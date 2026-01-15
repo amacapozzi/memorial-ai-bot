@@ -9,7 +9,6 @@
     "typecheck": "tsc --noEmit",
     "prepare": "husky"
   },
-  
   "lint-staged": {
     "*.{js,ts,tsx}": [
       "eslint --fix",
@@ -20,12 +19,17 @@
     ]
   },
   "dependencies": {
-    "elysia": "latest"
+    "@prisma/adapter-pg": "^7.2.0",
+    "@prisma/client": "^7.2.0",
+    "bun-elysia-modular-starter": ".",
+    "elysia": "latest",
+    "pg": "^8.17.0"
   },
   "devDependencies": {
     "@commitlint/cli": "^20.2.0",
     "@commitlint/config-conventional": "^20.2.0",
     "@types/node": "^25.0.3",
+    "@types/pg": "^8.16.0",
     "@typescript-eslint/eslint-plugin": "^8.51.0",
     "@typescript-eslint/parser": "^8.51.0",
     "bun-types": "latest",
@@ -37,6 +41,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
     "prettier": "^3.7.4",
+    "prisma": "^7.2.0",
     "typescript": "^5.9.3",
     "zod": "^4.2.1"
   },
