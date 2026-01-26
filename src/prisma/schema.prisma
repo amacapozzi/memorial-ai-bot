@@ -1,0 +1,59 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "./generated"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// WhatsApp session storage for baileys
+model WhatsAppSession {
+  id        String   @id @default("default")
+  data      Json
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("whatsapp_sessions")
+}
+
+// Reminder jobs
+model Reminder {
+  id              String         @id @default(cuid())
+  originalText    String         @map("original_text")
+  reminderText    String         @map("reminder_text")
+  scheduledAt     DateTime       @map("scheduled_at")
+  chatId          String         @map("chat_id")
+  status          ReminderStatus @default(PENDING)
+  calendarEventId String?        @map("calendar_event_id")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+  sentAt          DateTime?      @map("sent_at")
+
+  @@index([status, scheduledAt])
+  @@map("reminders")
+}
+
+enum ReminderStatus {
+  PENDING
+  SENT
+  FAILED
+  CANCELLED
+}
+
+// Google OAuth tokens storage
+model GoogleAuthToken {
+  id           String   @id @default("default")
+  accessToken  String   @map("access_token")
+  refreshToken String   @map("refresh_token")
+  expiresAt    DateTime @map("expires_at")
+  scope        String
+  tokenType    String   @default("Bearer") @map("token_type")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("google_auth_tokens")
+}

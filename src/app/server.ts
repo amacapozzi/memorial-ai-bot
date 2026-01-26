@@ -18,16 +18,32 @@ function getErrorMessage(err: unknown): string {
   }
 }
 
-export function createServer() {
+export async function createServer() {
   const { PORT } = env();
-  const { logger, modules } = buildApp();
+  const { logger, modules, startServices, stopServices } = buildApp();
 
-  const app = new Elysia().onError(({ code, error, set }) => {
-    set.status = code === "NOT_FOUND" ? 404 : 500;
-    return { ok: false, code, message: getErrorMessage(error) };
-  });
+  const app = new Elysia()
+    .onError(({ code, error, set }) => {
+      set.status = code === "NOT_FOUND" ? 404 : 500;
+      return { ok: false, code, message: getErrorMessage(error) };
+    })
+    .get("/health", () => ({ ok: true, status: "running" }));
 
+  // Register all modules
   for (const mod of modules) app.use(mod);
+
+  // Handle graceful shutdown
+  const shutdown = async () => {
+    logger.info("Shutting down...");
+    await stopServices();
+    process.exit(0);
+  };
+
+  process.on("SIGINT", shutdown);
+  process.on("SIGTERM", shutdown);
+
+  // Start background services (WhatsApp, Scheduler)
+  await startServices();
 
   logger.info(`Server ready on http://localhost:${PORT}`);
 
