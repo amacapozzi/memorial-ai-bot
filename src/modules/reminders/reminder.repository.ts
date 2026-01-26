@@ -69,4 +69,21 @@ export class ReminderRepository {
   async delete(id: string): Promise<void> {
     await this.prisma.reminder.delete({ where: { id } });
   }
+
+  async updateScheduledAt(id: string, scheduledAt: Date): Promise<Reminder> {
+    return this.prisma.reminder.update({
+      where: { id },
+      data: { scheduledAt }
+    });
+  }
+
+  async findPendingByChatOrdered(chatId: string): Promise<Reminder[]> {
+    return this.prisma.reminder.findMany({
+      where: {
+        chatId,
+        status: "PENDING"
+      },
+      orderBy: { scheduledAt: "asc" }
+    });
+  }
 }

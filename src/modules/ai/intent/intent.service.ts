@@ -4,19 +4,25 @@ import { buildReminderIntentPrompt, FUN_REMINDER_SYSTEM_PROMPT } from "./prompts
 import type { GroqClient } from "../groq/groq.client";
 
 export interface ParsedIntent {
-  type: "reminder" | "query" | "unknown";
+  type: "create_reminder" | "list_tasks" | "cancel_task" | "modify_task" | "unknown";
+  taskNumber?: number;
   reminderDetails?: {
     description: string;
     dateTime: Date;
     originalText: string;
   };
+  newDateTime?: Date;
   confidence: number;
 }
 
-interface ReminderIntentResponse {
-  isReminder: boolean;
-  description: string;
-  dateTime: string;
+interface IntentResponse {
+  intentType: "create_reminder" | "list_tasks" | "cancel_task" | "modify_task" | "unknown";
+  taskNumber: number | null;
+  reminderDetails: {
+    description: string;
+    dateTime: string;
+  } | null;
+  newDateTime: string | null;
   confidence: number;
 }
 
@@ -31,10 +37,32 @@ export class IntentService {
     const systemPrompt = buildReminderIntentPrompt();
 
     try {
-      const response = await this.groqClient.chatJSON<ReminderIntentResponse>(systemPrompt, text);
+      const response = await this.groqClient.chatJSON<IntentResponse>(systemPrompt, text);
 
-      if (response.isReminder && response.description && response.dateTime) {
-        const dateTime = new Date(response.dateTime);
+      const result: ParsedIntent = {
+        type: response.intentType,
+        confidence: response.confidence
+      };
+
+      // Handle task number for cancel/modify
+      if (response.taskNumber) {
+        result.taskNumber = response.taskNumber;
+      }
+
+      // Handle new date/time for modify
+      if (response.newDateTime) {
+        const newDateTime = new Date(response.newDateTime);
+        if (newDateTime > new Date()) {
+          result.newDateTime = newDateTime;
+        } else {
+          newDateTime.setDate(newDateTime.getDate() + 1);
+          result.newDateTime = newDateTime;
+        }
+      }
+
+      // Handle reminder details for create
+      if (response.intentType === "create_reminder" && response.reminderDetails) {
+        const dateTime = new Date(response.reminderDetails.dateTime);
 
         // Validate the date is in the future
         if (dateTime <= new Date()) {
@@ -42,21 +70,14 @@ export class IntentService {
           dateTime.setDate(dateTime.getDate() + 1);
         }
 
-        return {
-          type: "reminder",
-          reminderDetails: {
-            description: response.description,
-            dateTime,
-            originalText: text
-          },
-          confidence: response.confidence
+        result.reminderDetails = {
+          description: response.reminderDetails.description,
+          dateTime,
+          originalText: text
         };
       }
 
-      return {
-        type: response.isReminder ? "unknown" : "query",
-        confidence: response.confidence
-      };
+      return result;
     } catch (error) {
       this.logger.error("Failed to parse intent", error);
       return {

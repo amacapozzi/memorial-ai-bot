@@ -74,6 +74,41 @@ export class GoogleCalendarService {
     this.logger.info("Calendar event deleted");
   }
 
+  async updateEvent(
+    eventId: string,
+    updates: { startTime?: Date; endTime?: Date; summary?: string }
+  ): Promise<void> {
+    this.logger.info(`Updating calendar event: ${eventId}`);
+
+    const calendar = await this.getCalendar();
+
+    const requestBody: calendar_v3.Schema$Event = {};
+
+    if (updates.startTime) {
+      const endTime = updates.endTime || new Date(updates.startTime.getTime() + 30 * 60 * 1000);
+      requestBody.start = {
+        dateTime: updates.startTime.toISOString(),
+        timeZone: "America/Argentina/Buenos_Aires"
+      };
+      requestBody.end = {
+        dateTime: endTime.toISOString(),
+        timeZone: "America/Argentina/Buenos_Aires"
+      };
+    }
+
+    if (updates.summary) {
+      requestBody.summary = updates.summary;
+    }
+
+    await calendar.events.patch({
+      calendarId: "primary",
+      eventId,
+      requestBody
+    });
+
+    this.logger.info("Calendar event updated");
+  }
+
   async checkAvailability(startTime: Date, endTime: Date): Promise<boolean> {
     this.logger.debug(`Checking availability from ${startTime} to ${endTime}`);
 

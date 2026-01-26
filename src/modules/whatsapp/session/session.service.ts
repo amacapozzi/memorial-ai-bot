@@ -1,4 +1,8 @@
-import type { AuthenticationCreds, SignalDataTypeMap } from "@whiskeysockets/baileys";
+import type {
+  AuthenticationCreds,
+  SignalDataTypeMap,
+  SignalDataSet
+} from "@whiskeysockets/baileys";
 import { initAuthCreds, BufferJSON } from "@whiskeysockets/baileys";
 
 import { createLogger } from "@shared/logger/logger";
@@ -23,7 +27,7 @@ export class SessionService {
           type: T,
           ids: string[]
         ) => Promise<{ [id: string]: SignalDataTypeMap[T] }>;
-        set: (data: Partial<SignalDataTypeMap>) => Promise<void>;
+        set: (data: SignalDataSet) => Promise<void>;
       };
     };
     saveCreds: () => Promise<void>;
@@ -34,7 +38,7 @@ export class SessionService {
     let keys: Record<string, Record<string, unknown>> = {};
 
     if (session?.data) {
-      const data = session.data as AuthState;
+      const data = session.data as unknown as AuthState;
       creds = JSON.parse(JSON.stringify(data.creds), BufferJSON.reviver);
       keys = JSON.parse(JSON.stringify(data.keys || {}), BufferJSON.reviver);
     } else {
@@ -60,7 +64,7 @@ export class SessionService {
         }
         return result;
       },
-      set: async (data: Partial<SignalDataTypeMap>) => {
+      set: async (data: SignalDataSet) => {
         for (const [type, entries] of Object.entries(data)) {
           if (!keys[type]) keys[type] = {};
           for (const [id, value] of Object.entries(entries || {})) {

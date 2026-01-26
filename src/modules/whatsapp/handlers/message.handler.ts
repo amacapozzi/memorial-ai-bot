@@ -60,46 +60,32 @@ export class MessageHandler {
       const intent = await this.intentService.parseIntent(text);
       this.logger.info(`Parsed intent: ${intent.type} (confidence: ${intent.confidence})`);
 
-      if (intent.type === "reminder" && intent.reminderDetails) {
-        // Create reminder
-        const funMessage = await this.intentService.generateFunReminderMessage(
-          intent.reminderDetails.description
-        );
+      switch (intent.type) {
+        case "create_reminder":
+          await this.handleCreateReminder(message.chatId, text, intent);
+          break;
 
-        const reminder = await this.reminderService.createReminder({
-          originalText: text,
-          reminderText: funMessage,
-          scheduledAt: intent.reminderDetails.dateTime,
-          chatId: message.chatId
-        });
+        case "list_tasks":
+          await this.handleListTasks(message.chatId);
+          break;
 
-        // Send confirmation
-        const confirmationTime = intent.reminderDetails.dateTime.toLocaleString("es-AR", {
-          weekday: "long",
-          day: "numeric",
-          month: "long",
-          hour: "2-digit",
-          minute: "2-digit"
-        });
+        case "cancel_task":
+          await this.handleCancelTask(message.chatId, intent.taskNumber);
+          break;
 
-        await this.whatsappClient.sendMessage(
-          message.chatId,
-          `Listo! Te recordare: "${intent.reminderDetails.description}" el ${confirmationTime}`
-        );
+        case "modify_task":
+          await this.handleModifyTask(message.chatId, intent.taskNumber, intent.newDateTime);
+          break;
 
-        this.logger.info(`Reminder created: ${reminder.id}`);
-      } else if (intent.type === "query") {
-        // Handle queries (future feature)
-        await this.whatsappClient.sendMessage(
-          message.chatId,
-          "Por ahora solo puedo ayudarte con recordatorios. Dime algo como 'recuerdame manana a las 3 llamar a mama'"
-        );
-      } else {
-        // Unknown intent
-        await this.whatsappClient.sendMessage(
-          message.chatId,
-          "No entendi bien. Puedo ayudarte con recordatorios. Por ejemplo: 'recuerdame el viernes a las 5 que tengo reunion'"
-        );
+        default:
+          await this.whatsappClient.sendMessage(
+            message.chatId,
+            "No entendi bien. Puedo ayudarte con:\n" +
+              "- Crear recordatorios: 'recuerdame manana a las 3 llamar a mama'\n" +
+              "- Ver tareas: 'que tareas tengo'\n" +
+              "- Cancelar: 'cancela la tarea 2'\n" +
+              "- Cambiar hora: 'cambia la tarea 1 a las 5pm'"
+          );
       }
     } catch (error) {
       this.logger.error("Failed to process message", error);
@@ -108,5 +94,151 @@ export class MessageHandler {
         "Hubo un error procesando tu mensaje. Intenta de nuevo mas tarde."
       );
     }
+  }
+
+  private async handleCreateReminder(
+    chatId: string,
+    originalText: string,
+    intent: { reminderDetails?: { description: string; dateTime: Date } }
+  ): Promise<void> {
+    if (!intent.reminderDetails) {
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "No pude entender los detalles del recordatorio."
+      );
+      return;
+    }
+
+    const funMessage = await this.intentService.generateFunReminderMessage(
+      intent.reminderDetails.description
+    );
+
+    const reminder = await this.reminderService.createReminder({
+      originalText,
+      reminderText: funMessage,
+      scheduledAt: intent.reminderDetails.dateTime,
+      chatId
+    });
+
+    const confirmationTime = intent.reminderDetails.dateTime.toLocaleString("es-AR", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+
+    await this.whatsappClient.sendMessage(
+      chatId,
+      `Listo! Te recordare: "${intent.reminderDetails.description}" el ${confirmationTime}`
+    );
+
+    this.logger.info(`Reminder created: ${reminder.id}`);
+  }
+
+  private async handleListTasks(chatId: string): Promise<void> {
+    const reminders = await this.reminderService.getPendingRemindersOrdered(chatId);
+
+    if (reminders.length === 0) {
+      await this.whatsappClient.sendMessage(chatId, "No tenes tareas pendientes! 🎉");
+      return;
+    }
+
+    let response = "📋 *Tus tareas pendientes:*\n\n";
+
+    reminders.forEach((reminder, index) => {
+      const dateStr = reminder.scheduledAt.toLocaleString("es-AR", {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+      response += `*${index + 1}.* ${reminder.reminderText}\n   📅 ${dateStr}\n\n`;
+    });
+
+    response += "_Podes decir 'cancela la tarea X' o 'cambia la tarea X a las Y'_";
+
+    await this.whatsappClient.sendMessage(chatId, response);
+  }
+
+  private async handleCancelTask(chatId: string, taskNumber?: number): Promise<void> {
+    if (!taskNumber) {
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "Decime el numero de tarea a cancelar. Ej: 'cancela la tarea 2'"
+      );
+      return;
+    }
+
+    const reminders = await this.reminderService.getPendingRemindersOrdered(chatId);
+
+    if (taskNumber < 1 || taskNumber > reminders.length) {
+      await this.whatsappClient.sendMessage(
+        chatId,
+        `No existe la tarea ${taskNumber}. Tenes ${reminders.length} tarea(s) pendiente(s).`
+      );
+      return;
+    }
+
+    const reminder = reminders[taskNumber - 1];
+    await this.reminderService.cancelReminder(reminder.id);
+
+    await this.whatsappClient.sendMessage(
+      chatId,
+      `Tarea ${taskNumber} cancelada: "${reminder.reminderText}" ❌`
+    );
+
+    this.logger.info(`Reminder ${reminder.id} cancelled by user`);
+  }
+
+  private async handleModifyTask(
+    chatId: string,
+    taskNumber?: number,
+    newDateTime?: Date
+  ): Promise<void> {
+    if (!taskNumber) {
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "Decime el numero de tarea a modificar. Ej: 'cambia la tarea 2 a las 5pm'"
+      );
+      return;
+    }
+
+    if (!newDateTime) {
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "Decime la nueva hora. Ej: 'cambia la tarea 2 a las 5 de la tarde'"
+      );
+      return;
+    }
+
+    const reminders = await this.reminderService.getPendingRemindersOrdered(chatId);
+
+    if (taskNumber < 1 || taskNumber > reminders.length) {
+      await this.whatsappClient.sendMessage(
+        chatId,
+        `No existe la tarea ${taskNumber}. Tenes ${reminders.length} tarea(s) pendiente(s).`
+      );
+      return;
+    }
+
+    const reminder = reminders[taskNumber - 1];
+    await this.reminderService.modifyReminderTime(reminder.id, newDateTime);
+
+    const newTimeStr = newDateTime.toLocaleString("es-AR", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+
+    await this.whatsappClient.sendMessage(
+      chatId,
+      `Tarea ${taskNumber} reprogramada para el ${newTimeStr} ✅`
+    );
+
+    this.logger.info(`Reminder ${reminder.id} rescheduled to ${newDateTime.toISOString()}`);
   }
 }

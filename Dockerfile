@@ -12,7 +12,8 @@ RUN bun install --frozen-lockfile
 FROM base AS build
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN bun --bun run prisma generate
+# Dummy DATABASE_URL for prisma generate (only generates types, no connection needed)
+RUN DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy" bun --bun run prisma generate
 
 # Production
 FROM base AS production

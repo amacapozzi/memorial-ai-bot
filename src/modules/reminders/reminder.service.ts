@@ -88,4 +88,32 @@ export class ReminderService {
   async getUpcomingReminders(chatId: string): Promise<Reminder[]> {
     return this.repository.findUpcoming(chatId);
   }
+
+  async getPendingRemindersOrdered(chatId: string): Promise<Reminder[]> {
+    return this.repository.findPendingByChatOrdered(chatId);
+  }
+
+  async modifyReminderTime(id: string, newScheduledAt: Date): Promise<Reminder> {
+    const reminder = await this.repository.findById(id);
+
+    if (!reminder) {
+      throw new Error(`Reminder ${id} not found`);
+    }
+
+    // Update calendar event if exists
+    if (reminder.calendarEventId && this.calendarService) {
+      try {
+        await this.calendarService.updateEvent(reminder.calendarEventId, {
+          startTime: newScheduledAt
+        });
+      } catch (error) {
+        this.logger.warn("Failed to update calendar event", error);
+      }
+    }
+
+    const updated = await this.repository.updateScheduledAt(id, newScheduledAt);
+    this.logger.info(`Reminder ${id} rescheduled to ${newScheduledAt.toISOString()}`);
+
+    return updated;
+  }
 }
