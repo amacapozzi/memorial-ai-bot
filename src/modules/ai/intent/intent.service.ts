@@ -3,14 +3,16 @@ import { createLogger } from "@shared/logger/logger";
 import { buildReminderIntentPrompt, FUN_REMINDER_SYSTEM_PROMPT } from "./prompts";
 import type { GroqClient } from "../groq/groq.client";
 
+export interface ReminderDetail {
+  description: string;
+  dateTime: Date;
+}
+
 export interface ParsedIntent {
   type: "create_reminder" | "list_tasks" | "cancel_task" | "modify_task" | "unknown";
   taskNumber?: number;
-  reminderDetails?: {
-    description: string;
-    dateTime: Date;
-    originalText: string;
-  };
+  reminderDetails?: ReminderDetail[];
+  originalText?: string;
   newDateTime?: Date;
   confidence: number;
 }
@@ -18,10 +20,10 @@ export interface ParsedIntent {
 interface IntentResponse {
   intentType: "create_reminder" | "list_tasks" | "cancel_task" | "modify_task" | "unknown";
   taskNumber: number | null;
-  reminderDetails: {
+  reminderDetails: Array<{
     description: string;
     dateTime: string;
-  } | null;
+  }> | null;
   newDateTime: string | null;
   confidence: number;
 }
@@ -60,21 +62,29 @@ export class IntentService {
         }
       }
 
-      // Handle reminder details for create
-      if (response.intentType === "create_reminder" && response.reminderDetails) {
-        const dateTime = new Date(response.reminderDetails.dateTime);
+      // Handle reminder details for create (supports multiple reminders)
+      if (
+        response.intentType === "create_reminder" &&
+        response.reminderDetails &&
+        response.reminderDetails.length > 0
+      ) {
+        result.reminderDetails = response.reminderDetails.map((detail) => {
+          const dateTime = new Date(detail.dateTime);
 
-        // Validate the date is in the future
-        if (dateTime <= new Date()) {
-          this.logger.warn("Parsed date is in the past, adjusting to tomorrow");
-          dateTime.setDate(dateTime.getDate() + 1);
-        }
+          // Validate the date is in the future
+          if (dateTime <= new Date()) {
+            this.logger.warn(
+              `Parsed date for "${detail.description}" is in the past, adjusting to tomorrow`
+            );
+            dateTime.setDate(dateTime.getDate() + 1);
+          }
 
-        result.reminderDetails = {
-          description: response.reminderDetails.description,
-          dateTime,
-          originalText: text
-        };
+          return {
+            description: detail.description,
+            dateTime
+          };
+        });
+        result.originalText = text;
       }
 
       return result;

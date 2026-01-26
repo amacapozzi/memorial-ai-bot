@@ -99,9 +99,9 @@ export class MessageHandler {
   private async handleCreateReminder(
     chatId: string,
     originalText: string,
-    intent: { reminderDetails?: { description: string; dateTime: Date } }
+    intent: { reminderDetails?: Array<{ description: string; dateTime: Date }> }
   ): Promise<void> {
-    if (!intent.reminderDetails) {
+    if (!intent.reminderDetails || intent.reminderDetails.length === 0) {
       await this.whatsappClient.sendMessage(
         chatId,
         "No pude entender los detalles del recordatorio."
@@ -109,31 +109,56 @@ export class MessageHandler {
       return;
     }
 
-    const funMessage = await this.intentService.generateFunReminderMessage(
-      intent.reminderDetails.description
-    );
+    const createdReminders: Array<{ description: string; dateTime: Date }> = [];
 
-    const reminder = await this.reminderService.createReminder({
-      originalText,
-      reminderText: funMessage,
-      scheduledAt: intent.reminderDetails.dateTime,
-      chatId
-    });
+    for (const detail of intent.reminderDetails) {
+      const funMessage = await this.intentService.generateFunReminderMessage(detail.description);
 
-    const confirmationTime = intent.reminderDetails.dateTime.toLocaleString("es-AR", {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-      hour: "2-digit",
-      minute: "2-digit"
-    });
+      const reminder = await this.reminderService.createReminder({
+        originalText,
+        reminderText: funMessage,
+        scheduledAt: detail.dateTime,
+        chatId
+      });
 
-    await this.whatsappClient.sendMessage(
-      chatId,
-      `Listo! Te recordare: "${intent.reminderDetails.description}" el ${confirmationTime}`
-    );
+      createdReminders.push({
+        description: detail.description,
+        dateTime: detail.dateTime
+      });
 
-    this.logger.info(`Reminder created: ${reminder.id}`);
+      this.logger.info(`Reminder created: ${reminder.id}`);
+    }
+
+    // Build confirmation message
+    if (createdReminders.length === 1) {
+      const r = createdReminders[0];
+      const confirmationTime = r.dateTime.toLocaleString("es-AR", {
+        timeZone: "America/Argentina/Buenos_Aires",
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+      await this.whatsappClient.sendMessage(
+        chatId,
+        `Listo! Te recordare: "${r.description}" el ${confirmationTime}`
+      );
+    } else {
+      let message = `Listo! Te cree ${createdReminders.length} recordatorios:\n\n`;
+      createdReminders.forEach((r, index) => {
+        const timeStr = r.dateTime.toLocaleString("es-AR", {
+          timeZone: "America/Argentina/Buenos_Aires",
+          weekday: "short",
+          day: "numeric",
+          month: "short",
+          hour: "2-digit",
+          minute: "2-digit"
+        });
+        message += `${index + 1}. "${r.description}" - ${timeStr}\n`;
+      });
+      await this.whatsappClient.sendMessage(chatId, message);
+    }
   }
 
   private async handleListTasks(chatId: string): Promise<void> {
@@ -148,6 +173,7 @@ export class MessageHandler {
 
     reminders.forEach((reminder, index) => {
       const dateStr = reminder.scheduledAt.toLocaleString("es-AR", {
+        timeZone: "America/Argentina/Buenos_Aires",
         weekday: "short",
         day: "numeric",
         month: "short",
@@ -227,6 +253,7 @@ export class MessageHandler {
     await this.reminderService.modifyReminderTime(reminder.id, newDateTime);
 
     const newTimeStr = newDateTime.toLocaleString("es-AR", {
+      timeZone: "America/Argentina/Buenos_Aires",
       weekday: "long",
       day: "numeric",
       month: "long",

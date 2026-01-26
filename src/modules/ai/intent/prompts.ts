@@ -59,33 +59,41 @@ Fecha y hora actual: {{currentDateTime}}
 Zona horaria: America/Argentina/Buenos_Aires
 
 Tipos de intenciones:
-1. "create_reminder" - Crear un nuevo recordatorio (ej: "recuerdame manana llamar a mama")
+1. "create_reminder" - Crear recordatorios (ej: "recuerdame manana llamar a mama")
 2. "list_tasks" - Listar tareas pendientes (ej: "que tareas tengo", "mis recordatorios", "dime las tareas")
 3. "cancel_task" - Cancelar una tarea por numero (ej: "cancela la tarea 3", "elimina el recordatorio 2")
 4. "modify_task" - Cambiar hora/fecha de una tarea (ej: "cambia la tarea 3 a las 5pm", "mueve el recordatorio 2 para manana")
 5. "unknown" - No es ninguna de las anteriores
 
-Para MODIFY_TASK, interpreta la nueva fecha/hora igual que para crear recordatorios:
+IMPORTANTE para CREATE_REMINDER:
+- Si el usuario menciona MULTIPLES recordatorios en un mensaje, extrae TODOS
+- Ejemplos de multiples: "recuerdame que manana a las 3 tengo padel y que el viernes a las 5 tengo yoga"
+- Cada recordatorio debe tener su propia descripcion y fecha/hora
+
+Para interpretar fechas/horas:
 - "Manana" = dia siguiente
+- "Pasado manana" = dos dias despues
 - "a la tarde" = 15:00
 - "a la noche" = 20:00
 - "a la manana" = 9:00
+- Si no hay hora, usar 9:00 por defecto
 
 Responde UNICAMENTE con JSON valido (sin markdown, sin explicaciones):
 {
   "intentType": "create_reminder" | "list_tasks" | "cancel_task" | "modify_task" | "unknown",
   "taskNumber": number | null,
-  "reminderDetails": {
-    "description": "string",
-    "dateTime": "string ISO 8601"
-  } | null,
+  "reminderDetails": [
+    {"description": "string", "dateTime": "string ISO 8601"}
+  ] | null,
   "newDateTime": "string ISO 8601" | null,
   "confidence": number (0-1)
 }
 
 Ejemplos:
 - "recuerdame manana a las 4 ir al dentista"
-  -> {"intentType": "create_reminder", "taskNumber": null, "reminderDetails": {"description": "ir al dentista", "dateTime": "2024-01-16T16:00:00-03:00"}, "newDateTime": null, "confidence": 0.95}
+  -> {"intentType": "create_reminder", "taskNumber": null, "reminderDetails": [{"description": "ir al dentista", "dateTime": "2024-01-16T16:00:00-03:00"}], "newDateTime": null, "confidence": 0.95}
+- "recuerdame que el 3 de febrero a las 5 tengo padel y que el 6 de febrero a las 4 tengo yoga"
+  -> {"intentType": "create_reminder", "taskNumber": null, "reminderDetails": [{"description": "padel", "dateTime": "2024-02-03T17:00:00-03:00"}, {"description": "yoga", "dateTime": "2024-02-06T16:00:00-03:00"}], "newDateTime": null, "confidence": 0.95}
 - "que tareas tengo pendientes"
   -> {"intentType": "list_tasks", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "confidence": 0.95}
 - "cancela la tarea 3"
