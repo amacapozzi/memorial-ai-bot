@@ -44,7 +44,7 @@ enum ReminderStatus {
   CANCELLED
 }
 
-// Google OAuth tokens storage
+// Google OAuth tokens storage (for Calendar)
 model GoogleAuthToken {
   id           String   @id @default("default")
   accessToken  String   @map("access_token")
@@ -56,4 +56,77 @@ model GoogleAuthToken {
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   @@map("google_auth_tokens")
+}
+
+// User model to track WhatsApp users
+model User {
+  id        String   @id @default(cuid())
+  chatId    String   @unique @map("chat_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  emailToken      EmailToken?
+  processedEmails ProcessedEmail[]
+
+  @@map("users")
+}
+
+// Gmail OAuth tokens (per user, separate from calendar tokens)
+model EmailToken {
+  id           String    @id @default(cuid())
+  userId       String    @unique @map("user_id")
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  accessToken  String    @map("access_token")
+  refreshToken String    @map("refresh_token")
+  expiresAt    DateTime  @map("expires_at")
+  scope        String
+  tokenType    String    @default("Bearer") @map("token_type")
+  historyId    String?   @map("history_id")
+  lastSyncAt   DateTime? @map("last_sync_at")
+
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  @@map("email_tokens")
+}
+
+// Track processed emails to avoid duplicates
+model ProcessedEmail {
+  id              String               @id @default(cuid())
+  userId          String               @map("user_id")
+  user            User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  gmailMessageId  String               @map("gmail_message_id")
+  threadId        String?              @map("thread_id")
+  subject         String?
+  sender          String?
+  receivedAt      DateTime             @map("received_at")
+  processedAt     DateTime             @default(now()) @map("processed_at")
+
+  emailType       EmailType            @map("email_type")
+  extractedData   Json?                @map("extracted_data")
+
+  reminderId      String?              @unique @map("reminder_id")
+  status          ProcessedEmailStatus @default(PROCESSED)
+
+  @@unique([userId, gmailMessageId])
+  @@index([userId, processedAt])
+  @@map("processed_emails")
+}
+
+enum EmailType {
+  PURCHASE
+  DELIVERY
+  APPOINTMENT
+  MEETING
+  FLIGHT
+  OTHER
+}
+
+enum ProcessedEmailStatus {
+  PROCESSED
+  REMINDER_CREATED
+  SKIPPED
+  FAILED
 }

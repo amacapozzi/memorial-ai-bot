@@ -53,7 +53,7 @@ Ejemplos de buen tono:
 - "Opa! Reunion en 30 min. A ponerse las pilas!"
 - "Hola! Te acordas que querias llamar a mama? Es el momento 📞"`;
 
-export const TASK_MANAGEMENT_SYSTEM_PROMPT = `Eres un asistente que analiza mensajes para detectar intenciones relacionadas con recordatorios/tareas.
+export const TASK_MANAGEMENT_SYSTEM_PROMPT = `Eres un asistente que analiza mensajes para detectar intenciones relacionadas con recordatorios/tareas y email.
 
 Fecha y hora actual: {{currentDateTime}}
 Zona horaria: America/Argentina/Buenos_Aires
@@ -63,7 +63,10 @@ Tipos de intenciones:
 2. "list_tasks" - Listar tareas pendientes (ej: "que tareas tengo", "mis recordatorios", "dime las tareas")
 3. "cancel_task" - Cancelar una tarea por numero (ej: "cancela la tarea 3", "elimina el recordatorio 2")
 4. "modify_task" - Cambiar hora/fecha de una tarea (ej: "cambia la tarea 3 a las 5pm", "mueve el recordatorio 2 para manana")
-5. "unknown" - No es ninguna de las anteriores
+5. "link_email" - Vincular/conectar email/Gmail (ej: "conecta mi email", "vincula mi gmail", "quiero conectar mi correo", "link email")
+6. "unlink_email" - Desvincular/desconectar email (ej: "desconecta mi email", "quita gmail", "elimina acceso al correo")
+7. "email_status" - Consultar estado del email (ej: "mi email esta conectado?", "tengo email vinculado?", "estado de gmail")
+8. "unknown" - No es ninguna de las anteriores
 
 IMPORTANTE para CREATE_REMINDER:
 - Si el usuario menciona MULTIPLES recordatorios en un mensaje, extrae TODOS
@@ -80,7 +83,7 @@ Para interpretar fechas/horas:
 
 Responde UNICAMENTE con JSON valido (sin markdown, sin explicaciones):
 {
-  "intentType": "create_reminder" | "list_tasks" | "cancel_task" | "modify_task" | "unknown",
+  "intentType": "create_reminder" | "list_tasks" | "cancel_task" | "modify_task" | "link_email" | "unlink_email" | "email_status" | "unknown",
   "taskNumber": number | null,
   "reminderDetails": [
     {"description": "string", "dateTime": "string ISO 8601"}
@@ -101,7 +104,15 @@ Ejemplos:
 - "cambia la hora de la tarea 2 a las 6 de la tarde"
   -> {"intentType": "modify_task", "taskNumber": 2, "reminderDetails": null, "newDateTime": "2024-01-15T18:00:00-03:00", "confidence": 0.95}
 - "hola como estas"
-  -> {"intentType": "unknown", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "confidence": 0.90}`;
+  -> {"intentType": "unknown", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "confidence": 0.90}
+- "conecta mi email"
+  -> {"intentType": "link_email", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "confidence": 0.95}
+- "vincula mi gmail"
+  -> {"intentType": "link_email", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "confidence": 0.95}
+- "desconecta mi correo"
+  -> {"intentType": "unlink_email", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "confidence": 0.95}
+- "mi email esta conectado?"
+  -> {"intentType": "email_status", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "confidence": 0.95}`;
 
 export function buildReminderIntentPrompt(): string {
   const now = new Date();

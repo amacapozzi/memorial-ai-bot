@@ -1,6 +1,9 @@
 import type { IntentService } from "@modules/ai/intent/intent.service";
 import type { TranscriptionService } from "@modules/ai/transcription/transcription.service";
+import type { GmailAuthService } from "@modules/email/gmail/gmail-auth.service";
+import type { UserService } from "@modules/email/user/user.service";
 import type { ReminderService } from "@modules/reminders/reminder.service";
+import { env } from "@shared/env/env";
 import { createLogger } from "@shared/logger/logger";
 
 import type { WhatsAppClient } from "../client/whatsapp.client";
@@ -13,7 +16,9 @@ export class MessageHandler {
     private readonly whatsappClient: WhatsAppClient,
     private readonly transcriptionService: TranscriptionService,
     private readonly intentService: IntentService,
-    private readonly reminderService: ReminderService
+    private readonly reminderService: ReminderService,
+    private readonly userService?: UserService,
+    private readonly gmailAuthService?: GmailAuthService
   ) {}
 
   async handle(message: MessageContent): Promise<void> {
@@ -77,6 +82,18 @@ export class MessageHandler {
           await this.handleModifyTask(message.chatId, intent.taskNumber, intent.newDateTime);
           break;
 
+        case "link_email":
+          await this.handleLinkEmail(message.chatId);
+          break;
+
+        case "unlink_email":
+          await this.handleUnlinkEmail(message.chatId);
+          break;
+
+        case "email_status":
+          await this.handleEmailStatus(message.chatId);
+          break;
+
         default:
           await this.whatsappClient.sendMessage(
             message.chatId,
@@ -84,7 +101,8 @@ export class MessageHandler {
               "- Crear recordatorios: 'recuerdame manana a las 3 llamar a mama'\n" +
               "- Ver tareas: 'que tareas tengo'\n" +
               "- Cancelar: 'cancela la tarea 2'\n" +
-              "- Cambiar hora: 'cambia la tarea 1 a las 5pm'"
+              "- Cambiar hora: 'cambia la tarea 1 a las 5pm'\n" +
+              "- Conectar email: 'conecta mi email'"
           );
       }
     } catch (error) {
@@ -267,5 +285,148 @@ export class MessageHandler {
     );
 
     this.logger.info(`Reminder ${reminder.id} rescheduled to ${newDateTime.toISOString()}`);
+  }
+
+  private async handleLinkEmail(chatId: string): Promise<void> {
+    if (!this.userService || !this.gmailAuthService) {
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "La funcion de email no esta disponible en este momento."
+      );
+      return;
+    }
+
+    try {
+      // Get or create user
+      const user = await this.userService.getOrCreateUser(chatId);
+
+      // Check if already linked
+      const isLinked = await this.gmailAuthService.isAuthenticated(user.id);
+      if (isLinked) {
+        await this.whatsappClient.sendMessage(
+          chatId,
+          "Ya tenes tu email conectado! 📧\n\n" +
+            "Te aviso automaticamente de entregas, citas y reuniones.\n\n" +
+            "Si queres desconectarlo, decime 'desconecta mi email'."
+        );
+        return;
+      }
+
+      // Generate OAuth URL
+      const baseUrl = env().GMAIL_REDIRECT_URI.replace("/auth/gmail/callback", "");
+      const authUrl = `${baseUrl}/auth/gmail?chatId=${encodeURIComponent(chatId)}`;
+
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "📧 *Conectar tu Gmail*\n\n" +
+          "Para vincular tu email, hace click en este link:\n\n" +
+          `${authUrl}\n\n` +
+          "Una vez que autorices, voy a poder avisarte de:\n" +
+          "- 📦 Entregas de compras\n" +
+          "- 📅 Turnos y citas\n" +
+          "- 🗓️ Reuniones\n" +
+          "- ✈️ Vuelos\n\n" +
+          "_Tu privacidad es importante: solo leo los emails, nunca envio nada._"
+      );
+
+      this.logger.info(`Email link URL sent to ${chatId}`);
+    } catch (error) {
+      this.logger.error(`Failed to handle link email for ${chatId}`, error);
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "Hubo un error generando el link. Intenta de nuevo mas tarde."
+      );
+    }
+  }
+
+  private async handleUnlinkEmail(chatId: string): Promise<void> {
+    if (!this.userService || !this.gmailAuthService) {
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "La funcion de email no esta disponible en este momento."
+      );
+      return;
+    }
+
+    try {
+      const user = await this.userService.getUserByChatId(chatId);
+
+      if (!user) {
+        await this.whatsappClient.sendMessage(chatId, "No tenes ningun email conectado.");
+        return;
+      }
+
+      const isLinked = await this.gmailAuthService.isAuthenticated(user.id);
+
+      if (!isLinked) {
+        await this.whatsappClient.sendMessage(chatId, "No tenes ningun email conectado.");
+        return;
+      }
+
+      await this.gmailAuthService.revokeAccess(user.id);
+
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "Email desconectado exitosamente. ✅\n\n" +
+          "Ya no voy a recibir notificaciones de tu correo.\n" +
+          "Si queres volver a conectarlo, decime 'conecta mi email'."
+      );
+
+      this.logger.info(`Email unlinked for ${chatId}`);
+    } catch (error) {
+      this.logger.error(`Failed to unlink email for ${chatId}`, error);
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "Hubo un error desconectando el email. Intenta de nuevo mas tarde."
+      );
+    }
+  }
+
+  private async handleEmailStatus(chatId: string): Promise<void> {
+    if (!this.userService || !this.gmailAuthService) {
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "La funcion de email no esta disponible en este momento."
+      );
+      return;
+    }
+
+    try {
+      const user = await this.userService.getUserByChatId(chatId);
+
+      if (!user) {
+        await this.whatsappClient.sendMessage(
+          chatId,
+          "📧 *Estado del Email*\n\n" +
+            "No tenes email conectado.\n\n" +
+            "Decime 'conecta mi email' para vincularlo."
+        );
+        return;
+      }
+
+      const isLinked = await this.gmailAuthService.isAuthenticated(user.id);
+
+      if (isLinked) {
+        await this.whatsappClient.sendMessage(
+          chatId,
+          "📧 *Estado del Email*\n\n" +
+            "✅ Tu email esta conectado!\n\n" +
+            "Estoy monitoreando tus emails para avisarte de entregas, citas, reuniones y vuelos."
+        );
+      } else {
+        await this.whatsappClient.sendMessage(
+          chatId,
+          "📧 *Estado del Email*\n\n" +
+            "❌ Tu email no esta conectado.\n\n" +
+            "Decime 'conecta mi email' para vincularlo."
+        );
+      }
+    } catch (error) {
+      this.logger.error(`Failed to check email status for ${chatId}`, error);
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "Hubo un error verificando el estado. Intenta de nuevo mas tarde."
+      );
+    }
   }
 }

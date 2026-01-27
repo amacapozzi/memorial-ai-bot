@@ -57,3 +57,18 @@ export type Reminder = Prisma.ReminderModel;
  *
  */
 export type GoogleAuthToken = Prisma.GoogleAuthTokenModel;
+/**
+ * Model User
+ *
+ */
+export type User = Prisma.UserModel;
+/**
+ * Model EmailToken
+ *
+ */
+export type EmailToken = Prisma.EmailTokenModel;
+/**
+ * Model ProcessedEmail
+ *
+ */
+export type ProcessedEmail = Prisma.ProcessedEmailModel;

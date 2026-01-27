@@ -8,8 +8,18 @@ export interface ReminderDetail {
   dateTime: Date;
 }
 
+export type IntentType =
+  | "create_reminder"
+  | "list_tasks"
+  | "cancel_task"
+  | "modify_task"
+  | "link_email"
+  | "unlink_email"
+  | "email_status"
+  | "unknown";
+
 export interface ParsedIntent {
-  type: "create_reminder" | "list_tasks" | "cancel_task" | "modify_task" | "unknown";
+  type: IntentType;
   taskNumber?: number;
   reminderDetails?: ReminderDetail[];
   originalText?: string;
@@ -18,7 +28,7 @@ export interface ParsedIntent {
 }
 
 interface IntentResponse {
-  intentType: "create_reminder" | "list_tasks" | "cancel_task" | "modify_task" | "unknown";
+  intentType: IntentType;
   taskNumber: number | null;
   reminderDetails: Array<{
     description: string;

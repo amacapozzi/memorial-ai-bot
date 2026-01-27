@@ -16,3 +16,23 @@ export const ReminderStatus = {
 } as const;
 
 export type ReminderStatus = (typeof ReminderStatus)[keyof typeof ReminderStatus];
+
+export const EmailType = {
+  PURCHASE: "PURCHASE",
+  DELIVERY: "DELIVERY",
+  APPOINTMENT: "APPOINTMENT",
+  MEETING: "MEETING",
+  FLIGHT: "FLIGHT",
+  OTHER: "OTHER"
+} as const;
+
+export type EmailType = (typeof EmailType)[keyof typeof EmailType];
+
+export const ProcessedEmailStatus = {
+  PROCESSED: "PROCESSED",
+  REMINDER_CREATED: "REMINDER_CREATED",
+  SKIPPED: "SKIPPED",
+  FAILED: "FAILED"
+} as const;
+
+export type ProcessedEmailStatus = (typeof ProcessedEmailStatus)[keyof typeof ProcessedEmailStatus];

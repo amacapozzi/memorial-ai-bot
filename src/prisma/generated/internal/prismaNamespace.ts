@@ -377,7 +377,10 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 export const ModelName = {
   WhatsAppSession: "WhatsAppSession",
   Reminder: "Reminder",
-  GoogleAuthToken: "GoogleAuthToken"
+  GoogleAuthToken: "GoogleAuthToken",
+  User: "User",
+  EmailToken: "EmailToken",
+  ProcessedEmail: "ProcessedEmail"
 } as const;
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName];
@@ -397,7 +400,13 @@ export type TypeMap<
     omit: GlobalOmitOptions;
   };
   meta: {
-    modelProps: "whatsAppSession" | "reminder" | "googleAuthToken";
+    modelProps:
+      | "whatsAppSession"
+      | "reminder"
+      | "googleAuthToken"
+      | "user"
+      | "emailToken"
+      | "processedEmail";
     txIsolationLevel: TransactionIsolationLevel;
   };
   model: {
@@ -627,6 +636,230 @@ export type TypeMap<
         };
       };
     };
+    User: {
+      payload: Prisma.$UserPayload<ExtArgs>;
+      fields: Prisma.UserFieldRefs;
+      operations: {
+        findUnique: {
+          args: Prisma.UserFindUniqueArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserPayload> | null;
+        };
+        findUniqueOrThrow: {
+          args: Prisma.UserFindUniqueOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserPayload>;
+        };
+        findFirst: {
+          args: Prisma.UserFindFirstArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserPayload> | null;
+        };
+        findFirstOrThrow: {
+          args: Prisma.UserFindFirstOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserPayload>;
+        };
+        findMany: {
+          args: Prisma.UserFindManyArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserPayload>[];
+        };
+        create: {
+          args: Prisma.UserCreateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserPayload>;
+        };
+        createMany: {
+          args: Prisma.UserCreateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        createManyAndReturn: {
+          args: Prisma.UserCreateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserPayload>[];
+        };
+        delete: {
+          args: Prisma.UserDeleteArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserPayload>;
+        };
+        update: {
+          args: Prisma.UserUpdateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserPayload>;
+        };
+        deleteMany: {
+          args: Prisma.UserDeleteManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateMany: {
+          args: Prisma.UserUpdateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateManyAndReturn: {
+          args: Prisma.UserUpdateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserPayload>[];
+        };
+        upsert: {
+          args: Prisma.UserUpsertArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserPayload>;
+        };
+        aggregate: {
+          args: Prisma.UserAggregateArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.AggregateUser>;
+        };
+        groupBy: {
+          args: Prisma.UserGroupByArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.UserGroupByOutputType>[];
+        };
+        count: {
+          args: Prisma.UserCountArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.UserCountAggregateOutputType> | number;
+        };
+      };
+    };
+    EmailToken: {
+      payload: Prisma.$EmailTokenPayload<ExtArgs>;
+      fields: Prisma.EmailTokenFieldRefs;
+      operations: {
+        findUnique: {
+          args: Prisma.EmailTokenFindUniqueArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailTokenPayload> | null;
+        };
+        findUniqueOrThrow: {
+          args: Prisma.EmailTokenFindUniqueOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailTokenPayload>;
+        };
+        findFirst: {
+          args: Prisma.EmailTokenFindFirstArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailTokenPayload> | null;
+        };
+        findFirstOrThrow: {
+          args: Prisma.EmailTokenFindFirstOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailTokenPayload>;
+        };
+        findMany: {
+          args: Prisma.EmailTokenFindManyArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailTokenPayload>[];
+        };
+        create: {
+          args: Prisma.EmailTokenCreateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailTokenPayload>;
+        };
+        createMany: {
+          args: Prisma.EmailTokenCreateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        createManyAndReturn: {
+          args: Prisma.EmailTokenCreateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailTokenPayload>[];
+        };
+        delete: {
+          args: Prisma.EmailTokenDeleteArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailTokenPayload>;
+        };
+        update: {
+          args: Prisma.EmailTokenUpdateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailTokenPayload>;
+        };
+        deleteMany: {
+          args: Prisma.EmailTokenDeleteManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateMany: {
+          args: Prisma.EmailTokenUpdateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateManyAndReturn: {
+          args: Prisma.EmailTokenUpdateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailTokenPayload>[];
+        };
+        upsert: {
+          args: Prisma.EmailTokenUpsertArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailTokenPayload>;
+        };
+        aggregate: {
+          args: Prisma.EmailTokenAggregateArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.AggregateEmailToken>;
+        };
+        groupBy: {
+          args: Prisma.EmailTokenGroupByArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.EmailTokenGroupByOutputType>[];
+        };
+        count: {
+          args: Prisma.EmailTokenCountArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.EmailTokenCountAggregateOutputType> | number;
+        };
+      };
+    };
+    ProcessedEmail: {
+      payload: Prisma.$ProcessedEmailPayload<ExtArgs>;
+      fields: Prisma.ProcessedEmailFieldRefs;
+      operations: {
+        findUnique: {
+          args: Prisma.ProcessedEmailFindUniqueArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessedEmailPayload> | null;
+        };
+        findUniqueOrThrow: {
+          args: Prisma.ProcessedEmailFindUniqueOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessedEmailPayload>;
+        };
+        findFirst: {
+          args: Prisma.ProcessedEmailFindFirstArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessedEmailPayload> | null;
+        };
+        findFirstOrThrow: {
+          args: Prisma.ProcessedEmailFindFirstOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessedEmailPayload>;
+        };
+        findMany: {
+          args: Prisma.ProcessedEmailFindManyArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessedEmailPayload>[];
+        };
+        create: {
+          args: Prisma.ProcessedEmailCreateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessedEmailPayload>;
+        };
+        createMany: {
+          args: Prisma.ProcessedEmailCreateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        createManyAndReturn: {
+          args: Prisma.ProcessedEmailCreateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessedEmailPayload>[];
+        };
+        delete: {
+          args: Prisma.ProcessedEmailDeleteArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessedEmailPayload>;
+        };
+        update: {
+          args: Prisma.ProcessedEmailUpdateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessedEmailPayload>;
+        };
+        deleteMany: {
+          args: Prisma.ProcessedEmailDeleteManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateMany: {
+          args: Prisma.ProcessedEmailUpdateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateManyAndReturn: {
+          args: Prisma.ProcessedEmailUpdateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessedEmailPayload>[];
+        };
+        upsert: {
+          args: Prisma.ProcessedEmailUpsertArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessedEmailPayload>;
+        };
+        aggregate: {
+          args: Prisma.ProcessedEmailAggregateArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.AggregateProcessedEmail>;
+        };
+        groupBy: {
+          args: Prisma.ProcessedEmailGroupByArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.ProcessedEmailGroupByOutputType>[];
+        };
+        count: {
+          args: Prisma.ProcessedEmailCountArgs<ExtArgs>;
+          result:
+            | runtime.Types.Utils.Optional<Prisma.ProcessedEmailCountAggregateOutputType>
+            | number;
+        };
+      };
+    };
   };
 } & {
   other: {
@@ -706,6 +939,50 @@ export const GoogleAuthTokenScalarFieldEnum = {
 export type GoogleAuthTokenScalarFieldEnum =
   (typeof GoogleAuthTokenScalarFieldEnum)[keyof typeof GoogleAuthTokenScalarFieldEnum];
 
+export const UserScalarFieldEnum = {
+  id: "id",
+  chatId: "chatId",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt"
+} as const;
+
+export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum];
+
+export const EmailTokenScalarFieldEnum = {
+  id: "id",
+  userId: "userId",
+  accessToken: "accessToken",
+  refreshToken: "refreshToken",
+  expiresAt: "expiresAt",
+  scope: "scope",
+  tokenType: "tokenType",
+  historyId: "historyId",
+  lastSyncAt: "lastSyncAt",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt"
+} as const;
+
+export type EmailTokenScalarFieldEnum =
+  (typeof EmailTokenScalarFieldEnum)[keyof typeof EmailTokenScalarFieldEnum];
+
+export const ProcessedEmailScalarFieldEnum = {
+  id: "id",
+  userId: "userId",
+  gmailMessageId: "gmailMessageId",
+  threadId: "threadId",
+  subject: "subject",
+  sender: "sender",
+  receivedAt: "receivedAt",
+  processedAt: "processedAt",
+  emailType: "emailType",
+  extractedData: "extractedData",
+  reminderId: "reminderId",
+  status: "status"
+} as const;
+
+export type ProcessedEmailScalarFieldEnum =
+  (typeof ProcessedEmailScalarFieldEnum)[keyof typeof ProcessedEmailScalarFieldEnum];
+
 export const SortOrder = {
   asc: "asc",
   desc: "desc"
@@ -718,6 +995,14 @@ export const JsonNullValueInput = {
 } as const;
 
 export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput];
+
+export const NullableJsonNullValueInput = {
+  DbNull: DbNull,
+  JsonNull: JsonNull
+} as const;
+
+export type NullableJsonNullValueInput =
+  (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput];
 
 export const QueryMode = {
   default: "default",
@@ -789,6 +1074,35 @@ export type EnumReminderStatusFieldRefInput<$PrismaModel> = FieldRefInputType<
 export type ListEnumReminderStatusFieldRefInput<$PrismaModel> = FieldRefInputType<
   $PrismaModel,
   "ReminderStatus[]"
+>;
+
+/**
+ * Reference to a field of type 'EmailType'
+ */
+export type EnumEmailTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "EmailType">;
+
+/**
+ * Reference to a field of type 'EmailType[]'
+ */
+export type ListEnumEmailTypeFieldRefInput<$PrismaModel> = FieldRefInputType<
+  $PrismaModel,
+  "EmailType[]"
+>;
+
+/**
+ * Reference to a field of type 'ProcessedEmailStatus'
+ */
+export type EnumProcessedEmailStatusFieldRefInput<$PrismaModel> = FieldRefInputType<
+  $PrismaModel,
+  "ProcessedEmailStatus"
+>;
+
+/**
+ * Reference to a field of type 'ProcessedEmailStatus[]'
+ */
+export type ListEnumProcessedEmailStatusFieldRefInput<$PrismaModel> = FieldRefInputType<
+  $PrismaModel,
+  "ProcessedEmailStatus[]"
 >;
 
 /**
@@ -907,6 +1221,9 @@ export type GlobalOmitConfig = {
   whatsAppSession?: Prisma.WhatsAppSessionOmit;
   reminder?: Prisma.ReminderOmit;
   googleAuthToken?: Prisma.GoogleAuthTokenOmit;
+  user?: Prisma.UserOmit;
+  emailToken?: Prisma.EmailTokenOmit;
+  processedEmail?: Prisma.ProcessedEmailOmit;
 };
 
 /* Types for Logging */

@@ -10,4 +10,7 @@
 export type * from "./models/WhatsAppSession";
 export type * from "./models/Reminder";
 export type * from "./models/GoogleAuthToken";
+export type * from "./models/User";
+export type * from "./models/EmailToken";
+export type * from "./models/ProcessedEmail";
 export type * from "./commonInputTypes";

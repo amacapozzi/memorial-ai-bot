@@ -50,7 +50,10 @@ export const AnyNull = runtime.AnyNull;
 export const ModelName = {
   WhatsAppSession: "WhatsAppSession",
   Reminder: "Reminder",
-  GoogleAuthToken: "GoogleAuthToken"
+  GoogleAuthToken: "GoogleAuthToken",
+  User: "User",
+  EmailToken: "EmailToken",
+  ProcessedEmail: "ProcessedEmail"
 } as const;
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName];
@@ -109,6 +112,50 @@ export const GoogleAuthTokenScalarFieldEnum = {
 export type GoogleAuthTokenScalarFieldEnum =
   (typeof GoogleAuthTokenScalarFieldEnum)[keyof typeof GoogleAuthTokenScalarFieldEnum];
 
+export const UserScalarFieldEnum = {
+  id: "id",
+  chatId: "chatId",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt"
+} as const;
+
+export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum];
+
+export const EmailTokenScalarFieldEnum = {
+  id: "id",
+  userId: "userId",
+  accessToken: "accessToken",
+  refreshToken: "refreshToken",
+  expiresAt: "expiresAt",
+  scope: "scope",
+  tokenType: "tokenType",
+  historyId: "historyId",
+  lastSyncAt: "lastSyncAt",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt"
+} as const;
+
+export type EmailTokenScalarFieldEnum =
+  (typeof EmailTokenScalarFieldEnum)[keyof typeof EmailTokenScalarFieldEnum];
+
+export const ProcessedEmailScalarFieldEnum = {
+  id: "id",
+  userId: "userId",
+  gmailMessageId: "gmailMessageId",
+  threadId: "threadId",
+  subject: "subject",
+  sender: "sender",
+  receivedAt: "receivedAt",
+  processedAt: "processedAt",
+  emailType: "emailType",
+  extractedData: "extractedData",
+  reminderId: "reminderId",
+  status: "status"
+} as const;
+
+export type ProcessedEmailScalarFieldEnum =
+  (typeof ProcessedEmailScalarFieldEnum)[keyof typeof ProcessedEmailScalarFieldEnum];
+
 export const SortOrder = {
   asc: "asc",
   desc: "desc"
@@ -121,6 +168,14 @@ export const JsonNullValueInput = {
 } as const;
 
 export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput];
+
+export const NullableJsonNullValueInput = {
+  DbNull: DbNull,
+  JsonNull: JsonNull
+} as const;
+
+export type NullableJsonNullValueInput =
+  (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput];
 
 export const QueryMode = {
   default: "default",
