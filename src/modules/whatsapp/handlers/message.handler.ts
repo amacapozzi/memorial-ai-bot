@@ -312,21 +312,25 @@ export class MessageHandler {
         return;
       }
 
-      // Generate OAuth URL
-      const baseUrl = env().GMAIL_REDIRECT_URI.replace("/auth/gmail/callback", "");
-      const authUrl = `${baseUrl}/auth/gmail?chatId=${encodeURIComponent(chatId)}`;
+      // Generate OAuth URL using userId (clean cuid, no special chars)
+      const hostUrl = env().HOST_URL;
+      const authUrl = `${hostUrl}/auth/gmail?userId=${user.id}`;
 
       await this.whatsappClient.sendMessage(
         chatId,
-        "📧 *Conectar tu Gmail*\n\n" +
-          "Para vincular tu email, hace click en este link:\n\n" +
-          `${authUrl}\n\n` +
-          "Una vez que autorices, voy a poder avisarte de:\n" +
-          "- 📦 Entregas de compras\n" +
-          "- 📅 Turnos y citas\n" +
-          "- 🗓️ Reuniones\n" +
-          "- ✈️ Vuelos\n\n" +
-          "_Tu privacidad es importante: solo leo los emails, nunca envio nada._"
+        `📧 *Conectar tu Gmail*
+
+Para vincular tu email, hace click en este link:
+
+${authUrl}
+
+Una vez que autorices, voy a poder avisarte de:
+📦 Entregas de compras
+📅 Turnos y citas
+🗓️ Reuniones
+✈️ Vuelos
+
+_Tu privacidad es importante: solo leo los emails, nunca envio nada._`
       );
 
       this.logger.info(`Email link URL sent to ${chatId}`);

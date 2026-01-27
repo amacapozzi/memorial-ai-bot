@@ -22,7 +22,10 @@ export const envSchema = z.object({
 
   // Gmail integration
   GMAIL_REDIRECT_URI: z.string().url().default("http://localhost:3000/auth/gmail/callback"),
-  EMAIL_SYNC_INTERVAL_MS: z.coerce.number().default(120000) // 2 minutes
+  EMAIL_SYNC_INTERVAL_MS: z.coerce.number().default(120000), // 2 minutes
+
+  // Public host URL for OAuth callbacks
+  HOST_URL: z.string().url().default("http://localhost:3000")
 });
 
 export type Env = z.infer<typeof envSchema>;

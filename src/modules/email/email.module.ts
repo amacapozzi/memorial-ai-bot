@@ -10,14 +10,17 @@ const logger = createLogger("email-module");
 export function createEmailModule(authService: GmailAuthService, userService: UserService) {
   return new Elysia({ prefix: "/auth/gmail" })
     .get("/", async ({ query }) => {
-      const chatId = query.chatId;
+      const userId = query.userId;
 
-      if (!chatId || typeof chatId !== "string") {
-        return { ok: false, error: "Missing chatId parameter" };
+      if (!userId || typeof userId !== "string") {
+        return { ok: false, error: "Missing userId parameter" };
       }
 
-      // Get or create user
-      const user = await userService.getOrCreateUser(chatId);
+      // Verify user exists
+      const user = await userService.getUserById(userId);
+      if (!user) {
+        return { ok: false, error: "User not found" };
+      }
 
       const authUrl = authService.getAuthUrl(user.id);
       logger.info(`Redirecting to Gmail OAuth for user: ${user.id}`);
