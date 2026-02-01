@@ -173,6 +173,9 @@ export class EmailProcessorService {
           });
           message += `Cuando: ${date}\n`;
           message += `Organiza: ${analysis.meetingInfo.organizer}\n`;
+          if (analysis.meetingInfo.meetingLink) {
+            message += `Link: ${analysis.meetingInfo.meetingLink}\n`;
+          }
         }
         message += `\nTe aviso unos minutos antes!`;
         break;
@@ -192,6 +195,150 @@ export class EmailProcessorService {
           message += `Sale: ${date} desde ${analysis.flightInfo.departure.airport}\n`;
         }
         message += `\nTe aviso con tiempo para que llegues al aeropuerto!`;
+        break;
+
+      case "LEGAL_HEARING":
+        message = `⚖️ AUDIENCIA JUDICIAL detectada!\n\n`;
+        message += `${analysis.summary}\n`;
+        if (analysis.legalHearingInfo) {
+          const date = analysis.legalHearingInfo.dateTime.toLocaleString("es-AR", {
+            weekday: "long",
+            day: "numeric",
+            month: "long",
+            hour: "2-digit",
+            minute: "2-digit"
+          });
+          message += `📍 ${analysis.legalHearingInfo.court}\n`;
+          message += `📅 ${date}\n`;
+          if (analysis.legalHearingInfo.caseNumber) {
+            message += `📁 Exp: ${analysis.legalHearingInfo.caseNumber}\n`;
+          }
+          if (analysis.legalHearingInfo.caseName) {
+            message += `📋 ${analysis.legalHearingInfo.caseName}\n`;
+          }
+          if (analysis.legalHearingInfo.hearingType) {
+            message += `Tipo: ${analysis.legalHearingInfo.hearingType}\n`;
+          }
+          if (analysis.legalHearingInfo.location) {
+            message += `Direccion: ${analysis.legalHearingInfo.location}\n`;
+          }
+        }
+        message += `\nTe aviso 24 horas antes!`;
+        break;
+
+      case "DEADLINE":
+        message = `⏰ VENCIMIENTO detectado!\n\n`;
+        message += `${analysis.summary}\n`;
+        if (analysis.deadlineInfo) {
+          const date = analysis.deadlineInfo.dueDate.toLocaleDateString("es-AR", {
+            weekday: "long",
+            day: "numeric",
+            month: "long"
+          });
+          message += `📅 Vence: ${date}\n`;
+          message += `📝 Accion: ${analysis.deadlineInfo.action}\n`;
+          if (analysis.deadlineInfo.caseNumber) {
+            message += `📁 Exp: ${analysis.deadlineInfo.caseNumber}\n`;
+          }
+          message += `Tipo: ${analysis.deadlineInfo.deadlineType}\n`;
+        }
+        message += `\nTe aviso 48 horas antes para que tengas tiempo de actuar!`;
+        break;
+
+      case "COURSE":
+        message = `📚 Encontre un curso/capacitacion!\n\n`;
+        message += `${analysis.summary}\n`;
+        if (analysis.courseInfo) {
+          const date = analysis.courseInfo.dateTime.toLocaleString("es-AR", {
+            weekday: "long",
+            day: "numeric",
+            month: "long",
+            hour: "2-digit",
+            minute: "2-digit"
+          });
+          message += `📅 Inicio: ${date}\n`;
+          message += `🏛️ Organiza: ${analysis.courseInfo.organizer}\n`;
+          if (analysis.courseInfo.instructor) {
+            message += `👨‍🏫 Instructor: ${analysis.courseInfo.instructor}\n`;
+          }
+          if (analysis.courseInfo.meetingLink) {
+            message += `🔗 Link: ${analysis.courseInfo.meetingLink}\n`;
+          }
+          if (analysis.courseInfo.location) {
+            message += `📍 Lugar: ${analysis.courseInfo.location}\n`;
+          }
+        }
+        message += `\nTe aviso 1 hora antes!`;
+        break;
+
+      case "TASK":
+        message = `✅ Nueva tarea detectada!\n\n`;
+        message += `${analysis.summary}\n`;
+        if (analysis.taskInfo) {
+          message += `📝 ${analysis.taskInfo.title}\n`;
+          if (analysis.taskInfo.dueDate) {
+            const date = analysis.taskInfo.dueDate.toLocaleDateString("es-AR", {
+              weekday: "long",
+              day: "numeric",
+              month: "long"
+            });
+            message += `📅 Para: ${date}\n`;
+          }
+          if (analysis.taskInfo.relatedCase) {
+            message += `📁 Caso: ${analysis.taskInfo.relatedCase}\n`;
+          }
+          if (analysis.taskInfo.assignedBy) {
+            message += `👤 Asignado por: ${analysis.taskInfo.assignedBy}\n`;
+          }
+          if (analysis.taskInfo.priority) {
+            message += `🔴 Prioridad: ${analysis.taskInfo.priority}\n`;
+          }
+        }
+        message += `\nTe recuerdo mañana para que no se te pase!`;
+        break;
+
+      case "LEGAL_INFO":
+        message = `📜 Informacion juridica relevante!\n\n`;
+        message += `${analysis.summary}\n`;
+        if (analysis.legalInfoData) {
+          message += `📑 ${analysis.legalInfoData.title}\n`;
+          message += `🏛️ Fuente: ${analysis.legalInfoData.source}\n`;
+          if (analysis.legalInfoData.summary) {
+            message += `📝 ${analysis.legalInfoData.summary}\n`;
+          }
+          if (analysis.legalInfoData.relevance) {
+            message += `⭐ ${analysis.legalInfoData.relevance}\n`;
+          }
+          if (analysis.legalInfoData.link) {
+            message += `🔗 ${analysis.legalInfoData.link}\n`;
+          }
+        }
+        message += `\nTe recuerdo mañana para que lo revises!`;
+        break;
+
+      case "EVENT":
+        message = `🎯 Encontre un evento!\n\n`;
+        message += `${analysis.summary}\n`;
+        if (analysis.eventInfo) {
+          const date = analysis.eventInfo.dateTime.toLocaleString("es-AR", {
+            weekday: "long",
+            day: "numeric",
+            month: "long",
+            hour: "2-digit",
+            minute: "2-digit"
+          });
+          message += `📅 Cuando: ${date}\n`;
+          if (analysis.eventInfo.organizer) {
+            message += `🏛️ Organiza: ${analysis.eventInfo.organizer}\n`;
+          }
+          if (analysis.eventInfo.location) {
+            message += `📍 Lugar: ${analysis.eventInfo.location}\n`;
+          }
+          if (analysis.eventInfo.meetingLink) {
+            message += `🔗 Link: ${analysis.eventInfo.meetingLink}\n`;
+          }
+        }
+        message += `\nTe aviso 30 minutos antes!`;
         break;
 
       default:
@@ -247,6 +394,50 @@ export class EmailProcessorService {
           ...analysis.flightInfo.arrival,
           dateTime: analysis.flightInfo.arrival.dateTime.toISOString()
         }
+      };
+    }
+
+    if (analysis.legalHearingInfo) {
+      data.legalHearingInfo = {
+        ...analysis.legalHearingInfo,
+        dateTime: analysis.legalHearingInfo.dateTime.toISOString()
+      };
+    }
+
+    if (analysis.deadlineInfo) {
+      data.deadlineInfo = {
+        ...analysis.deadlineInfo,
+        dueDate: analysis.deadlineInfo.dueDate.toISOString()
+      };
+    }
+
+    if (analysis.courseInfo) {
+      data.courseInfo = {
+        ...analysis.courseInfo,
+        dateTime: analysis.courseInfo.dateTime.toISOString(),
+        endDateTime: analysis.courseInfo.endDateTime?.toISOString()
+      };
+    }
+
+    if (analysis.taskInfo) {
+      data.taskInfo = {
+        ...analysis.taskInfo,
+        dueDate: analysis.taskInfo.dueDate?.toISOString()
+      };
+    }
+
+    if (analysis.legalInfoData) {
+      data.legalInfoData = {
+        ...analysis.legalInfoData,
+        date: analysis.legalInfoData.date?.toISOString()
+      };
+    }
+
+    if (analysis.eventInfo) {
+      data.eventInfo = {
+        ...analysis.eventInfo,
+        dateTime: analysis.eventInfo.dateTime.toISOString(),
+        endDateTime: analysis.eventInfo.endDateTime?.toISOString()
       };
     }
 

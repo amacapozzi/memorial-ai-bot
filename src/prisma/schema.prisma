@@ -121,6 +121,12 @@ enum EmailType {
   APPOINTMENT
   MEETING
   FLIGHT
+  LEGAL_HEARING    // Audiencias judiciales
+  DEADLINE         // Vencimientos de plazos
+  COURSE           // Cursos, capacitaciones, seminarios
+  TASK             // Tareas asignadas
+  LEGAL_INFO       // Fallos, doctrina, jurisprudencia
+  EVENT            // Eventos con programación (genérico)
   OTHER
 }
 

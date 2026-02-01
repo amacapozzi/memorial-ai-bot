@@ -4,7 +4,19 @@ import { createLogger } from "@shared/logger/logger";
 import { buildEmailAnalysisPrompt } from "./email-analyzer.prompts";
 import type { EmailMessage } from "../gmail/gmail.service";
 
-export type EmailType = "PURCHASE" | "DELIVERY" | "APPOINTMENT" | "MEETING" | "FLIGHT" | "OTHER";
+export type EmailType =
+  | "PURCHASE"
+  | "DELIVERY"
+  | "APPOINTMENT"
+  | "MEETING"
+  | "FLIGHT"
+  | "LEGAL_HEARING"
+  | "DEADLINE"
+  | "COURSE"
+  | "TASK"
+  | "LEGAL_INFO"
+  | "EVENT"
+  | "OTHER";
 
 export interface DeliveryInfo {
   carrier: string;
@@ -43,6 +55,66 @@ export interface FlightInfo {
   confirmationCode: string | null;
 }
 
+export interface LegalHearingInfo {
+  court: string;
+  caseNumber: string | null;
+  caseName: string | null;
+  dateTime: Date;
+  location: string | null;
+  hearingType: string;
+  judge: string | null;
+  notes: string | null;
+}
+
+export interface DeadlineInfo {
+  title: string;
+  dueDate: Date;
+  caseNumber: string | null;
+  deadlineType: string;
+  action: string;
+  entity: string | null;
+}
+
+export interface CourseInfo {
+  title: string;
+  dateTime: Date;
+  endDateTime: Date | null;
+  organizer: string;
+  location: string | null;
+  meetingLink: string | null;
+  instructor: string | null;
+  topic: string | null;
+}
+
+export interface TaskInfo {
+  title: string;
+  dueDate: Date | null;
+  assignedBy: string | null;
+  priority: string | null;
+  relatedCase: string | null;
+  details: string | null;
+}
+
+export interface LegalInfoData {
+  title: string;
+  source: string;
+  date: Date | null;
+  caseNumber: string | null;
+  summary: string;
+  relevance: string | null;
+  link: string | null;
+}
+
+export interface EventInfo {
+  title: string;
+  dateTime: Date;
+  endDateTime: Date | null;
+  organizer: string | null;
+  location: string | null;
+  meetingLink: string | null;
+  description: string | null;
+}
+
 export interface AnalyzedEmail {
   type: EmailType;
   confidence: number;
@@ -53,6 +125,12 @@ export interface AnalyzedEmail {
   meetingInfo: MeetingInfo | null;
   purchaseInfo: PurchaseInfo | null;
   flightInfo: FlightInfo | null;
+  legalHearingInfo: LegalHearingInfo | null;
+  deadlineInfo: DeadlineInfo | null;
+  courseInfo: CourseInfo | null;
+  taskInfo: TaskInfo | null;
+  legalInfoData: LegalInfoData | null;
+  eventInfo: EventInfo | null;
 
   shouldCreateReminder: boolean;
   suggestedReminderDateTime: Date | null;
@@ -101,6 +179,66 @@ interface RawEmailAnalysis {
     confirmationCode: string | null;
   } | null;
 
+  legalHearingInfo: {
+    court: string;
+    caseNumber: string | null;
+    caseName: string | null;
+    dateTime: string;
+    location: string | null;
+    hearingType: string;
+    judge: string | null;
+    notes: string | null;
+  } | null;
+
+  deadlineInfo: {
+    title: string;
+    dueDate: string;
+    caseNumber: string | null;
+    deadlineType: string;
+    action: string;
+    entity: string | null;
+  } | null;
+
+  courseInfo: {
+    title: string;
+    dateTime: string;
+    endDateTime: string | null;
+    organizer: string;
+    location: string | null;
+    meetingLink: string | null;
+    instructor: string | null;
+    topic: string | null;
+  } | null;
+
+  taskInfo: {
+    title: string;
+    dueDate: string | null;
+    assignedBy: string | null;
+    priority: string | null;
+    relatedCase: string | null;
+    details: string | null;
+  } | null;
+
+  legalInfoData: {
+    title: string;
+    source: string;
+    date: string | null;
+    caseNumber: string | null;
+    summary: string;
+    relevance: string | null;
+    link: string | null;
+  } | null;
+
+  eventInfo: {
+    title: string;
+    dateTime: string;
+    endDateTime: string | null;
+    organizer: string | null;
+    location: string | null;
+    meetingLink: string | null;
+    description: string | null;
+  } | null;
+
   shouldCreateReminder: boolean;
   suggestedReminderDateTime: string | null;
   suggestedReminderText: string | null;
@@ -136,6 +274,12 @@ export class EmailAnalyzerService {
         meetingInfo: null,
         purchaseInfo: null,
         flightInfo: null,
+        legalHearingInfo: null,
+        deadlineInfo: null,
+        courseInfo: null,
+        taskInfo: null,
+        legalInfoData: null,
+        eventInfo: null,
         shouldCreateReminder: false,
         suggestedReminderDateTime: null,
         suggestedReminderText: null
@@ -166,6 +310,12 @@ export class EmailAnalyzerService {
       meetingInfo: null,
       purchaseInfo: null,
       flightInfo: null,
+      legalHearingInfo: null,
+      deadlineInfo: null,
+      courseInfo: null,
+      taskInfo: null,
+      legalInfoData: null,
+      eventInfo: null,
       shouldCreateReminder: raw.shouldCreateReminder,
       suggestedReminderDateTime: raw.suggestedReminderDateTime
         ? new Date(raw.suggestedReminderDateTime)
@@ -230,6 +380,84 @@ export class EmailAnalyzerService {
           dateTime: new Date(raw.flightInfo.arrival.dateTime)
         },
         confirmationCode: raw.flightInfo.confirmationCode
+      };
+    }
+
+    // Transform legal hearing info
+    if (raw.legalHearingInfo) {
+      result.legalHearingInfo = {
+        court: raw.legalHearingInfo.court,
+        caseNumber: raw.legalHearingInfo.caseNumber,
+        caseName: raw.legalHearingInfo.caseName,
+        dateTime: new Date(raw.legalHearingInfo.dateTime),
+        location: raw.legalHearingInfo.location,
+        hearingType: raw.legalHearingInfo.hearingType,
+        judge: raw.legalHearingInfo.judge,
+        notes: raw.legalHearingInfo.notes
+      };
+    }
+
+    // Transform deadline info
+    if (raw.deadlineInfo) {
+      result.deadlineInfo = {
+        title: raw.deadlineInfo.title,
+        dueDate: new Date(raw.deadlineInfo.dueDate),
+        caseNumber: raw.deadlineInfo.caseNumber,
+        deadlineType: raw.deadlineInfo.deadlineType,
+        action: raw.deadlineInfo.action,
+        entity: raw.deadlineInfo.entity
+      };
+    }
+
+    // Transform course info
+    if (raw.courseInfo) {
+      result.courseInfo = {
+        title: raw.courseInfo.title,
+        dateTime: new Date(raw.courseInfo.dateTime),
+        endDateTime: raw.courseInfo.endDateTime ? new Date(raw.courseInfo.endDateTime) : null,
+        organizer: raw.courseInfo.organizer,
+        location: raw.courseInfo.location,
+        meetingLink: raw.courseInfo.meetingLink,
+        instructor: raw.courseInfo.instructor,
+        topic: raw.courseInfo.topic
+      };
+    }
+
+    // Transform task info
+    if (raw.taskInfo) {
+      result.taskInfo = {
+        title: raw.taskInfo.title,
+        dueDate: raw.taskInfo.dueDate ? new Date(raw.taskInfo.dueDate) : null,
+        assignedBy: raw.taskInfo.assignedBy,
+        priority: raw.taskInfo.priority,
+        relatedCase: raw.taskInfo.relatedCase,
+        details: raw.taskInfo.details
+      };
+    }
+
+    // Transform legal info data
+    if (raw.legalInfoData) {
+      result.legalInfoData = {
+        title: raw.legalInfoData.title,
+        source: raw.legalInfoData.source,
+        date: raw.legalInfoData.date ? new Date(raw.legalInfoData.date) : null,
+        caseNumber: raw.legalInfoData.caseNumber,
+        summary: raw.legalInfoData.summary,
+        relevance: raw.legalInfoData.relevance,
+        link: raw.legalInfoData.link
+      };
+    }
+
+    // Transform event info
+    if (raw.eventInfo) {
+      result.eventInfo = {
+        title: raw.eventInfo.title,
+        dateTime: new Date(raw.eventInfo.dateTime),
+        endDateTime: raw.eventInfo.endDateTime ? new Date(raw.eventInfo.endDateTime) : null,
+        organizer: raw.eventInfo.organizer,
+        location: raw.eventInfo.location,
+        meetingLink: raw.eventInfo.meetingLink,
+        description: raw.eventInfo.description
       };
     }
 
