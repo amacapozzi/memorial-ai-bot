@@ -73,46 +73,88 @@ IMPORTANTE para CREATE_REMINDER:
 - Ejemplos de multiples: "recuerdame que manana a las 3 tengo padel y que el viernes a las 5 tengo yoga"
 - Cada recordatorio debe tener su propia descripcion y fecha/hora
 
+RECORDATORIOS RECURRENTES:
+Detecta cuando el usuario quiere recordatorios que se repiten:
+- "todos los dias" / "cada dia" / "diariamente" -> recurrence: "DAILY"
+- "todos los domingos" / "cada domingo" / "los domingos" -> recurrence: "WEEKLY", recurrenceDay: 0
+- "todos los lunes" / "cada lunes" / "los lunes" -> recurrence: "WEEKLY", recurrenceDay: 1
+- "todos los martes" -> recurrence: "WEEKLY", recurrenceDay: 2
+- "todos los miercoles" -> recurrence: "WEEKLY", recurrenceDay: 3
+- "todos los jueves" -> recurrence: "WEEKLY", recurrenceDay: 4
+- "todos los viernes" -> recurrence: "WEEKLY", recurrenceDay: 5
+- "todos los sabados" -> recurrence: "WEEKLY", recurrenceDay: 6
+- "todos los meses" / "cada mes" / "el dia X de cada mes" -> recurrence: "MONTHLY"
+
+Dias de la semana (recurrenceDay para WEEKLY):
+- Domingo = 0, Lunes = 1, Martes = 2, Miercoles = 3, Jueves = 4, Viernes = 5, Sabado = 6
+
+IMPORTANTE - CUANDO FALTA FECHA/HORA:
+Si el usuario dice algo como "recuerdame llamar a mama" SIN especificar cuando, marca:
+- missingDateTime: true
+- NO inventes una fecha/hora
+- Solo pon missingDateTime: true si realmente no hay ninguna referencia temporal
+
 Para interpretar fechas/horas:
 - "Manana" = dia siguiente
 - "Pasado manana" = dos dias despues
 - "a la tarde" = 15:00
 - "a la noche" = 20:00
 - "a la manana" = 9:00
-- Si no hay hora, usar 9:00 por defecto
+- Si dice dia pero no hora, usar 9:00 por defecto
+- Si es recurrente y dice la hora, usar esa hora para recurrenceTime
 
 Responde UNICAMENTE con JSON valido (sin markdown, sin explicaciones):
 {
   "intentType": "create_reminder" | "list_tasks" | "cancel_task" | "modify_task" | "link_email" | "unlink_email" | "email_status" | "unknown",
   "taskNumber": number | null,
   "reminderDetails": [
-    {"description": "string", "dateTime": "string ISO 8601"}
+    {
+      "description": "string",
+      "dateTime": "string ISO 8601 | null",
+      "recurrence": "NONE" | "DAILY" | "WEEKLY" | "MONTHLY",
+      "recurrenceDay": number | null,
+      "recurrenceTime": "HH:MM | null"
+    }
   ] | null,
   "newDateTime": "string ISO 8601" | null,
+  "missingDateTime": boolean,
   "confidence": number (0-1)
 }
 
 Ejemplos:
+
 - "recuerdame manana a las 4 ir al dentista"
-  -> {"intentType": "create_reminder", "taskNumber": null, "reminderDetails": [{"description": "ir al dentista", "dateTime": "2024-01-16T16:00:00-03:00"}], "newDateTime": null, "confidence": 0.95}
-- "recuerdame que el 3 de febrero a las 5 tengo padel y que el 6 de febrero a las 4 tengo yoga"
-  -> {"intentType": "create_reminder", "taskNumber": null, "reminderDetails": [{"description": "padel", "dateTime": "2024-02-03T17:00:00-03:00"}, {"description": "yoga", "dateTime": "2024-02-06T16:00:00-03:00"}], "newDateTime": null, "confidence": 0.95}
+  -> {"intentType": "create_reminder", "taskNumber": null, "reminderDetails": [{"description": "ir al dentista", "dateTime": "2024-01-16T16:00:00-03:00", "recurrence": "NONE", "recurrenceDay": null, "recurrenceTime": null}], "newDateTime": null, "missingDateTime": false, "confidence": 0.95}
+
+- "recuerdame todos los dias a las 8 tomar la pastilla"
+  -> {"intentType": "create_reminder", "taskNumber": null, "reminderDetails": [{"description": "tomar la pastilla", "dateTime": null, "recurrence": "DAILY", "recurrenceDay": null, "recurrenceTime": "08:00"}], "newDateTime": null, "missingDateTime": false, "confidence": 0.95}
+
+- "recuerdame todos los domingos a las 10 ir a la iglesia"
+  -> {"intentType": "create_reminder", "taskNumber": null, "reminderDetails": [{"description": "ir a la iglesia", "dateTime": null, "recurrence": "WEEKLY", "recurrenceDay": 0, "recurrenceTime": "10:00"}], "newDateTime": null, "missingDateTime": false, "confidence": 0.95}
+
+- "recuerdame los lunes y miercoles a las 7 ir al gimnasio"
+  -> {"intentType": "create_reminder", "taskNumber": null, "reminderDetails": [{"description": "ir al gimnasio", "dateTime": null, "recurrence": "WEEKLY", "recurrenceDay": 1, "recurrenceTime": "07:00"}, {"description": "ir al gimnasio", "dateTime": null, "recurrence": "WEEKLY", "recurrenceDay": 3, "recurrenceTime": "07:00"}], "newDateTime": null, "missingDateTime": false, "confidence": 0.95}
+
+- "recuerdame llamar a mama"
+  -> {"intentType": "create_reminder", "taskNumber": null, "reminderDetails": [{"description": "llamar a mama", "dateTime": null, "recurrence": "NONE", "recurrenceDay": null, "recurrenceTime": null}], "newDateTime": null, "missingDateTime": true, "confidence": 0.90}
+
+- "creame un recordatorio de pagar las cuentas"
+  -> {"intentType": "create_reminder", "taskNumber": null, "reminderDetails": [{"description": "pagar las cuentas", "dateTime": null, "recurrence": "NONE", "recurrenceDay": null, "recurrenceTime": null}], "newDateTime": null, "missingDateTime": true, "confidence": 0.90}
+
 - "que tareas tengo pendientes"
-  -> {"intentType": "list_tasks", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "confidence": 0.95}
+  -> {"intentType": "list_tasks", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "confidence": 0.95}
+
 - "cancela la tarea 3"
-  -> {"intentType": "cancel_task", "taskNumber": 3, "reminderDetails": null, "newDateTime": null, "confidence": 0.95}
+  -> {"intentType": "cancel_task", "taskNumber": 3, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "confidence": 0.95}
+
 - "cambia la hora de la tarea 2 a las 6 de la tarde"
-  -> {"intentType": "modify_task", "taskNumber": 2, "reminderDetails": null, "newDateTime": "2024-01-15T18:00:00-03:00", "confidence": 0.95}
-- "hola como estas"
-  -> {"intentType": "unknown", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "confidence": 0.90}
+  -> {"intentType": "modify_task", "taskNumber": 2, "reminderDetails": null, "newDateTime": "2024-01-15T18:00:00-03:00", "missingDateTime": false, "confidence": 0.95}
+
 - "conecta mi email"
-  -> {"intentType": "link_email", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "confidence": 0.95}
-- "vincula mi gmail"
-  -> {"intentType": "link_email", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "confidence": 0.95}
-- "desconecta mi correo"
-  -> {"intentType": "unlink_email", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "confidence": 0.95}
-- "mi email esta conectado?"
-  -> {"intentType": "email_status", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "confidence": 0.95}`;
+  -> {"intentType": "link_email", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "confidence": 0.95}
+
+- "hola como estas"
+  -> {"intentType": "unknown", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "confidence": 0.90}`;
 
 export function buildReminderIntentPrompt(): string {
   const now = new Date();

@@ -22,18 +22,24 @@ model WhatsAppSession {
 
 // Reminder jobs
 model Reminder {
-  id              String         @id @default(cuid())
-  originalText    String         @map("original_text")
-  reminderText    String         @map("reminder_text")
-  scheduledAt     DateTime       @map("scheduled_at")
-  chatId          String         @map("chat_id")
-  status          ReminderStatus @default(PENDING)
-  calendarEventId String?        @map("calendar_event_id")
-  createdAt       DateTime       @default(now()) @map("created_at")
-  updatedAt       DateTime       @updatedAt @map("updated_at")
-  sentAt          DateTime?      @map("sent_at")
+  id              String            @id @default(cuid())
+  originalText    String            @map("original_text")
+  reminderText    String            @map("reminder_text")
+  scheduledAt     DateTime          @map("scheduled_at")
+  chatId          String            @map("chat_id")
+  status          ReminderStatus    @default(PENDING)
+  calendarEventId String?           @map("calendar_event_id")
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+  sentAt          DateTime?         @map("sent_at")
+
+  // Recurrence fields
+  recurrence      RecurrenceType    @default(NONE)
+  recurrenceDay   Int?              @map("recurrence_day") // 0-6 for weekly (Sunday=0), 1-31 for monthly
+  recurrenceTime  String?           @map("recurrence_time") // HH:MM format for recurring reminders
 
   @@index([status, scheduledAt])
+  @@index([chatId, recurrence])
   @@map("reminders")
 }
 
@@ -42,6 +48,13 @@ enum ReminderStatus {
   SENT
   FAILED
   CANCELLED
+}
+
+enum RecurrenceType {
+  NONE
+  DAILY
+  WEEKLY
+  MONTHLY
 }
 
 // Google OAuth tokens storage (for Calendar)

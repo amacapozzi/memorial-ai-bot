@@ -1,13 +1,16 @@
-import type { IntentService } from "@modules/ai/intent/intent.service";
+import type { IntentService, ReminderDetail } from "@modules/ai/intent/intent.service";
 import type { TranscriptionService } from "@modules/ai/transcription/transcription.service";
 import type { GmailAuthService } from "@modules/email/gmail/gmail-auth.service";
 import type { UserService } from "@modules/email/user/user.service";
 import type { ReminderService } from "@modules/reminders/reminder.service";
+import type { RecurrenceType } from "@prisma-module/generated/client";
 import { env } from "@shared/env/env";
 import { createLogger } from "@shared/logger/logger";
 
 import type { WhatsAppClient } from "../client/whatsapp.client";
 import type { MessageContent } from "../client/whatsapp.types";
+
+const DAYS_OF_WEEK = ["domingo", "lunes", "martes", "miercoles", "jueves", "viernes", "sabado"];
 
 export class MessageHandler {
   private readonly logger = createLogger("message-handler");
@@ -99,6 +102,7 @@ export class MessageHandler {
             message.chatId,
             "No entendi bien. Puedo ayudarte con:\n" +
               "- Crear recordatorios: 'recuerdame manana a las 3 llamar a mama'\n" +
+              "- Recordatorios recurrentes: 'recuerdame todos los dias a las 8 tomar la pastilla'\n" +
               "- Ver tareas: 'que tareas tengo'\n" +
               "- Cancelar: 'cancela la tarea 2'\n" +
               "- Cambiar hora: 'cambia la tarea 1 a las 5pm'\n" +
@@ -117,31 +121,79 @@ export class MessageHandler {
   private async handleCreateReminder(
     chatId: string,
     originalText: string,
-    intent: { reminderDetails?: Array<{ description: string; dateTime: Date }> }
+    intent: {
+      reminderDetails?: ReminderDetail[];
+      missingDateTime?: boolean;
+    }
   ): Promise<void> {
-    if (!intent.reminderDetails || intent.reminderDetails.length === 0) {
+    // Check if missing date/time
+    if (intent.missingDateTime) {
+      const description = intent.reminderDetails?.[0]?.description || "lo que me pediste";
       await this.whatsappClient.sendMessage(
         chatId,
-        "No pude entender los detalles del recordatorio."
+        `Para crear el recordatorio de "${description}", necesito que me digas cuando.\n\n` +
+          "Por ejemplo:\n" +
+          "- 'manana a las 3'\n" +
+          "- 'el viernes a las 10'\n" +
+          "- 'todos los dias a las 8'\n" +
+          "- 'todos los lunes a las 9'\n\n" +
+          "Decime cuando queres que te recuerde!"
       );
       return;
     }
 
-    const createdReminders: Array<{ description: string; dateTime: Date }> = [];
+    if (!intent.reminderDetails || intent.reminderDetails.length === 0) {
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "No pude entender los detalles del recordatorio. Decime que queres que te recuerde y cuando."
+      );
+      return;
+    }
+
+    const createdReminders: Array<{
+      description: string;
+      dateTime: Date | null;
+      recurrence: string;
+      recurrenceDay: number | null;
+    }> = [];
 
     for (const detail of intent.reminderDetails) {
       const funMessage = await this.intentService.generateFunReminderMessage(detail.description);
 
+      // Calculate scheduledAt based on recurrence or specific date
+      let scheduledAt: Date;
+
+      if (detail.recurrence !== "NONE" && detail.recurrenceTime) {
+        // For recurring reminders, calculate the first occurrence
+        scheduledAt = this.calculateFirstOccurrence(
+          detail.recurrence as RecurrenceType,
+          detail.recurrenceDay,
+          detail.recurrenceTime
+        );
+      } else if (detail.dateTime) {
+        scheduledAt = detail.dateTime;
+      } else {
+        // Shouldn't happen, but fallback to tomorrow 9am
+        scheduledAt = new Date();
+        scheduledAt.setDate(scheduledAt.getDate() + 1);
+        scheduledAt.setHours(9, 0, 0, 0);
+      }
+
       const reminder = await this.reminderService.createReminder({
         originalText,
         reminderText: funMessage,
-        scheduledAt: detail.dateTime,
-        chatId
+        scheduledAt,
+        chatId,
+        recurrence: (detail.recurrence as RecurrenceType) || "NONE",
+        recurrenceDay: detail.recurrenceDay ?? undefined,
+        recurrenceTime: detail.recurrenceTime ?? undefined
       });
 
       createdReminders.push({
         description: detail.description,
-        dateTime: detail.dateTime
+        dateTime: scheduledAt,
+        recurrence: detail.recurrence,
+        recurrenceDay: detail.recurrenceDay
       });
 
       this.logger.info(`Reminder created: ${reminder.id}`);
@@ -150,33 +202,135 @@ export class MessageHandler {
     // Build confirmation message
     if (createdReminders.length === 1) {
       const r = createdReminders[0];
-      const confirmationTime = r.dateTime.toLocaleString("es-AR", {
-        timeZone: "America/Argentina/Buenos_Aires",
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-        hour: "2-digit",
-        minute: "2-digit"
-      });
-      await this.whatsappClient.sendMessage(
-        chatId,
-        `Listo! Te recordare: "${r.description}" el ${confirmationTime}`
-      );
+      await this.whatsappClient.sendMessage(chatId, this.buildConfirmationMessage(r));
     } else {
       let message = `Listo! Te cree ${createdReminders.length} recordatorios:\n\n`;
       createdReminders.forEach((r, index) => {
-        const timeStr = r.dateTime.toLocaleString("es-AR", {
-          timeZone: "America/Argentina/Buenos_Aires",
-          weekday: "short",
-          day: "numeric",
-          month: "short",
-          hour: "2-digit",
-          minute: "2-digit"
-        });
-        message += `${index + 1}. "${r.description}" - ${timeStr}\n`;
+        message += `${index + 1}. ${this.buildConfirmationMessageShort(r)}\n`;
       });
       await this.whatsappClient.sendMessage(chatId, message);
     }
+  }
+
+  private calculateFirstOccurrence(
+    recurrence: RecurrenceType,
+    recurrenceDay: number | null,
+    recurrenceTime: string
+  ): Date {
+    const now = new Date();
+    const [hours, minutes] = recurrenceTime.split(":").map(Number);
+    let nextDate = new Date(now);
+    nextDate.setHours(hours, minutes, 0, 0);
+
+    switch (recurrence) {
+      case "DAILY":
+        if (nextDate <= now) {
+          nextDate.setDate(nextDate.getDate() + 1);
+        }
+        break;
+
+      case "WEEKLY":
+        const targetDay = recurrenceDay ?? 0;
+        const currentDay = nextDate.getDay();
+        let daysUntilTarget = targetDay - currentDay;
+        if (daysUntilTarget < 0 || (daysUntilTarget === 0 && nextDate <= now)) {
+          daysUntilTarget += 7;
+        }
+        nextDate.setDate(nextDate.getDate() + daysUntilTarget);
+        break;
+
+      case "MONTHLY":
+        const targetDayOfMonth = recurrenceDay ?? 1;
+        nextDate.setDate(targetDayOfMonth);
+        if (nextDate <= now) {
+          nextDate.setMonth(nextDate.getMonth() + 1);
+        }
+        break;
+    }
+
+    return nextDate;
+  }
+
+  private buildConfirmationMessage(r: {
+    description: string;
+    dateTime: Date | null;
+    recurrence: string;
+    recurrenceDay: number | null;
+  }): string {
+    if (r.recurrence === "DAILY") {
+      const timeStr = r.dateTime?.toLocaleTimeString("es-AR", {
+        timeZone: "America/Argentina/Buenos_Aires",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+      return `Listo! Te voy a recordar "${r.description}" todos los dias a las ${timeStr} 🔁`;
+    }
+
+    if (r.recurrence === "WEEKLY" && r.recurrenceDay !== null) {
+      const dayName = DAYS_OF_WEEK[r.recurrenceDay];
+      const timeStr = r.dateTime?.toLocaleTimeString("es-AR", {
+        timeZone: "America/Argentina/Buenos_Aires",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+      return `Listo! Te voy a recordar "${r.description}" todos los ${dayName} a las ${timeStr} 🔁`;
+    }
+
+    if (r.recurrence === "MONTHLY" && r.recurrenceDay !== null) {
+      const timeStr = r.dateTime?.toLocaleTimeString("es-AR", {
+        timeZone: "America/Argentina/Buenos_Aires",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+      return `Listo! Te voy a recordar "${r.description}" el dia ${r.recurrenceDay} de cada mes a las ${timeStr} 🔁`;
+    }
+
+    // Non-recurring
+    const confirmationTime = r.dateTime?.toLocaleString("es-AR", {
+      timeZone: "America/Argentina/Buenos_Aires",
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+    return `Listo! Te recordare: "${r.description}" el ${confirmationTime}`;
+  }
+
+  private buildConfirmationMessageShort(r: {
+    description: string;
+    dateTime: Date | null;
+    recurrence: string;
+    recurrenceDay: number | null;
+  }): string {
+    if (r.recurrence === "DAILY") {
+      const timeStr = r.dateTime?.toLocaleTimeString("es-AR", {
+        timeZone: "America/Argentina/Buenos_Aires",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+      return `"${r.description}" - todos los dias ${timeStr} 🔁`;
+    }
+
+    if (r.recurrence === "WEEKLY" && r.recurrenceDay !== null) {
+      const dayName = DAYS_OF_WEEK[r.recurrenceDay];
+      const timeStr = r.dateTime?.toLocaleTimeString("es-AR", {
+        timeZone: "America/Argentina/Buenos_Aires",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+      return `"${r.description}" - ${dayName} ${timeStr} 🔁`;
+    }
+
+    const timeStr = r.dateTime?.toLocaleString("es-AR", {
+      timeZone: "America/Argentina/Buenos_Aires",
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+    return `"${r.description}" - ${timeStr}`;
   }
 
   private async handleListTasks(chatId: string): Promise<void> {
@@ -190,15 +344,38 @@ export class MessageHandler {
     let response = "📋 *Tus tareas pendientes:*\n\n";
 
     reminders.forEach((reminder, index) => {
-      const dateStr = reminder.scheduledAt.toLocaleString("es-AR", {
-        timeZone: "America/Argentina/Buenos_Aires",
-        weekday: "short",
-        day: "numeric",
-        month: "short",
-        hour: "2-digit",
-        minute: "2-digit"
-      });
-      response += `*${index + 1}.* ${reminder.reminderText}\n   📅 ${dateStr}\n\n`;
+      const isRecurring = reminder.recurrence !== "NONE";
+      const recurrenceIcon = isRecurring ? " 🔁" : "";
+
+      let dateStr: string;
+      if (isRecurring) {
+        const timeStr = reminder.recurrenceTime || "09:00";
+        if (reminder.recurrence === "DAILY") {
+          dateStr = `Todos los dias ${timeStr}`;
+        } else if (reminder.recurrence === "WEEKLY" && reminder.recurrenceDay !== null) {
+          dateStr = `${DAYS_OF_WEEK[reminder.recurrenceDay]} ${timeStr}`;
+        } else {
+          dateStr = reminder.scheduledAt.toLocaleString("es-AR", {
+            timeZone: "America/Argentina/Buenos_Aires",
+            weekday: "short",
+            day: "numeric",
+            month: "short",
+            hour: "2-digit",
+            minute: "2-digit"
+          });
+        }
+      } else {
+        dateStr = reminder.scheduledAt.toLocaleString("es-AR", {
+          timeZone: "America/Argentina/Buenos_Aires",
+          weekday: "short",
+          day: "numeric",
+          month: "short",
+          hour: "2-digit",
+          minute: "2-digit"
+        });
+      }
+
+      response += `*${index + 1}.* ${reminder.reminderText}${recurrenceIcon}\n   📅 ${dateStr}\n\n`;
     });
 
     response += "_Podes decir 'cancela la tarea X' o 'cambia la tarea X a las Y'_";
@@ -226,12 +403,14 @@ export class MessageHandler {
     }
 
     const reminder = reminders[taskNumber - 1];
+    const wasRecurring = reminder.recurrence !== "NONE";
     await this.reminderService.cancelReminder(reminder.id);
 
-    await this.whatsappClient.sendMessage(
-      chatId,
-      `Tarea ${taskNumber} cancelada: "${reminder.reminderText}" ❌`
-    );
+    const cancelMsg = wasRecurring
+      ? `Tarea recurrente ${taskNumber} cancelada: "${reminder.reminderText}" ❌\n(Ya no se va a repetir)`
+      : `Tarea ${taskNumber} cancelada: "${reminder.reminderText}" ❌`;
+
+    await this.whatsappClient.sendMessage(chatId, cancelMsg);
 
     this.logger.info(`Reminder ${reminder.id} cancelled by user`);
   }

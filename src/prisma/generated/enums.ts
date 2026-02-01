@@ -17,6 +17,15 @@ export const ReminderStatus = {
 
 export type ReminderStatus = (typeof ReminderStatus)[keyof typeof ReminderStatus];
 
+export const RecurrenceType = {
+  NONE: "NONE",
+  DAILY: "DAILY",
+  WEEKLY: "WEEKLY",
+  MONTHLY: "MONTHLY"
+} as const;
+
+export type RecurrenceType = (typeof RecurrenceType)[keyof typeof RecurrenceType];
+
 export const EmailType = {
   PURCHASE: "PURCHASE",
   DELIVERY: "DELIVERY",

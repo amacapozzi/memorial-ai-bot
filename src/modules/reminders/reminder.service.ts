@@ -1,13 +1,17 @@
 import type { GoogleCalendarService } from "@modules/calendar";
-import type { Reminder } from "@prisma-module/generated/client";
+import type { Reminder, RecurrenceType } from "@prisma-module/generated/client";
 import { createLogger } from "@shared/logger/logger";
 
 import type { ReminderRepository, CreateReminderData } from "./reminder.repository";
+
 export interface CreateReminderInput {
   originalText: string;
   reminderText: string;
   scheduledAt: Date;
   chatId: string;
+  recurrence?: RecurrenceType;
+  recurrenceDay?: number;
+  recurrenceTime?: string;
 }
 
 export class ReminderService {
@@ -42,7 +46,10 @@ export class ReminderService {
       reminderText: input.reminderText,
       scheduledAt: input.scheduledAt,
       chatId: input.chatId,
-      calendarEventId
+      calendarEventId,
+      recurrence: input.recurrence,
+      recurrenceDay: input.recurrenceDay,
+      recurrenceTime: input.recurrenceTime
     };
 
     const reminder = await this.repository.create(data);
@@ -115,5 +122,84 @@ export class ReminderService {
     this.logger.info(`Reminder ${id} rescheduled to ${newScheduledAt.toISOString()}`);
 
     return updated;
+  }
+
+  /**
+   * Calculate next occurrence for a recurring reminder
+   */
+  calculateNextOccurrence(reminder: Reminder): Date {
+    const now = new Date();
+    let nextDate: Date;
+
+    // Parse recurrence time (HH:MM format)
+    const [hours, minutes] = (reminder.recurrenceTime || "09:00").split(":").map(Number);
+
+    switch (reminder.recurrence) {
+      case "DAILY":
+        nextDate = new Date(now);
+        nextDate.setHours(hours, minutes, 0, 0);
+        // If time already passed today, schedule for tomorrow
+        if (nextDate <= now) {
+          nextDate.setDate(nextDate.getDate() + 1);
+        }
+        break;
+
+      case "WEEKLY":
+        nextDate = new Date(now);
+        nextDate.setHours(hours, minutes, 0, 0);
+        const targetDay = reminder.recurrenceDay ?? 0;
+        const currentDay = nextDate.getDay();
+        let daysUntilTarget = targetDay - currentDay;
+
+        if (daysUntilTarget < 0 || (daysUntilTarget === 0 && nextDate <= now)) {
+          daysUntilTarget += 7;
+        }
+
+        nextDate.setDate(nextDate.getDate() + daysUntilTarget);
+        break;
+
+      case "MONTHLY":
+        nextDate = new Date(now);
+        nextDate.setHours(hours, minutes, 0, 0);
+        const targetDayOfMonth = reminder.recurrenceDay ?? 1;
+        nextDate.setDate(targetDayOfMonth);
+
+        // If the date already passed this month, go to next month
+        if (nextDate <= now) {
+          nextDate.setMonth(nextDate.getMonth() + 1);
+        }
+        break;
+
+      default:
+        throw new Error(`Unknown recurrence type: ${reminder.recurrence}`);
+    }
+
+    return nextDate;
+  }
+
+  /**
+   * Reschedule a recurring reminder for its next occurrence
+   */
+  async rescheduleRecurringReminder(reminder: Reminder): Promise<Reminder> {
+    if (reminder.recurrence === "NONE") {
+      throw new Error("Cannot reschedule non-recurring reminder");
+    }
+
+    const nextDate = this.calculateNextOccurrence(reminder);
+
+    this.logger.info(`Rescheduling recurring reminder ${reminder.id} to ${nextDate.toISOString()}`);
+
+    // Create a new reminder for the next occurrence
+    const newReminder = await this.repository.create({
+      originalText: reminder.originalText,
+      reminderText: reminder.reminderText,
+      scheduledAt: nextDate,
+      chatId: reminder.chatId,
+      recurrence: reminder.recurrence,
+      recurrenceDay: reminder.recurrenceDay ?? undefined,
+      recurrenceTime: reminder.recurrenceTime ?? undefined
+    });
+
+    return newReminder;
   }
 }

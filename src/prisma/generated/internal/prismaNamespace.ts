@@ -919,7 +919,10 @@ export const ReminderScalarFieldEnum = {
   calendarEventId: "calendarEventId",
   createdAt: "createdAt",
   updatedAt: "updatedAt",
-  sentAt: "sentAt"
+  sentAt: "sentAt",
+  recurrence: "recurrence",
+  recurrenceDay: "recurrenceDay",
+  recurrenceTime: "recurrenceTime"
 } as const;
 
 export type ReminderScalarFieldEnum =
@@ -1077,6 +1080,32 @@ export type ListEnumReminderStatusFieldRefInput<$PrismaModel> = FieldRefInputTyp
 >;
 
 /**
+ * Reference to a field of type 'RecurrenceType'
+ */
+export type EnumRecurrenceTypeFieldRefInput<$PrismaModel> = FieldRefInputType<
+  $PrismaModel,
+  "RecurrenceType"
+>;
+
+/**
+ * Reference to a field of type 'RecurrenceType[]'
+ */
+export type ListEnumRecurrenceTypeFieldRefInput<$PrismaModel> = FieldRefInputType<
+  $PrismaModel,
+  "RecurrenceType[]"
+>;
+
+/**
+ * Reference to a field of type 'Int'
+ */
+export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "Int">;
+
+/**
+ * Reference to a field of type 'Int[]'
+ */
+export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "Int[]">;
+
+/**
  * Reference to a field of type 'EmailType'
  */
 export type EnumEmailTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "EmailType">;
@@ -1106,14 +1135,14 @@ export type ListEnumProcessedEmailStatusFieldRefInput<$PrismaModel> = FieldRefIn
 >;
 
 /**
- * Reference to a field of type 'Int'
+ * Reference to a field of type 'Float'
  */
-export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "Int">;
+export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "Float">;
 
 /**
- * Reference to a field of type 'Int[]'
+ * Reference to a field of type 'Float[]'
  */
-export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "Int[]">;
+export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "Float[]">;
 
 /**
  * Batch Payload for updateMany & deleteMany & createMany

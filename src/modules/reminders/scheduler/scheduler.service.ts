@@ -1,4 +1,5 @@
 import type { WhatsAppClient } from "@modules/whatsapp";
+import type { Reminder } from "@prisma-module/generated/client";
 import { createLogger } from "@shared/logger/logger";
 
 import type { ReminderService } from "../reminder.service";
@@ -54,7 +55,7 @@ export class SchedulerService {
       }
 
       for (const reminder of pendingReminders) {
-        await this.sendReminder(reminder.id, reminder.chatId, reminder.reminderText);
+        await this.sendReminder(reminder);
       }
     } catch (error) {
       this.logger.error("Error in scheduler tick", error);
@@ -63,16 +64,28 @@ export class SchedulerService {
     }
   }
 
-  private async sendReminder(id: string, chatId: string, message: string): Promise<void> {
-    this.logger.info(`Sending reminder ${id} to ${chatId}`);
+  private async sendReminder(reminder: Reminder): Promise<void> {
+    this.logger.info(`Sending reminder ${reminder.id} to ${reminder.chatId}`);
 
     try {
-      await this.whatsappClient.sendMessage(chatId, message);
-      await this.reminderService.markAsSent(id);
-      this.logger.info(`Reminder ${id} sent successfully`);
+      await this.whatsappClient.sendMessage(reminder.chatId, reminder.reminderText);
+      await this.reminderService.markAsSent(reminder.id);
+      this.logger.info(`Reminder ${reminder.id} sent successfully`);
+
+      // If this is a recurring reminder, schedule the next occurrence
+      if (reminder.recurrence !== "NONE") {
+        try {
+          const nextReminder = await this.reminderService.rescheduleRecurringReminder(reminder);
+          this.logger.info(
+            `Recurring reminder rescheduled: ${nextReminder.id} for ${nextReminder.scheduledAt.toISOString()}`
+          );
+        } catch (error) {
+          this.logger.error(`Failed to reschedule recurring reminder ${reminder.id}`, error);
+        }
+      }
     } catch (error) {
-      this.logger.error(`Failed to send reminder ${id}`, error);
-      await this.reminderService.markAsFailed(id);
+      this.logger.error(`Failed to send reminder ${reminder.id}`, error);
+      await this.reminderService.markAsFailed(reminder.id);
     }
   }
 }

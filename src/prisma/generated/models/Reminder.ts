@@ -19,8 +19,18 @@ export type ReminderModel = runtime.Types.Result.DefaultSelection<Prisma.$Remind
 
 export type AggregateReminder = {
   _count: ReminderCountAggregateOutputType | null;
+  _avg: ReminderAvgAggregateOutputType | null;
+  _sum: ReminderSumAggregateOutputType | null;
   _min: ReminderMinAggregateOutputType | null;
   _max: ReminderMaxAggregateOutputType | null;
+};
+
+export type ReminderAvgAggregateOutputType = {
+  recurrenceDay: number | null;
+};
+
+export type ReminderSumAggregateOutputType = {
+  recurrenceDay: number | null;
 };
 
 export type ReminderMinAggregateOutputType = {
@@ -34,6 +44,9 @@ export type ReminderMinAggregateOutputType = {
   createdAt: Date | null;
   updatedAt: Date | null;
   sentAt: Date | null;
+  recurrence: $Enums.RecurrenceType | null;
+  recurrenceDay: number | null;
+  recurrenceTime: string | null;
 };
 
 export type ReminderMaxAggregateOutputType = {
@@ -47,6 +60,9 @@ export type ReminderMaxAggregateOutputType = {
   createdAt: Date | null;
   updatedAt: Date | null;
   sentAt: Date | null;
+  recurrence: $Enums.RecurrenceType | null;
+  recurrenceDay: number | null;
+  recurrenceTime: string | null;
 };
 
 export type ReminderCountAggregateOutputType = {
@@ -60,7 +76,18 @@ export type ReminderCountAggregateOutputType = {
   createdAt: number;
   updatedAt: number;
   sentAt: number;
+  recurrence: number;
+  recurrenceDay: number;
+  recurrenceTime: number;
   _all: number;
+};
+
+export type ReminderAvgAggregateInputType = {
+  recurrenceDay?: true;
+};
+
+export type ReminderSumAggregateInputType = {
+  recurrenceDay?: true;
 };
 
 export type ReminderMinAggregateInputType = {
@@ -74,6 +101,9 @@ export type ReminderMinAggregateInputType = {
   createdAt?: true;
   updatedAt?: true;
   sentAt?: true;
+  recurrence?: true;
+  recurrenceDay?: true;
+  recurrenceTime?: true;
 };
 
 export type ReminderMaxAggregateInputType = {
@@ -87,6 +117,9 @@ export type ReminderMaxAggregateInputType = {
   createdAt?: true;
   updatedAt?: true;
   sentAt?: true;
+  recurrence?: true;
+  recurrenceDay?: true;
+  recurrenceTime?: true;
 };
 
 export type ReminderCountAggregateInputType = {
@@ -100,6 +133,9 @@ export type ReminderCountAggregateInputType = {
   createdAt?: true;
   updatedAt?: true;
   sentAt?: true;
+  recurrence?: true;
+  recurrenceDay?: true;
+  recurrenceTime?: true;
   _all?: true;
 };
 
@@ -143,6 +179,18 @@ export type ReminderAggregateArgs<
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
    *
+   * Select which fields to average
+   **/
+  _avg?: ReminderAvgAggregateInputType;
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   *
+   * Select which fields to sum
+   **/
+  _sum?: ReminderSumAggregateInputType;
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   *
    * Select which fields to find the minimum value
    **/
   _min?: ReminderMinAggregateInputType;
@@ -174,6 +222,8 @@ export type ReminderGroupByArgs<
   take?: number;
   skip?: number;
   _count?: ReminderCountAggregateInputType | true;
+  _avg?: ReminderAvgAggregateInputType;
+  _sum?: ReminderSumAggregateInputType;
   _min?: ReminderMinAggregateInputType;
   _max?: ReminderMaxAggregateInputType;
 };
@@ -189,7 +239,12 @@ export type ReminderGroupByOutputType = {
   createdAt: Date;
   updatedAt: Date;
   sentAt: Date | null;
+  recurrence: $Enums.RecurrenceType;
+  recurrenceDay: number | null;
+  recurrenceTime: string | null;
   _count: ReminderCountAggregateOutputType | null;
+  _avg: ReminderAvgAggregateOutputType | null;
+  _sum: ReminderSumAggregateOutputType | null;
   _min: ReminderMinAggregateOutputType | null;
   _max: ReminderMaxAggregateOutputType | null;
 };
@@ -220,6 +275,9 @@ export type ReminderWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"Reminder"> | Date | string;
   updatedAt?: Prisma.DateTimeFilter<"Reminder"> | Date | string;
   sentAt?: Prisma.DateTimeNullableFilter<"Reminder"> | Date | string | null;
+  recurrence?: Prisma.EnumRecurrenceTypeFilter<"Reminder"> | $Enums.RecurrenceType;
+  recurrenceDay?: Prisma.IntNullableFilter<"Reminder"> | number | null;
+  recurrenceTime?: Prisma.StringNullableFilter<"Reminder"> | string | null;
 };
 
 export type ReminderOrderByWithRelationInput = {
@@ -233,6 +291,9 @@ export type ReminderOrderByWithRelationInput = {
   createdAt?: Prisma.SortOrder;
   updatedAt?: Prisma.SortOrder;
   sentAt?: Prisma.SortOrderInput | Prisma.SortOrder;
+  recurrence?: Prisma.SortOrder;
+  recurrenceDay?: Prisma.SortOrderInput | Prisma.SortOrder;
+  recurrenceTime?: Prisma.SortOrderInput | Prisma.SortOrder;
 };
 
 export type ReminderWhereUniqueInput = Prisma.AtLeast<
@@ -250,6 +311,9 @@ export type ReminderWhereUniqueInput = Prisma.AtLeast<
     createdAt?: Prisma.DateTimeFilter<"Reminder"> | Date | string;
     updatedAt?: Prisma.DateTimeFilter<"Reminder"> | Date | string;
     sentAt?: Prisma.DateTimeNullableFilter<"Reminder"> | Date | string | null;
+    recurrence?: Prisma.EnumRecurrenceTypeFilter<"Reminder"> | $Enums.RecurrenceType;
+    recurrenceDay?: Prisma.IntNullableFilter<"Reminder"> | number | null;
+    recurrenceTime?: Prisma.StringNullableFilter<"Reminder"> | string | null;
   },
   "id"
 >;
@@ -265,9 +329,14 @@ export type ReminderOrderByWithAggregationInput = {
   createdAt?: Prisma.SortOrder;
   updatedAt?: Prisma.SortOrder;
   sentAt?: Prisma.SortOrderInput | Prisma.SortOrder;
+  recurrence?: Prisma.SortOrder;
+  recurrenceDay?: Prisma.SortOrderInput | Prisma.SortOrder;
+  recurrenceTime?: Prisma.SortOrderInput | Prisma.SortOrder;
   _count?: Prisma.ReminderCountOrderByAggregateInput;
+  _avg?: Prisma.ReminderAvgOrderByAggregateInput;
   _max?: Prisma.ReminderMaxOrderByAggregateInput;
   _min?: Prisma.ReminderMinOrderByAggregateInput;
+  _sum?: Prisma.ReminderSumOrderByAggregateInput;
 };
 
 export type ReminderScalarWhereWithAggregatesInput = {
@@ -288,6 +357,9 @@ export type ReminderScalarWhereWithAggregatesInput = {
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Reminder"> | Date | string;
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Reminder"> | Date | string;
   sentAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Reminder"> | Date | string | null;
+  recurrence?: Prisma.EnumRecurrenceTypeWithAggregatesFilter<"Reminder"> | $Enums.RecurrenceType;
+  recurrenceDay?: Prisma.IntNullableWithAggregatesFilter<"Reminder"> | number | null;
+  recurrenceTime?: Prisma.StringNullableWithAggregatesFilter<"Reminder"> | string | null;
 };
 
 export type ReminderCreateInput = {
@@ -301,6 +373,9 @@ export type ReminderCreateInput = {
   createdAt?: Date | string;
   updatedAt?: Date | string;
   sentAt?: Date | string | null;
+  recurrence?: $Enums.RecurrenceType;
+  recurrenceDay?: number | null;
+  recurrenceTime?: string | null;
 };
 
 export type ReminderUncheckedCreateInput = {
@@ -314,6 +389,9 @@ export type ReminderUncheckedCreateInput = {
   createdAt?: Date | string;
   updatedAt?: Date | string;
   sentAt?: Date | string | null;
+  recurrence?: $Enums.RecurrenceType;
+  recurrenceDay?: number | null;
+  recurrenceTime?: string | null;
 };
 
 export type ReminderUpdateInput = {
@@ -327,6 +405,9 @@ export type ReminderUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   sentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+  recurrence?: Prisma.EnumRecurrenceTypeFieldUpdateOperationsInput | $Enums.RecurrenceType;
+  recurrenceDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+  recurrenceTime?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 };
 
 export type ReminderUncheckedUpdateInput = {
@@ -340,6 +421,9 @@ export type ReminderUncheckedUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   sentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+  recurrence?: Prisma.EnumRecurrenceTypeFieldUpdateOperationsInput | $Enums.RecurrenceType;
+  recurrenceDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+  recurrenceTime?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 };
 
 export type ReminderCreateManyInput = {
@@ -353,6 +437,9 @@ export type ReminderCreateManyInput = {
   createdAt?: Date | string;
   updatedAt?: Date | string;
   sentAt?: Date | string | null;
+  recurrence?: $Enums.RecurrenceType;
+  recurrenceDay?: number | null;
+  recurrenceTime?: string | null;
 };
 
 export type ReminderUpdateManyMutationInput = {
@@ -366,6 +453,9 @@ export type ReminderUpdateManyMutationInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   sentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+  recurrence?: Prisma.EnumRecurrenceTypeFieldUpdateOperationsInput | $Enums.RecurrenceType;
+  recurrenceDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+  recurrenceTime?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 };
 
 export type ReminderUncheckedUpdateManyInput = {
@@ -379,6 +469,9 @@ export type ReminderUncheckedUpdateManyInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   sentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+  recurrence?: Prisma.EnumRecurrenceTypeFieldUpdateOperationsInput | $Enums.RecurrenceType;
+  recurrenceDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+  recurrenceTime?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 };
 
 export type ReminderCountOrderByAggregateInput = {
@@ -392,6 +485,13 @@ export type ReminderCountOrderByAggregateInput = {
   createdAt?: Prisma.SortOrder;
   updatedAt?: Prisma.SortOrder;
   sentAt?: Prisma.SortOrder;
+  recurrence?: Prisma.SortOrder;
+  recurrenceDay?: Prisma.SortOrder;
+  recurrenceTime?: Prisma.SortOrder;
+};
+
+export type ReminderAvgOrderByAggregateInput = {
+  recurrenceDay?: Prisma.SortOrder;
 };
 
 export type ReminderMaxOrderByAggregateInput = {
@@ -405,6 +505,9 @@ export type ReminderMaxOrderByAggregateInput = {
   createdAt?: Prisma.SortOrder;
   updatedAt?: Prisma.SortOrder;
   sentAt?: Prisma.SortOrder;
+  recurrence?: Prisma.SortOrder;
+  recurrenceDay?: Prisma.SortOrder;
+  recurrenceTime?: Prisma.SortOrder;
 };
 
 export type ReminderMinOrderByAggregateInput = {
@@ -418,6 +521,13 @@ export type ReminderMinOrderByAggregateInput = {
   createdAt?: Prisma.SortOrder;
   updatedAt?: Prisma.SortOrder;
   sentAt?: Prisma.SortOrder;
+  recurrence?: Prisma.SortOrder;
+  recurrenceDay?: Prisma.SortOrder;
+  recurrenceTime?: Prisma.SortOrder;
+};
+
+export type ReminderSumOrderByAggregateInput = {
+  recurrenceDay?: Prisma.SortOrder;
 };
 
 export type EnumReminderStatusFieldUpdateOperationsInput = {
@@ -430,6 +540,18 @@ export type NullableStringFieldUpdateOperationsInput = {
 
 export type NullableDateTimeFieldUpdateOperationsInput = {
   set?: Date | string | null;
+};
+
+export type EnumRecurrenceTypeFieldUpdateOperationsInput = {
+  set?: $Enums.RecurrenceType;
+};
+
+export type NullableIntFieldUpdateOperationsInput = {
+  set?: number | null;
+  increment?: number;
+  decrement?: number;
+  multiply?: number;
+  divide?: number;
 };
 
 export type ReminderSelect<
@@ -446,6 +568,9 @@ export type ReminderSelect<
     createdAt?: boolean;
     updatedAt?: boolean;
     sentAt?: boolean;
+    recurrence?: boolean;
+    recurrenceDay?: boolean;
+    recurrenceTime?: boolean;
   },
   ExtArgs["result"]["reminder"]
 >;
@@ -464,6 +589,9 @@ export type ReminderSelectCreateManyAndReturn<
     createdAt?: boolean;
     updatedAt?: boolean;
     sentAt?: boolean;
+    recurrence?: boolean;
+    recurrenceDay?: boolean;
+    recurrenceTime?: boolean;
   },
   ExtArgs["result"]["reminder"]
 >;
@@ -482,6 +610,9 @@ export type ReminderSelectUpdateManyAndReturn<
     createdAt?: boolean;
     updatedAt?: boolean;
     sentAt?: boolean;
+    recurrence?: boolean;
+    recurrenceDay?: boolean;
+    recurrenceTime?: boolean;
   },
   ExtArgs["result"]["reminder"]
 >;
@@ -497,6 +628,9 @@ export type ReminderSelectScalar = {
   createdAt?: boolean;
   updatedAt?: boolean;
   sentAt?: boolean;
+  recurrence?: boolean;
+  recurrenceDay?: boolean;
+  recurrenceTime?: boolean;
 };
 
 export type ReminderOmit<
@@ -511,7 +645,10 @@ export type ReminderOmit<
   | "calendarEventId"
   | "createdAt"
   | "updatedAt"
-  | "sentAt",
+  | "sentAt"
+  | "recurrence"
+  | "recurrenceDay"
+  | "recurrenceTime",
   ExtArgs["result"]["reminder"]
 >;
 
@@ -532,6 +669,9 @@ export type $ReminderPayload<
       createdAt: Date;
       updatedAt: Date;
       sentAt: Date | null;
+      recurrence: $Enums.RecurrenceType;
+      recurrenceDay: number | null;
+      recurrenceTime: string | null;
     },
     ExtArgs["result"]["reminder"]
   >;
@@ -1108,6 +1248,9 @@ export interface ReminderFieldRefs {
   readonly createdAt: Prisma.FieldRef<"Reminder", "DateTime">;
   readonly updatedAt: Prisma.FieldRef<"Reminder", "DateTime">;
   readonly sentAt: Prisma.FieldRef<"Reminder", "DateTime">;
+  readonly recurrence: Prisma.FieldRef<"Reminder", "RecurrenceType">;
+  readonly recurrenceDay: Prisma.FieldRef<"Reminder", "Int">;
+  readonly recurrenceTime: Prisma.FieldRef<"Reminder", "String">;
 }
 
 // Custom InputTypes

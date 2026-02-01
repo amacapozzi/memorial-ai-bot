@@ -3,9 +3,14 @@ import { createLogger } from "@shared/logger/logger";
 import { buildReminderIntentPrompt, FUN_REMINDER_SYSTEM_PROMPT } from "./prompts";
 import type { GroqClient } from "../groq/groq.client";
 
+export type RecurrenceType = "NONE" | "DAILY" | "WEEKLY" | "MONTHLY";
+
 export interface ReminderDetail {
   description: string;
-  dateTime: Date;
+  dateTime: Date | null;
+  recurrence: RecurrenceType;
+  recurrenceDay: number | null;
+  recurrenceTime: string | null;
 }
 
 export type IntentType =
@@ -24,6 +29,7 @@ export interface ParsedIntent {
   reminderDetails?: ReminderDetail[];
   originalText?: string;
   newDateTime?: Date;
+  missingDateTime?: boolean;
   confidence: number;
 }
 
@@ -32,9 +38,13 @@ interface IntentResponse {
   taskNumber: number | null;
   reminderDetails: Array<{
     description: string;
-    dateTime: string;
+    dateTime: string | null;
+    recurrence: RecurrenceType;
+    recurrenceDay: number | null;
+    recurrenceTime: string | null;
   }> | null;
   newDateTime: string | null;
+  missingDateTime: boolean;
   confidence: number;
 }
 
@@ -53,7 +63,8 @@ export class IntentService {
 
       const result: ParsedIntent = {
         type: response.intentType,
-        confidence: response.confidence
+        confidence: response.confidence,
+        missingDateTime: response.missingDateTime || false
       };
 
       // Handle task number for cancel/modify
@@ -79,19 +90,27 @@ export class IntentService {
         response.reminderDetails.length > 0
       ) {
         result.reminderDetails = response.reminderDetails.map((detail) => {
-          const dateTime = new Date(detail.dateTime);
+          let dateTime: Date | null = null;
 
-          // Validate the date is in the future
-          if (dateTime <= new Date()) {
-            this.logger.warn(
-              `Parsed date for "${detail.description}" is in the past, adjusting to tomorrow`
-            );
-            dateTime.setDate(dateTime.getDate() + 1);
+          // Only parse dateTime if provided and not a recurring reminder without specific date
+          if (detail.dateTime) {
+            dateTime = new Date(detail.dateTime);
+
+            // Validate the date is in the future (only for non-recurring)
+            if (detail.recurrence === "NONE" && dateTime <= new Date()) {
+              this.logger.warn(
+                `Parsed date for "${detail.description}" is in the past, adjusting to tomorrow`
+              );
+              dateTime.setDate(dateTime.getDate() + 1);
+            }
           }
 
           return {
             description: detail.description,
-            dateTime
+            dateTime,
+            recurrence: detail.recurrence || "NONE",
+            recurrenceDay: detail.recurrenceDay,
+            recurrenceTime: detail.recurrenceTime
           };
         });
         result.originalText = text;

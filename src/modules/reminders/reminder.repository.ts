@@ -1,4 +1,9 @@
-import type { PrismaClient, Reminder, ReminderStatus } from "@prisma-module/generated/client";
+import type {
+  PrismaClient,
+  Reminder,
+  ReminderStatus,
+  RecurrenceType
+} from "@prisma-module/generated/client";
 
 export interface CreateReminderData {
   originalText: string;
@@ -6,6 +11,9 @@ export interface CreateReminderData {
   scheduledAt: Date;
   chatId: string;
   calendarEventId?: string;
+  recurrence?: RecurrenceType;
+  recurrenceDay?: number;
+  recurrenceTime?: string;
 }
 
 export class ReminderRepository {
@@ -18,7 +26,10 @@ export class ReminderRepository {
         reminderText: data.reminderText,
         scheduledAt: data.scheduledAt,
         chatId: data.chatId,
-        calendarEventId: data.calendarEventId
+        calendarEventId: data.calendarEventId,
+        recurrence: data.recurrence || "NONE",
+        recurrenceDay: data.recurrenceDay,
+        recurrenceTime: data.recurrenceTime
       }
     });
   }
@@ -82,6 +93,17 @@ export class ReminderRepository {
       where: {
         chatId,
         status: "PENDING"
+      },
+      orderBy: { scheduledAt: "asc" }
+    });
+  }
+
+  async findRecurringByChat(chatId: string): Promise<Reminder[]> {
+    return this.prisma.reminder.findMany({
+      where: {
+        chatId,
+        recurrence: { not: "NONE" },
+        status: { in: ["PENDING", "SENT"] }
       },
       orderBy: { scheduledAt: "asc" }
     });

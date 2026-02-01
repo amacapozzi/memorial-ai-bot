@@ -92,7 +92,10 @@ export const ReminderScalarFieldEnum = {
   calendarEventId: "calendarEventId",
   createdAt: "createdAt",
   updatedAt: "updatedAt",
-  sentAt: "sentAt"
+  sentAt: "sentAt",
+  recurrence: "recurrence",
+  recurrenceDay: "recurrenceDay",
+  recurrenceTime: "recurrenceTime"
 } as const;
 
 export type ReminderScalarFieldEnum =
