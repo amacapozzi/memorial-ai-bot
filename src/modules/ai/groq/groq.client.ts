@@ -44,16 +44,30 @@ export class GroqClient {
 
   private isRetryable(error: unknown): boolean {
     if (typeof error !== "object" || error === null) return false;
-    const status = (error as Record<string, unknown>).status;
-    // 429 = rate limit, 500/502/503/504 = server errors
-    if (status === 429 || status === 500 || status === 502 || status === 503 || status === 504) {
+    const err = error as Record<string, unknown>;
+    const status = err.status;
+
+    if (status === 429) {
+      // Don't retry if it's a daily/long-term rate limit (retry-after > 60s or message says hours)
+      const msg = typeof err.message === "string" ? err.message : "";
+      if (msg.includes("tokens per day") || msg.includes("requests per day")) {
+        return false;
+      }
+      const headers = err.headers as Record<string, string> | undefined;
+      const retryAfter = headers?.["retry-after"];
+      if (retryAfter && Number(retryAfter) > 60) {
+        return false;
+      }
+      // Short-term rate limit (per-minute burst), worth retrying
+      return true;
+    }
+
+    // 500/502/503/504 = server errors
+    if (status === 500 || status === 502 || status === 503 || status === 504) {
       return true;
     }
     // Network errors (no status code)
-    if (
-      (error as Record<string, unknown>).code === "ECONNRESET" ||
-      (error as Record<string, unknown>).code === "ETIMEDOUT"
-    ) {
+    if (err.code === "ECONNRESET" || err.code === "ETIMEDOUT") {
       return true;
     }
     return false;
