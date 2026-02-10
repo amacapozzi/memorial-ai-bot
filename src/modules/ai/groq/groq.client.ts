@@ -3,9 +3,10 @@ import Groq from "groq-sdk";
 import { env } from "@shared/env/env";
 import { createLogger } from "@shared/logger/logger";
 
-const MAX_RETRIES = 3;
+const MAX_RETRIES = 2;
 const BASE_DELAY_MS = 1000;
-const MAX_DELAY_MS = 30000;
+const MAX_DELAY_MS = 5000;
+const REQUEST_TIMEOUT_MS = 30_000;
 
 export class GroqClient {
   private readonly client: Groq;
@@ -13,7 +14,8 @@ export class GroqClient {
 
   constructor() {
     this.client = new Groq({
-      apiKey: env().GROQ_API_KEY
+      apiKey: env().GROQ_API_KEY,
+      timeout: REQUEST_TIMEOUT_MS
     });
   }
 
@@ -30,7 +32,7 @@ export class GroqClient {
           throw error;
         }
 
-        const delay = this.getRetryDelay(error, attempt);
+        const delay = this.getRetryDelay(attempt);
         this.logger.warn(
           `${label} failed (attempt ${attempt + 1}/${MAX_RETRIES + 1}), retrying in ${delay}ms...`,
           { status: (error as Record<string, unknown>).status }
@@ -47,22 +49,12 @@ export class GroqClient {
     const err = error as Record<string, unknown>;
     const status = err.status;
 
+    // Never retry rate limits — throw immediately so user gets instant feedback
     if (status === 429) {
-      // Don't retry if it's a daily/long-term rate limit (retry-after > 60s or message says hours)
-      const msg = typeof err.message === "string" ? err.message : "";
-      if (msg.includes("tokens per day") || msg.includes("requests per day")) {
-        return false;
-      }
-      const headers = err.headers as Record<string, string> | undefined;
-      const retryAfter = headers?.["retry-after"];
-      if (retryAfter && Number(retryAfter) > 60) {
-        return false;
-      }
-      // Short-term rate limit (per-minute burst), worth retrying
-      return true;
+      return false;
     }
 
-    // 500/502/503/504 = server errors
+    // 500/502/503/504 = server errors, worth retrying
     if (status === 500 || status === 502 || status === 503 || status === 504) {
       return true;
     }
@@ -73,21 +65,7 @@ export class GroqClient {
     return false;
   }
 
-  private getRetryDelay(error: unknown, attempt: number): number {
-    // Use Retry-After header if available (GROQ sends this on 429)
-    if (typeof error === "object" && error !== null) {
-      const headers = (error as Record<string, unknown>).headers as
-        | Record<string, string>
-        | undefined;
-      const retryAfter = headers?.["retry-after"];
-      if (retryAfter) {
-        const seconds = Number(retryAfter);
-        if (!isNaN(seconds) && seconds > 0) {
-          return Math.min(seconds * 1000, MAX_DELAY_MS);
-        }
-      }
-    }
-    // Exponential backoff with jitter
+  private getRetryDelay(attempt: number): number {
     const exponential = BASE_DELAY_MS * Math.pow(2, attempt);
     const jitter = Math.random() * BASE_DELAY_MS;
     return Math.min(exponential + jitter, MAX_DELAY_MS);

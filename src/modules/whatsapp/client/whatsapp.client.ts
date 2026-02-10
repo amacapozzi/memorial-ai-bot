@@ -56,7 +56,6 @@ export class WhatsAppClient {
       keepAliveIntervalMs: 30_000,
       connectTimeoutMs: 60_000,
       retryRequestDelayMs: 2000,
-      markOnlineOnConnect: false,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       logger: silentLogger as any
     });
