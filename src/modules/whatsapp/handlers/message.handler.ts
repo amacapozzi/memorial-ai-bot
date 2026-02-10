@@ -20,6 +20,26 @@ const CONNECT_COMMANDS = ["/connect", "/link", "/conectar"];
 const CONFIRM_SEND = ["enviar", "si", "send", "yes"];
 const CANCEL_SEND = ["cancelar", "cancel", "no"];
 
+function extractRateLimitWait(error: unknown): string | null {
+  const msg =
+    typeof error === "object" && error !== null ? (error as Record<string, unknown>).message : null;
+  if (typeof msg !== "string") return null;
+  const match = msg.match(/try again in (\d+h)?(\d+m)?(\d+(?:\.\d+)?s)?/i);
+  if (!match) return null;
+  const hours = match[1] ? parseInt(match[1]) : 0;
+  const minutes = match[2] ? parseInt(match[2]) : 0;
+  const parts: string[] = [];
+  if (hours > 0) parts.push(`${hours} hora${hours > 1 ? "s" : ""}`);
+  if (minutes > 0) parts.push(`${minutes} minuto${minutes > 1 ? "s" : ""}`);
+  if (parts.length === 0) parts.push("unos segundos");
+  return parts.join(" y ");
+}
+
+function isRateLimitError(error: unknown): boolean {
+  if (typeof error !== "object" || error === null) return false;
+  return (error as Record<string, unknown>).status === 429;
+}
+
 interface PendingReply {
   userId: string;
   messageId: string;
@@ -84,10 +104,18 @@ export class MessageHandler {
         this.logger.info(`Transcription: "${text}"`);
       } catch (error) {
         this.logger.error("Failed to transcribe audio", error);
-        await this.whatsappClient.sendMessage(
-          message.chatId,
-          "No pude entender el audio. Por favor intenta de nuevo."
-        );
+        if (isRateLimitError(error)) {
+          const wait = extractRateLimitWait(error) || "unos minutos";
+          await this.whatsappClient.sendMessage(
+            message.chatId,
+            `Estoy saturado en este momento. Intenta de nuevo en ${wait}.`
+          );
+        } else {
+          await this.whatsappClient.sendMessage(
+            message.chatId,
+            "No pude entender el audio. Por favor intenta de nuevo."
+          );
+        }
         return;
       }
     } else if (message.type === "text" && message.text) {
@@ -188,10 +216,18 @@ export class MessageHandler {
       }
     } catch (error) {
       this.logger.error("Failed to process message", error);
-      await this.whatsappClient.sendMessage(
-        message.chatId,
-        "Hubo un error procesando tu mensaje. Intenta de nuevo mas tarde."
-      );
+      if (isRateLimitError(error)) {
+        const wait = extractRateLimitWait(error) || "unos minutos";
+        await this.whatsappClient.sendMessage(
+          message.chatId,
+          `Estoy saturado en este momento. Intenta de nuevo en ${wait}.`
+        );
+      } else {
+        await this.whatsappClient.sendMessage(
+          message.chatId,
+          "Hubo un error procesando tu mensaje. Intenta de nuevo mas tarde."
+        );
+      }
     }
   }
 

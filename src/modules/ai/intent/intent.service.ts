@@ -137,6 +137,14 @@ export class IntentService {
 
       return result;
     } catch (error) {
+      // Re-throw rate limit errors so the caller can inform the user
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        (error as Record<string, unknown>).status === 429
+      ) {
+        throw error;
+      }
       this.logger.error("Failed to parse intent", error);
       return {
         type: "unknown",

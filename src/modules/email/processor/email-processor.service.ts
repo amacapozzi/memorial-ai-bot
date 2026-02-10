@@ -3,6 +3,15 @@ import type { WhatsAppClient } from "@modules/whatsapp/client/whatsapp.client";
 import type { ProcessedEmail, EmailType } from "@prisma-module/generated/client";
 import { createLogger } from "@shared/logger/logger";
 
+function isUniqueConstraintError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as Record<string, unknown>).code === "P2002"
+  );
+}
+
 import type { ProcessedEmailRepository } from "./processed-email.repository";
 import type { EmailAnalyzerService, AnalyzedEmail } from "../analyzer/email-analyzer.service";
 import type { GmailService, EmailMessage } from "../gmail/gmail.service";
@@ -34,6 +43,23 @@ export class EmailProcessorService {
       return null;
     }
 
+    try {
+      return await this.processEmailInner(userId, chatId, email);
+    } catch (error) {
+      // Handle race condition: another sync cycle processed this email while we were waiting
+      if (isUniqueConstraintError(error)) {
+        this.logger.debug(`Email ${email.id} was processed by another cycle, skipping`);
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  private async processEmailInner(
+    userId: string,
+    chatId: string,
+    email: EmailMessage
+  ): Promise<ProcessedEmail | null> {
     // Pre-filter obvious non-actionable emails to save AI calls
     if (this.shouldSkipEmail(email)) {
       this.logger.debug(`Email ${email.id} pre-filtered as non-actionable, skipping AI analysis`);
