@@ -1,5 +1,6 @@
 import type { Boom } from "@hapi/boom";
 import makeWASocket, {
+  Browsers,
   DisconnectReason,
   type WASocket,
   type BaileysEventMap,
@@ -32,7 +33,8 @@ export class WhatsAppClient {
   private messageHandler: MessageHandler | null = null;
   private readonly logger = createLogger("whatsapp");
   private reconnectAttempts = 0;
-  private readonly maxReconnectAttempts = 5;
+  private readonly maxReconnectAttempts = 10;
+  private reconnecting = false;
 
   constructor(
     private readonly sessionService: SessionService,
@@ -49,7 +51,12 @@ export class WhatsAppClient {
 
     this.socket = makeWASocket({
       auth: state,
+      browser: Browsers.ubuntu("Chrome"),
       printQRInTerminal: false,
+      keepAliveIntervalMs: 30_000,
+      connectTimeoutMs: 60_000,
+      retryRequestDelayMs: 2000,
+      markOnlineOnConnect: false,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       logger: silentLogger as any
     });
@@ -96,23 +103,53 @@ export class WhatsAppClient {
 
     if (connection === "close") {
       const reason = (lastDisconnect?.error as Boom)?.output?.statusCode;
+      const errorMsg = (lastDisconnect?.error as Boom)?.message || "unknown";
+
+      this.logger.warn(`Connection closed: reason=${reason} (${errorMsg})`);
 
       if (reason === DisconnectReason.loggedOut) {
         this.logger.warn("Logged out from WhatsApp. Please scan QR code again.");
         this.sessionService.clearSession();
         this.reconnectAttempts = 0;
+        this.reconnecting = false;
         this.connect();
-      } else if (this.reconnectAttempts < this.maxReconnectAttempts) {
+        return;
+      }
+
+      // Don't reconnect if another device took over
+      if (reason === DisconnectReason.connectionReplaced) {
+        this.logger.warn("Connection replaced by another session. Not reconnecting.");
+        this.reconnecting = false;
+        return;
+      }
+
+      // Guard against concurrent reconnection attempts
+      if (this.reconnecting) {
+        this.logger.debug("Already reconnecting, ignoring duplicate close event");
+        return;
+      }
+
+      if (this.reconnectAttempts < this.maxReconnectAttempts) {
+        this.reconnecting = true;
         this.reconnectAttempts++;
+
+        // Exponential backoff: 2s, 4s, 8s, 16s, 32s... capped at 60s
+        const delay = Math.min(2000 * Math.pow(2, this.reconnectAttempts - 1), 60_000);
+
         this.logger.info(
-          `Connection closed. Reconnecting (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})...`
+          `Reconnecting in ${delay / 1000}s (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})...`
         );
-        setTimeout(() => this.connect(), 3000);
+
+        setTimeout(() => {
+          this.reconnecting = false;
+          this.connect();
+        }, delay);
       } else {
         this.logger.error("Max reconnection attempts reached. Please restart the bot.");
       }
     } else if (connection === "open") {
       this.reconnectAttempts = 0;
+      this.reconnecting = false;
       this.logger.info("Connected to WhatsApp!");
     }
   }
