@@ -28,8 +28,8 @@ export * from "./enums";
  * @example
  * ```
  * const prisma = new PrismaClient()
- * // Fetch zero or more WhatsAppSessions
- * const whatsAppSessions = await prisma.whatsAppSession.findMany()
+ * // Fetch zero or more Users
+ * const users = await prisma.user.findMany()
  * ```
  *
  * Read more in our [docs](https://pris.ly/d/client).
@@ -43,25 +43,55 @@ export type PrismaClient<
 export { Prisma };
 
 /**
- * Model WhatsAppSession
+ * Model User
  *
  */
-export type WhatsAppSession = Prisma.WhatsAppSessionModel;
+export type User = Prisma.UserModel;
+/**
+ * Model Account
+ *
+ */
+export type Account = Prisma.AccountModel;
+/**
+ * Model Session
+ *
+ */
+export type Session = Prisma.SessionModel;
+/**
+ * Model VerificationToken
+ *
+ */
+export type VerificationToken = Prisma.VerificationTokenModel;
+/**
+ * Model Plan
+ *
+ */
+export type Plan = Prisma.PlanModel;
+/**
+ * Model Subscription
+ *
+ */
+export type Subscription = Prisma.SubscriptionModel;
+/**
+ * Model Payment
+ *
+ */
+export type Payment = Prisma.PaymentModel;
 /**
  * Model Reminder
  *
  */
 export type Reminder = Prisma.ReminderModel;
 /**
+ * Model WhatsAppSession
+ *
+ */
+export type WhatsAppSession = Prisma.WhatsAppSessionModel;
+/**
  * Model GoogleAuthToken
  *
  */
 export type GoogleAuthToken = Prisma.GoogleAuthTokenModel;
-/**
- * Model User
- *
- */
-export type User = Prisma.UserModel;
 /**
  * Model EmailToken
  *
@@ -72,3 +102,8 @@ export type EmailToken = Prisma.EmailTokenModel;
  *
  */
 export type ProcessedEmail = Prisma.ProcessedEmailModel;
+/**
+ * Model LinkingCode
+ *
+ */
+export type LinkingCode = Prisma.LinkingCodeModel;

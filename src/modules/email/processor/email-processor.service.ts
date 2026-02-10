@@ -76,6 +76,9 @@ export class EmailProcessorService {
       } catch (error) {
         this.logger.error(`Failed to create reminder for email ${email.id}: ${error}`);
       }
+    } else if (analysis.type === "SECURITY") {
+      // Security alerts are always notified even without reminders
+      await this.notifyUser(chatId, analysis);
     }
 
     // Save processed email
@@ -196,6 +199,33 @@ export class EmailProcessorService {
         }
         message += `\nTe aviso con tiempo para que llegues al aeropuerto!`;
         break;
+
+      case "SECURITY": {
+        const alertTypeLabels: Record<string, string> = {
+          login_suspicious: "Inicio de sesion sospechoso",
+          password_change: "Cambio de contraseña",
+          phishing: "Posible phishing",
+          data_breach: "Brecha de datos",
+          unrecognized_transaction: "Transaccion no reconocida",
+          new_device: "Nuevo dispositivo",
+          unauthorized_access: "Acceso no autorizado",
+          unknown_subscription: "Suscripcion desconocida"
+        };
+        message = `🚨 *ALERTA DE SEGURIDAD*\n\n`;
+        message += `${analysis.summary}\n`;
+        if (analysis.securityInfo) {
+          message += `🔐 Servicio: ${analysis.securityInfo.service}\n`;
+          const alertLabel =
+            alertTypeLabels[analysis.securityInfo.alertType] || analysis.securityInfo.alertType;
+          message += `⚠️ Tipo: ${alertLabel}\n`;
+          if (analysis.securityInfo.ipOrLocation) {
+            message += `📍 Ubicacion/IP: ${analysis.securityInfo.ipOrLocation}\n`;
+          }
+          message += `\n*Accion recomendada:* ${analysis.securityInfo.actionRequired}\n`;
+        }
+        message += `\n_Si no fuiste vos, actua de inmediato._`;
+        break;
+      }
 
       case "LEGAL_HEARING":
         message = `⚖️ AUDIENCIA JUDICIAL detectada!\n\n`;
@@ -402,6 +432,10 @@ export class EmailProcessorService {
         ...analysis.legalHearingInfo,
         dateTime: analysis.legalHearingInfo.dateTime.toISOString()
       };
+    }
+
+    if (analysis.securityInfo) {
+      data.securityInfo = analysis.securityInfo;
     }
 
     if (analysis.deadlineInfo) {

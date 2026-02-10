@@ -1,8 +1,13 @@
 import type { IntentService, ReminderDetail } from "@modules/ai/intent/intent.service";
 import type { TranscriptionService } from "@modules/ai/transcription/transcription.service";
 import type { GmailAuthService } from "@modules/email/gmail/gmail-auth.service";
+import type { GmailService } from "@modules/email/gmail/gmail.service";
+import type { ProcessedEmailRepository } from "@modules/email/processor/processed-email.repository";
+import type { EmailReplyService } from "@modules/email/reply/email-reply.service";
 import type { UserService } from "@modules/email/user/user.service";
+import type { LinkingCodeService } from "@modules/linking/linking.service";
 import type { ReminderService } from "@modules/reminders/reminder.service";
+import type { SubscriptionService } from "@modules/subscription/subscription.service";
 import type { RecurrenceType } from "@prisma-module/generated/client";
 import { env } from "@shared/env/env";
 import { createLogger } from "@shared/logger/logger";
@@ -11,9 +16,32 @@ import type { WhatsAppClient } from "../client/whatsapp.client";
 import type { MessageContent } from "../client/whatsapp.types";
 
 const DAYS_OF_WEEK = ["domingo", "lunes", "martes", "miercoles", "jueves", "viernes", "sabado"];
+const CONNECT_COMMANDS = ["/connect", "/link", "/conectar"];
+const CONFIRM_SEND = ["enviar", "si", "send", "yes"];
+const CANCEL_SEND = ["cancelar", "cancel", "no"];
+
+interface PendingReply {
+  userId: string;
+  messageId: string;
+  threadId: string;
+  to: string;
+  subject: string;
+  body: string;
+}
+
+interface ViewedEmail {
+  gmailMessageId: string;
+  threadId: string;
+  from: string;
+  subject: string;
+}
 
 export class MessageHandler {
   private readonly logger = createLogger("message-handler");
+  private readonly pendingReplies = new Map<string, PendingReply>();
+  private readonly lastViewedEmail = new Map<string, ViewedEmail>();
+  private readonly pendingSearchReply = new Set<string>();
+  private readonly pendingReplyInstruction = new Set<string>();
 
   constructor(
     private readonly whatsappClient: WhatsAppClient,
@@ -21,7 +49,12 @@ export class MessageHandler {
     private readonly intentService: IntentService,
     private readonly reminderService: ReminderService,
     private readonly userService?: UserService,
-    private readonly gmailAuthService?: GmailAuthService
+    private readonly gmailAuthService?: GmailAuthService,
+    private readonly linkingCodeService?: LinkingCodeService,
+    private readonly subscriptionService?: SubscriptionService,
+    private readonly emailReplyService?: EmailReplyService,
+    private readonly gmailService?: GmailService,
+    private readonly processedEmailRepository?: ProcessedEmailRepository
   ) {}
 
   async handle(message: MessageContent): Promise<void> {
@@ -63,6 +96,39 @@ export class MessageHandler {
       return;
     }
 
+    // Check for pending email reply confirmation
+    if (this.pendingReplies.has(message.chatId)) {
+      await this.handlePendingReplyResponse(message.chatId, text);
+      return;
+    }
+
+    // Check for pending search reply ("queres responder?")
+    if (this.pendingSearchReply.has(message.chatId)) {
+      await this.handlePendingSearchReplyResponse(message.chatId, text);
+      return;
+    }
+
+    // Check for pending reply instruction (user said "si", now we need the instruction)
+    if (this.pendingReplyInstruction.has(message.chatId)) {
+      await this.handleReplyToViewedEmail(message.chatId, text);
+      return;
+    }
+
+    // Check for /connect command before LLM parsing
+    if (CONNECT_COMMANDS.includes(text.trim().toLowerCase())) {
+      await this.handleConnect(message.chatId);
+      return;
+    }
+
+    // Check subscription access (linked account + active plan)
+    if (this.subscriptionService) {
+      const access = await this.subscriptionService.checkBotAccess(message.chatId);
+      if (!access.allowed) {
+        await this.whatsappClient.sendMessage(message.chatId, access.message);
+        return;
+      }
+    }
+
     // Parse intent
     try {
       const intent = await this.intentService.parseIntent(text);
@@ -97,6 +163,14 @@ export class MessageHandler {
           await this.handleEmailStatus(message.chatId);
           break;
 
+        case "reply_email":
+          await this.handleReplyEmail(message.chatId, intent.emailReplyInstruction);
+          break;
+
+        case "search_email":
+          await this.handleSearchEmail(message.chatId, intent.emailSearchQuery);
+          break;
+
         default:
           await this.whatsappClient.sendMessage(
             message.chatId,
@@ -106,7 +180,10 @@ export class MessageHandler {
               "- Ver tareas: 'que tareas tengo'\n" +
               "- Cancelar: 'cancela la tarea 2'\n" +
               "- Cambiar hora: 'cambia la tarea 1 a las 5pm'\n" +
-              "- Conectar email: 'conecta mi email'"
+              "- Conectar email: 'conecta mi email'\n" +
+              "- Responder email: 'respondele al mail diciendo que acepto'\n" +
+              "- Buscar email: 'busca el mail de Juan sobre el presupuesto'\n" +
+              "- Vincular con la web: /connect"
           );
       }
     } catch (error) {
@@ -126,6 +203,15 @@ export class MessageHandler {
       missingDateTime?: boolean;
     }
   ): Promise<void> {
+    // Check reminder limit
+    if (this.subscriptionService) {
+      const access = await this.subscriptionService.checkCanCreateReminder(chatId);
+      if (!access.allowed) {
+        await this.whatsappClient.sendMessage(chatId, access.message);
+        return;
+      }
+    }
+
     // Check if missing date/time
     if (intent.missingDateTime) {
       const description = intent.reminderDetails?.[0]?.description || "lo que me pediste";
@@ -475,6 +561,15 @@ export class MessageHandler {
       return;
     }
 
+    // Check email access on plan
+    if (this.subscriptionService) {
+      const access = await this.subscriptionService.checkEmailAccess(chatId);
+      if (!access.allowed) {
+        await this.whatsappClient.sendMessage(chatId, access.message);
+        return;
+      }
+    }
+
     try {
       // Get or create user
       const user = await this.userService.getOrCreateUser(chatId);
@@ -491,9 +586,25 @@ export class MessageHandler {
         return;
       }
 
+      // Check if user's plan includes email reply to decide scopes
+      let includeReply = false;
+      if (this.subscriptionService) {
+        const info = await this.subscriptionService.checkBotAccess(chatId);
+        if (info.allowed && info.info.hasEmailReply) {
+          includeReply = true;
+        }
+      }
+
       // Generate OAuth URL using userId (clean cuid, no special chars)
       const hostUrl = env().HOST_URL;
-      const authUrl = `${hostUrl}/auth/gmail?userId=${user.id}`;
+      const authUrl = includeReply
+        ? `${hostUrl}/auth/gmail?userId=${user.id}&includeSend=true`
+        : `${hostUrl}/auth/gmail?userId=${user.id}`;
+
+      const replyLine = includeReply ? "📧 Responder emails desde WhatsApp\n" : "";
+      const privacyLine = includeReply
+        ? "_Tu privacidad es importante: solo accedo a lo necesario para leer y responder._"
+        : "_Tu privacidad es importante: solo leo los emails, nunca envio nada._";
 
       await this.whatsappClient.sendMessage(
         chatId,
@@ -508,8 +619,8 @@ Una vez que autorices, voy a poder avisarte de:
 📅 Turnos y citas
 🗓️ Reuniones
 ✈️ Vuelos
-
-_Tu privacidad es importante: solo leo los emails, nunca envio nada._`
+${replyLine}
+${privacyLine}`
       );
 
       this.logger.info(`Email link URL sent to ${chatId}`);
@@ -529,6 +640,15 @@ _Tu privacidad es importante: solo leo los emails, nunca envio nada._`
         "La funcion de email no esta disponible en este momento."
       );
       return;
+    }
+
+    // Check email access on plan
+    if (this.subscriptionService) {
+      const access = await this.subscriptionService.checkEmailAccess(chatId);
+      if (!access.allowed) {
+        await this.whatsappClient.sendMessage(chatId, access.message);
+        return;
+      }
     }
 
     try {
@@ -565,6 +685,458 @@ _Tu privacidad es importante: solo leo los emails, nunca envio nada._`
     }
   }
 
+  private async handleConnect(chatId: string): Promise<void> {
+    if (!this.linkingCodeService) {
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "La funcion de vinculacion no esta disponible en este momento."
+      );
+      return;
+    }
+
+    try {
+      const code = await this.linkingCodeService.generateCode(chatId);
+
+      await this.whatsappClient.sendMessage(
+        chatId,
+        `🔗 *Vincular con la web*\n\n` +
+          `Tu codigo de vinculacion es:\n\n` +
+          `*${code}*\n\n` +
+          `Ingresalo en la pagina de conexiones de tu cuenta.\n\n` +
+          `⏳ Este codigo expira en 5 minutos.`
+      );
+
+      this.logger.info(`Linking code sent to ${chatId}`);
+    } catch (error) {
+      this.logger.error(`Failed to generate linking code for ${chatId}`, error);
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "Hubo un error generando el codigo. Intenta de nuevo mas tarde."
+      );
+    }
+  }
+
+  private async handleReplyEmail(chatId: string, instruction?: string): Promise<void> {
+    if (
+      !this.emailReplyService ||
+      !this.gmailService ||
+      !this.processedEmailRepository ||
+      !this.userService ||
+      !this.gmailAuthService
+    ) {
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "La funcion de respuesta de email no esta disponible en este momento."
+      );
+      return;
+    }
+
+    // Check email reply access on plan
+    if (this.subscriptionService) {
+      const access = await this.subscriptionService.checkEmailReplyAccess(chatId);
+      if (!access.allowed) {
+        await this.whatsappClient.sendMessage(chatId, access.message);
+        return;
+      }
+    }
+
+    if (!instruction) {
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "Decime que queres responder. Ej: 'respondele al mail diciendo que acepto la reunion'"
+      );
+      return;
+    }
+
+    try {
+      const user = await this.userService.getUserByChatId(chatId);
+      if (!user) {
+        await this.whatsappClient.sendMessage(chatId, "No tenes cuenta vinculada.");
+        return;
+      }
+
+      // Check if user has send scope
+      const hasSend = await this.gmailAuthService.hasSendScope(user.id);
+      if (!hasSend) {
+        const hostUrl = env().HOST_URL;
+        const authUrl = `${hostUrl}/auth/gmail?userId=${user.id}&includeSend=true`;
+        await this.whatsappClient.sendMessage(
+          chatId,
+          "Para responder emails, necesitas re-autorizar tu Gmail con permisos de envio.\n\n" +
+            `Hace click aca: ${authUrl}\n\n` +
+            "Una vez autorizado, volveme a pedir que responda el email."
+        );
+        return;
+      }
+
+      // Check if there's a viewed email from search first
+      const viewed = this.lastViewedEmail.get(chatId);
+      let gmailMessageId: string;
+      let threadId: string;
+
+      if (viewed) {
+        gmailMessageId = viewed.gmailMessageId;
+        threadId = viewed.threadId;
+        this.lastViewedEmail.delete(chatId);
+      } else {
+        // Get most recent processed email
+        const recentEmails = await this.processedEmailRepository.findRecentForChat(user.id, 1);
+        if (recentEmails.length === 0) {
+          await this.whatsappClient.sendMessage(
+            chatId,
+            "No tengo un email reciente al que responder."
+          );
+          return;
+        }
+        gmailMessageId = recentEmails[0].gmailMessageId;
+        threadId = recentEmails[0].threadId || "";
+      }
+
+      // Fetch full email from Gmail
+      const fullEmail = await this.gmailService.getMessage(user.id, gmailMessageId);
+
+      // Compose reply using AI
+      const reply = await this.emailReplyService.composeReply({
+        originalEmail: {
+          subject: fullEmail.subject,
+          from: fullEmail.from,
+          body: fullEmail.body,
+          date: fullEmail.date
+        },
+        userInstruction: instruction,
+        locale: user.locale || "es"
+      });
+
+      // Show preview
+      await this.whatsappClient.sendMessage(
+        chatId,
+        `*Preview de tu respuesta:*\n\n` +
+          `*Para:* ${fullEmail.from}\n` +
+          `*Asunto:* ${reply.subject}\n\n` +
+          `${reply.body}\n\n` +
+          `_Responde "enviar" para enviar o "cancelar" para descartar._`
+      );
+
+      // Store pending reply
+      this.pendingReplies.set(chatId, {
+        userId: user.id,
+        messageId: gmailMessageId,
+        threadId,
+        to: fullEmail.from,
+        subject: reply.subject,
+        body: reply.body
+      });
+
+      this.logger.info(`Pending reply set for ${chatId}`);
+    } catch (error) {
+      this.logger.error(`Failed to handle reply email for ${chatId}`, error);
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "Hubo un error preparando la respuesta. Intenta de nuevo mas tarde."
+      );
+    }
+  }
+
+  private async handlePendingReplyResponse(chatId: string, text: string): Promise<void> {
+    const pending = this.pendingReplies.get(chatId);
+    if (!pending) return;
+
+    const normalized = text.trim().toLowerCase();
+
+    if (CONFIRM_SEND.includes(normalized)) {
+      // Send the email
+      try {
+        if (!this.gmailService) {
+          await this.whatsappClient.sendMessage(chatId, "Error: servicio de Gmail no disponible.");
+          this.pendingReplies.delete(chatId);
+          return;
+        }
+
+        await this.gmailService.sendReply(pending.userId, pending.messageId, pending.threadId, {
+          to: pending.to,
+          subject: pending.subject,
+          body: pending.body
+        });
+
+        await this.whatsappClient.sendMessage(chatId, "Email enviado exitosamente!");
+        this.logger.info(`Email reply sent for ${chatId}`);
+      } catch (error) {
+        this.logger.error(`Failed to send email reply for ${chatId}`, error);
+        await this.whatsappClient.sendMessage(
+          chatId,
+          "Hubo un error enviando el email. Intenta de nuevo mas tarde."
+        );
+      }
+      this.pendingReplies.delete(chatId);
+    } else if (CANCEL_SEND.includes(normalized)) {
+      await this.whatsappClient.sendMessage(chatId, "Respuesta descartada.");
+      this.pendingReplies.delete(chatId);
+    } else {
+      // Treat as new instruction — re-compose
+      this.pendingReplies.delete(chatId);
+      await this.handleReplyEmail(chatId, text);
+    }
+  }
+
+  private async handleSearchEmail(chatId: string, searchQuery?: string): Promise<void> {
+    if (
+      !this.gmailService ||
+      !this.processedEmailRepository ||
+      !this.userService ||
+      !this.gmailAuthService
+    ) {
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "La funcion de email no esta disponible en este momento."
+      );
+      return;
+    }
+
+    // Check email access on plan
+    if (this.subscriptionService) {
+      const access = await this.subscriptionService.checkEmailAccess(chatId);
+      if (!access.allowed) {
+        await this.whatsappClient.sendMessage(chatId, access.message);
+        return;
+      }
+    }
+
+    if (!searchQuery) {
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "Decime que email buscas. Ej: 'busca el mail de Juan sobre el presupuesto'"
+      );
+      return;
+    }
+
+    try {
+      const user = await this.userService.getUserByChatId(chatId);
+      if (!user) {
+        await this.whatsappClient.sendMessage(chatId, "No tenes cuenta vinculada.");
+        return;
+      }
+
+      const isLinked = await this.gmailAuthService.isAuthenticated(user.id);
+      if (!isLinked) {
+        await this.whatsappClient.sendMessage(
+          chatId,
+          "No tenes email conectado. Decime 'conecta mi email' para vincularlo."
+        );
+        return;
+      }
+
+      await this.whatsappClient.sendMessage(chatId, "Buscando en tus emails... 🔍");
+
+      // Stage 1: Local search
+      let foundEmail: {
+        gmailMessageId: string;
+        threadId: string;
+        from: string;
+        subject: string;
+        content: string;
+        date: Date;
+      } | null = null;
+
+      const localResults = await this.processedEmailRepository.searchByKeywords(
+        user.id,
+        searchQuery
+      );
+
+      if (localResults.length > 0) {
+        const best = localResults[0];
+        const summary =
+          best.extractedData && typeof best.extractedData === "object"
+            ? (best.extractedData as Record<string, unknown>).summary
+            : null;
+        foundEmail = {
+          gmailMessageId: best.gmailMessageId,
+          threadId: best.threadId || "",
+          from: best.sender || "Desconocido",
+          subject: best.subject || "(sin asunto)",
+          content: typeof summary === "string" ? summary : "",
+          date: best.receivedAt
+        };
+      }
+
+      // Stage 2: Gmail API search if nothing local
+      if (!foundEmail) {
+        const gmailResults = await this.gmailService.searchMessages(user.id, searchQuery, 1);
+        if (gmailResults.length > 0) {
+          const msg = gmailResults[0];
+          const content = msg.snippet || msg.body.substring(0, 500);
+          foundEmail = {
+            gmailMessageId: msg.id,
+            threadId: msg.threadId,
+            from: msg.from,
+            subject: msg.subject,
+            content,
+            date: msg.date
+          };
+        }
+      }
+
+      if (!foundEmail) {
+        await this.whatsappClient.sendMessage(
+          chatId,
+          "No encontre ningun email que coincida con tu busqueda. Intenta con otros terminos."
+        );
+        return;
+      }
+
+      // Format result
+      const dateStr = foundEmail.date.toLocaleString("es-AR", {
+        timeZone: "America/Argentina/Buenos_Aires",
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+
+      const contentPreview =
+        foundEmail.content.length > 500
+          ? foundEmail.content.substring(0, 500) + "..."
+          : foundEmail.content;
+
+      let message = `📧 *Email encontrado:*\n\n`;
+      message += `*De:* ${foundEmail.from}\n`;
+      message += `*Asunto:* ${foundEmail.subject}\n`;
+      message += `*Fecha:* ${dateStr}\n`;
+      if (contentPreview) {
+        message += `\n${contentPreview}\n`;
+      }
+      message += `\n_Queres responder a este email? Decime "si" o "no"_`;
+
+      await this.whatsappClient.sendMessage(chatId, message);
+
+      // Save state
+      this.lastViewedEmail.set(chatId, {
+        gmailMessageId: foundEmail.gmailMessageId,
+        threadId: foundEmail.threadId,
+        from: foundEmail.from,
+        subject: foundEmail.subject
+      });
+      this.pendingSearchReply.add(chatId);
+
+      this.logger.info(`Email search result shown for ${chatId}`);
+    } catch (error) {
+      this.logger.error(`Failed to search emails for ${chatId}`, error);
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "Hubo un error buscando emails. Intenta de nuevo mas tarde."
+      );
+    }
+  }
+
+  private async handlePendingSearchReplyResponse(chatId: string, text: string): Promise<void> {
+    this.pendingSearchReply.delete(chatId);
+    const normalized = text.trim().toLowerCase();
+
+    if (["si", "sí", "yes"].includes(normalized)) {
+      this.pendingReplyInstruction.add(chatId);
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "Decime que queres responder. Ej: 'decile que acepto la propuesta'"
+      );
+    } else {
+      this.lastViewedEmail.delete(chatId);
+      await this.whatsappClient.sendMessage(chatId, "OK!");
+    }
+  }
+
+  private async handleReplyToViewedEmail(chatId: string, instruction: string): Promise<void> {
+    this.pendingReplyInstruction.delete(chatId);
+
+    if (
+      !this.emailReplyService ||
+      !this.gmailService ||
+      !this.userService ||
+      !this.gmailAuthService
+    ) {
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "La funcion de respuesta de email no esta disponible en este momento."
+      );
+      this.lastViewedEmail.delete(chatId);
+      return;
+    }
+
+    const viewed = this.lastViewedEmail.get(chatId);
+    if (!viewed) {
+      await this.whatsappClient.sendMessage(chatId, "No tengo un email guardado para responder.");
+      return;
+    }
+
+    try {
+      const user = await this.userService.getUserByChatId(chatId);
+      if (!user) {
+        await this.whatsappClient.sendMessage(chatId, "No tenes cuenta vinculada.");
+        this.lastViewedEmail.delete(chatId);
+        return;
+      }
+
+      // Check send scope
+      const hasSend = await this.gmailAuthService.hasSendScope(user.id);
+      if (!hasSend) {
+        const hostUrl = env().HOST_URL;
+        const authUrl = `${hostUrl}/auth/gmail?userId=${user.id}&includeSend=true`;
+        await this.whatsappClient.sendMessage(
+          chatId,
+          "Para responder emails, necesitas re-autorizar tu Gmail con permisos de envio.\n\n" +
+            `Hace click aca: ${authUrl}\n\n` +
+            "Una vez autorizado, volveme a pedir que responda el email."
+        );
+        this.lastViewedEmail.delete(chatId);
+        return;
+      }
+
+      // Fetch full email
+      const fullEmail = await this.gmailService.getMessage(user.id, viewed.gmailMessageId);
+
+      // Compose reply
+      const reply = await this.emailReplyService.composeReply({
+        originalEmail: {
+          subject: fullEmail.subject,
+          from: fullEmail.from,
+          body: fullEmail.body,
+          date: fullEmail.date
+        },
+        userInstruction: instruction,
+        locale: user.locale || "es"
+      });
+
+      // Show preview
+      await this.whatsappClient.sendMessage(
+        chatId,
+        `*Preview de tu respuesta:*\n\n` +
+          `*Para:* ${fullEmail.from}\n` +
+          `*Asunto:* ${reply.subject}\n\n` +
+          `${reply.body}\n\n` +
+          `_Responde "enviar" para enviar o "cancelar" para descartar._`
+      );
+
+      // Store pending reply (reuses existing send/cancel flow)
+      this.pendingReplies.set(chatId, {
+        userId: user.id,
+        messageId: viewed.gmailMessageId,
+        threadId: viewed.threadId,
+        to: fullEmail.from,
+        subject: reply.subject,
+        body: reply.body
+      });
+
+      this.lastViewedEmail.delete(chatId);
+      this.logger.info(`Reply preview from search shown for ${chatId}`);
+    } catch (error) {
+      this.logger.error(`Failed to compose reply to viewed email for ${chatId}`, error);
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "Hubo un error preparando la respuesta. Intenta de nuevo mas tarde."
+      );
+      this.lastViewedEmail.delete(chatId);
+    }
+  }
+
   private async handleEmailStatus(chatId: string): Promise<void> {
     if (!this.userService || !this.gmailAuthService) {
       await this.whatsappClient.sendMessage(
@@ -572,6 +1144,15 @@ _Tu privacidad es importante: solo leo los emails, nunca envio nada._`
         "La funcion de email no esta disponible en este momento."
       );
       return;
+    }
+
+    // Check email access on plan
+    if (this.subscriptionService) {
+      const access = await this.subscriptionService.checkEmailAccess(chatId);
+      if (!access.allowed) {
+        await this.whatsappClient.sendMessage(chatId, access.message);
+        return;
+      }
     }
 
     try {

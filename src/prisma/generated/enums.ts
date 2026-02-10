@@ -8,6 +8,39 @@
  * 🟢 You can import this file directly.
  */
 
+export const UserRole = {
+  USER: "USER",
+  ADMIN: "ADMIN"
+} as const;
+
+export type UserRole = (typeof UserRole)[keyof typeof UserRole];
+
+export const SubscriptionStatus = {
+  TRIALING: "TRIALING",
+  ACTIVE: "ACTIVE",
+  PAST_DUE: "PAST_DUE",
+  CANCELLED: "CANCELLED",
+  PAUSED: "PAUSED"
+} as const;
+
+export type SubscriptionStatus = (typeof SubscriptionStatus)[keyof typeof SubscriptionStatus];
+
+export const BillingCycle = {
+  MONTHLY: "MONTHLY",
+  YEARLY: "YEARLY"
+} as const;
+
+export type BillingCycle = (typeof BillingCycle)[keyof typeof BillingCycle];
+
+export const PaymentStatus = {
+  PENDING: "PENDING",
+  APPROVED: "APPROVED",
+  REJECTED: "REJECTED",
+  REFUNDED: "REFUNDED"
+} as const;
+
+export type PaymentStatus = (typeof PaymentStatus)[keyof typeof PaymentStatus];
+
 export const ReminderStatus = {
   PENDING: "PENDING",
   SENT: "SENT",
@@ -33,6 +66,7 @@ export const EmailType = {
   MEETING: "MEETING",
   FLIGHT: "FLIGHT",
   LEGAL_HEARING: "LEGAL_HEARING",
+  SECURITY: "SECURITY",
   DEADLINE: "DEADLINE",
   COURSE: "COURSE",
   TASK: "TASK",

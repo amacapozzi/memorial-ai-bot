@@ -6,6 +6,7 @@ export {
   type AppointmentInfo,
   type MeetingInfo,
   type PurchaseInfo,
-  type FlightInfo
+  type FlightInfo,
+  type SecurityInfo
 } from "./email-analyzer.service";
 export { buildEmailAnalysisPrompt } from "./email-analyzer.prompts";

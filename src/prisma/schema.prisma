@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client"
   output   = "./generated"
@@ -10,36 +7,222 @@ datasource db {
   provider = "postgresql"
 }
 
-// WhatsApp session storage for baileys
-model WhatsAppSession {
-  id        String   @id @default("default")
-  data      Json
+// =============================================
+// USER & AUTH (Auth.js v5)
+// =============================================
+
+model User {
+  id            String    @id @default(cuid())
+
+  // Auth fields
+  email         String?   @unique
+  emailVerified DateTime? @map("email_verified")
+  passwordHash  String?   @map("password_hash")
+  name          String?
+  image         String?
+  role          UserRole  @default(USER)
+
+  // WhatsApp (connection with bot)
+  chatId        String?   @unique @map("chat_id")
+  locale        String    @default("es")
+
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  // Auth.js relations
+  accounts      Account[]
+  sessions      Session[]
+
+  // App relations
+  reminders     Reminder[]
+  subscription  Subscription?
+  emailToken    EmailToken?
+  processedEmails ProcessedEmail[]
+
+  @@map("users")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String  @map("user_id")
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// =============================================
+// PLANS & SUBSCRIPTIONS
+// =============================================
+
+model Plan {
+  id            String   @id @default(cuid())
+  name          String
+  description   String?
+
+  // Prices in cents
+  priceMonthly  Int      @map("price_monthly")
+  priceYearly   Int      @map("price_yearly")
+  currency      String   @default("ARS")
+
+  // Mercado Pago Plan IDs
+  mpPlanIdMonthly String? @unique @map("mp_plan_id_monthly")
+  mpPlanIdYearly  String? @unique @map("mp_plan_id_yearly")
+
+  // Features and limits
+  features         Json    @default("[]")
+  maxReminders     Int?    @map("max_reminders")
+  maxEmailAccounts Int?    @map("max_email_accounts")
+  hasCalendarSync  Boolean @default(false) @map("has_calendar_sync")
+  hasEmailSync     Boolean @default(false) @map("has_email_sync")
+  hasEmailReply    Boolean @default(false) @map("has_email_reply")
+
+  trialDays   Int     @default(0) @map("trial_days")
+  isActive    Boolean @default(true) @map("is_active")
+  sortOrder   Int     @default(0) @map("sort_order")
+
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  subscriptions Subscription[]
+
+  @@map("plans")
+}
+
+model Subscription {
+  id        String   @id @default(cuid())
+  userId    String   @unique @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  planId    String   @map("plan_id")
+  plan      Plan     @relation(fields: [planId], references: [id])
+
+  status       SubscriptionStatus @default(TRIALING)
+  billingCycle BillingCycle       @map("billing_cycle")
+
+  // Mercado Pago
+  mpSubscriptionId String?  @unique @map("mp_subscription_id")
+  mpPayerId        String?  @map("mp_payer_id")
+
+  // Periods
+  currentPeriodStart DateTime  @map("current_period_start")
+  currentPeriodEnd   DateTime  @map("current_period_end")
+  trialEndsAt        DateTime? @map("trial_ends_at")
+  cancelledAt        DateTime? @map("cancelled_at")
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  @@map("whatsapp_sessions")
+  payments Payment[]
+
+  @@map("subscriptions")
 }
 
-// Reminder jobs
-model Reminder {
-  id              String            @id @default(cuid())
-  originalText    String            @map("original_text")
-  reminderText    String            @map("reminder_text")
-  scheduledAt     DateTime          @map("scheduled_at")
-  chatId          String            @map("chat_id")
-  status          ReminderStatus    @default(PENDING)
-  calendarEventId String?           @map("calendar_event_id")
-  createdAt       DateTime          @default(now()) @map("created_at")
-  updatedAt       DateTime          @updatedAt @map("updated_at")
-  sentAt          DateTime?         @map("sent_at")
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+  PAUSED
+}
 
-  // Recurrence fields
-  recurrence      RecurrenceType    @default(NONE)
-  recurrenceDay   Int?              @map("recurrence_day") // 0-6 for weekly (Sunday=0), 1-31 for monthly
-  recurrenceTime  String?           @map("recurrence_time") // HH:MM format for recurring reminders
+enum BillingCycle {
+  MONTHLY
+  YEARLY
+}
+
+model Payment {
+  id             String       @id @default(cuid())
+  subscriptionId String       @map("subscription_id")
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  amount    Int           // Cents
+  currency  String        @default("ARS")
+  status    PaymentStatus
+
+  mpPaymentId String?  @unique @map("mp_payment_id")
+  mpStatus    String?  @map("mp_status")
+
+  paidAt    DateTime? @map("paid_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@index([subscriptionId, createdAt])
+  @@map("payments")
+}
+
+enum PaymentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  REFUNDED
+}
+
+// =============================================
+// REMINDERS (Updated with FK to User)
+// =============================================
+
+model Reminder {
+  id           String         @id @default(cuid())
+  originalText String         @map("original_text")
+  reminderText String         @map("reminder_text")
+  scheduledAt  DateTime       @map("scheduled_at")
+
+  // FK to User
+  userId       String?        @map("user_id")
+  user         User?          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Keep chatId for bot compatibility
+  chatId       String         @map("chat_id")
+
+  status          ReminderStatus @default(PENDING)
+  calendarEventId String?        @map("calendar_event_id")
+
+  recurrence     RecurrenceType @default(NONE)
+  recurrenceDay  Int?           @map("recurrence_day")
+  recurrenceTime String?        @map("recurrence_time")
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  sentAt    DateTime? @map("sent_at")
 
   @@index([status, scheduledAt])
   @@index([chatId, recurrence])
+  @@index([userId, status])
   @@map("reminders")
 }
 
@@ -57,6 +240,20 @@ enum RecurrenceType {
   MONTHLY
 }
 
+// =============================================
+// BOT-SPECIFIC MODELS
+// =============================================
+
+// WhatsApp session storage for baileys
+model WhatsAppSession {
+  id        String   @id @default("default")
+  data      Json
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("whatsapp_sessions")
+}
+
 // Google OAuth tokens storage (for Calendar)
 model GoogleAuthToken {
   id           String   @id @default("default")
@@ -69,19 +266,6 @@ model GoogleAuthToken {
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   @@map("google_auth_tokens")
-}
-
-// User model to track WhatsApp users
-model User {
-  id        String   @id @default(cuid())
-  chatId    String   @unique @map("chat_id")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  emailToken      EmailToken?
-  processedEmails ProcessedEmail[]
-
-  @@map("users")
 }
 
 // Gmail OAuth tokens (per user, separate from calendar tokens)
@@ -134,12 +318,13 @@ enum EmailType {
   APPOINTMENT
   MEETING
   FLIGHT
-  LEGAL_HEARING    // Audiencias judiciales
-  DEADLINE         // Vencimientos de plazos
-  COURSE           // Cursos, capacitaciones, seminarios
-  TASK             // Tareas asignadas
-  LEGAL_INFO       // Fallos, doctrina, jurisprudencia
-  EVENT            // Eventos con programación (genérico)
+  LEGAL_HEARING
+  SECURITY
+  DEADLINE
+  COURSE
+  TASK
+  LEGAL_INFO
+  EVENT
   OTHER
 }
 
@@ -148,4 +333,21 @@ enum ProcessedEmailStatus {
   REMINDER_CREATED
   SKIPPED
   FAILED
+}
+
+// =============================================
+// LINKING CODES (WhatsApp ↔ Website)
+// =============================================
+
+model LinkingCode {
+  id        String    @id @default(cuid())
+  code      String    @unique
+  chatId    String    @map("chat_id")
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  usedBy    String?   @map("used_by")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@index([code, expiresAt])
+  @@map("linking_codes")
 }

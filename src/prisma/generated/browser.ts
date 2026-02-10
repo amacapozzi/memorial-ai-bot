@@ -17,25 +17,55 @@ export { Prisma };
 export * as $Enums from "./enums";
 export * from "./enums";
 /**
- * Model WhatsAppSession
+ * Model User
  *
  */
-export type WhatsAppSession = Prisma.WhatsAppSessionModel;
+export type User = Prisma.UserModel;
+/**
+ * Model Account
+ *
+ */
+export type Account = Prisma.AccountModel;
+/**
+ * Model Session
+ *
+ */
+export type Session = Prisma.SessionModel;
+/**
+ * Model VerificationToken
+ *
+ */
+export type VerificationToken = Prisma.VerificationTokenModel;
+/**
+ * Model Plan
+ *
+ */
+export type Plan = Prisma.PlanModel;
+/**
+ * Model Subscription
+ *
+ */
+export type Subscription = Prisma.SubscriptionModel;
+/**
+ * Model Payment
+ *
+ */
+export type Payment = Prisma.PaymentModel;
 /**
  * Model Reminder
  *
  */
 export type Reminder = Prisma.ReminderModel;
 /**
+ * Model WhatsAppSession
+ *
+ */
+export type WhatsAppSession = Prisma.WhatsAppSessionModel;
+/**
  * Model GoogleAuthToken
  *
  */
 export type GoogleAuthToken = Prisma.GoogleAuthTokenModel;
-/**
- * Model User
- *
- */
-export type User = Prisma.UserModel;
 /**
  * Model EmailToken
  *
@@ -46,3 +76,8 @@ export type EmailToken = Prisma.EmailTokenModel;
  *
  */
 export type ProcessedEmail = Prisma.ProcessedEmailModel;
+/**
+ * Model LinkingCode
+ *
+ */
+export type LinkingCode = Prisma.LinkingCodeModel;

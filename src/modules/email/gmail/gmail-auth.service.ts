@@ -5,7 +5,16 @@ import { createLogger } from "@shared/logger/logger";
 
 import type { GmailAuthRepository } from "./gmail-auth.repository";
 
-const GMAIL_SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"];
+const GMAIL_READONLY_SCOPE = "https://www.googleapis.com/auth/gmail.readonly";
+const GMAIL_SEND_SCOPE = "https://www.googleapis.com/auth/gmail.send";
+
+function getGmailScopes(includeSend: boolean): string[] {
+  const scopes = [GMAIL_READONLY_SCOPE];
+  if (includeSend) {
+    scopes.push(GMAIL_SEND_SCOPE);
+  }
+  return scopes;
+}
 
 export class GmailAuthService {
   private readonly logger = createLogger("gmail-auth");
@@ -18,12 +27,12 @@ export class GmailAuthService {
     return new google.auth.OAuth2(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GMAIL_REDIRECT_URI);
   }
 
-  getAuthUrl(userId: string): string {
+  getAuthUrl(userId: string, includeSend: boolean = false): string {
     const oauth2Client = this.createOAuth2Client();
 
     return oauth2Client.generateAuthUrl({
       access_type: "offline",
-      scope: GMAIL_SCOPES,
+      scope: getGmailScopes(includeSend),
       prompt: "consent",
       state: userId // Pass userId to identify user on callback
     });
@@ -43,7 +52,7 @@ export class GmailAuthService {
       accessToken: tokens.access_token,
       refreshToken: tokens.refresh_token,
       expiresAt: new Date(tokens.expiry_date || Date.now() + 3600000),
-      scope: tokens.scope || GMAIL_SCOPES.join(" "),
+      scope: tokens.scope || getGmailScopes(false).join(" "),
       tokenType: tokens.token_type || "Bearer"
     });
 
@@ -90,7 +99,7 @@ export class GmailAuthService {
       accessToken: credentials.access_token,
       refreshToken: credentials.refresh_token || currentToken?.refreshToken || "",
       expiresAt: new Date(credentials.expiry_date || Date.now() + 3600000),
-      scope: credentials.scope || GMAIL_SCOPES.join(" "),
+      scope: credentials.scope || getGmailScopes(false).join(" "),
       tokenType: credentials.token_type || "Bearer"
     });
 
@@ -100,6 +109,12 @@ export class GmailAuthService {
   async isAuthenticated(userId: string): Promise<boolean> {
     const token = await this.repository.findByUserId(userId);
     return !!token;
+  }
+
+  async hasSendScope(userId: string): Promise<boolean> {
+    const token = await this.repository.findByUserId(userId);
+    if (!token) return false;
+    return token.scope.includes(GMAIL_SEND_SCOPE);
   }
 
   async revokeAccess(userId: string): Promise<void> {

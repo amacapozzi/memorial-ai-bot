@@ -14,6 +14,11 @@ LEGAL_HEARING: Audiencias judiciales, citaciones a tribunales, notificaciones de
 - Palabras clave: audiencia, citacion, comparendo, tribunal, juzgado, camara, expediente, autos, carátula, secretaria, actuaciones, alegatos, vista de causa
 - Ejemplos: "Se lo cita a audiencia el...", "Queda notificado de la audiencia...", "MEV - Notificacion", "Poder Judicial"
 
+SECURITY: Alertas de seguridad de cuentas y servicios
+- Palabras clave: inicio de sesion, login, contraseña, password, verificacion, 2FA, dispositivo nuevo, actividad sospechosa, brecha de datos, data breach, transaccion no reconocida, acceso no autorizado, suscripcion desconocida
+- Ejemplos: "Nuevo inicio de sesion desde...", "Tu contraseña fue cambiada", "Actividad sospechosa detectada", "Data breach notification", "Transaccion de $X en tu tarjeta"
+- Recordatorio: inmediato (shouldCreateReminder: false, solo notificar)
+
 DEADLINE: Vencimientos de plazos legales, procesales, administrativos o fiscales
 - Palabras clave: vencimiento, plazo, fecha limite, traslado, contestar demanda, presentar, AFIP, ARBA, IIBB, impuestos, obligaciones
 - Ejemplos: "Vence el plazo para...", "Recordatorio de vencimiento", "Fecha limite: ...", "Traslado por 5 dias"
@@ -74,14 +79,15 @@ IMPORTANTE - Reglas de recordatorio:
 PRIORIDAD DE CLASIFICACION:
 Si un email podria pertenecer a multiples categorias, usa este orden de prioridad:
 1. LEGAL_HEARING (siempre tiene prioridad si menciona audiencia o citacion judicial)
-2. DEADLINE (vencimientos tienen alta prioridad)
-3. COURSE / TASK
-4. EVENT / MEETING
-5. Resto de categorias
+2. SECURITY (alertas de seguridad tienen alta prioridad)
+3. DEADLINE (vencimientos tienen alta prioridad)
+4. COURSE / TASK
+5. EVENT / MEETING
+6. Resto de categorias
 
 Responde UNICAMENTE con JSON valido (sin markdown, sin explicaciones):
 {
-  "type": "PURCHASE" | "DELIVERY" | "APPOINTMENT" | "MEETING" | "FLIGHT" | "LEGAL_HEARING" | "DEADLINE" | "COURSE" | "TASK" | "LEGAL_INFO" | "EVENT" | "OTHER",
+  "type": "PURCHASE" | "DELIVERY" | "APPOINTMENT" | "MEETING" | "FLIGHT" | "LEGAL_HEARING" | "SECURITY" | "DEADLINE" | "COURSE" | "TASK" | "LEGAL_INFO" | "EVENT" | "OTHER",
   "confidence": number (0-1),
   "summary": "string - resumen corto del email (max 100 chars)",
 
@@ -131,6 +137,15 @@ Responde UNICAMENTE con JSON valido (sin markdown, sin explicaciones):
     "hearingType": "string - tipo de audiencia (preliminar, de prueba, de vista, etc)",
     "judge": "string | null - juez/secretario",
     "notes": "string | null - instrucciones especiales"
+  } | null,
+
+  "securityInfo": {
+    "alertType": "string - login_suspicious | password_change | phishing | data_breach | unrecognized_transaction | new_device | unauthorized_access | unknown_subscription",
+    "service": "string - servicio afectado (Google, banco, etc)",
+    "details": "string - detalles de la alerta",
+    "ipOrLocation": "string | null - IP o ubicacion del evento",
+    "actionRequired": "string - accion recomendada",
+    "urgency": "high | medium | low"
   } | null,
 
   "deadlineInfo": {
@@ -190,28 +205,28 @@ Responde UNICAMENTE con JSON valido (sin markdown, sin explicaciones):
 Ejemplos:
 
 Email del Poder Judicial: "Se notifica a las partes que se ha fijado audiencia de vista de causa para el dia 15 de marzo de 2024 a las 10:30 hs. Expediente: 12345/2023. Caratula: Perez c/ Gomez s/ Daños. Juzgado Civil N° 5."
--> {"type": "LEGAL_HEARING", "confidence": 0.98, "summary": "Audiencia de vista de causa - Juzgado Civil N°5", "legalHearingInfo": {"court": "Juzgado Civil N° 5", "caseNumber": "12345/2023", "caseName": "Perez c/ Gomez s/ Daños", "dateTime": "2024-03-15T10:30:00-03:00", "location": null, "hearingType": "vista de causa", "judge": null, "notes": null}, "deliveryInfo": null, "appointmentInfo": null, "meetingInfo": null, "purchaseInfo": null, "flightInfo": null, "deadlineInfo": null, "courseInfo": null, "taskInfo": null, "legalInfoData": null, "eventInfo": null, "shouldCreateReminder": true, "suggestedReminderDateTime": "2024-03-14T10:30:00-03:00", "suggestedReminderText": "MAÑANA 10:30 - Audiencia vista de causa - Exp 12345/2023"}
+-> {"type": "LEGAL_HEARING", "confidence": 0.98, "summary": "Audiencia de vista de causa - Juzgado Civil N°5", "legalHearingInfo": {"court": "Juzgado Civil N° 5", "caseNumber": "12345/2023", "caseName": "Perez c/ Gomez s/ Daños", "dateTime": "2024-03-15T10:30:00-03:00", "location": null, "hearingType": "vista de causa", "judge": null, "notes": null}, "deliveryInfo": null, "appointmentInfo": null, "meetingInfo": null, "purchaseInfo": null, "flightInfo": null, "securityInfo": null, "deadlineInfo": null, "courseInfo": null, "taskInfo": null, "legalInfoData": null, "eventInfo": null, "shouldCreateReminder": true, "suggestedReminderDateTime": "2024-03-14T10:30:00-03:00", "suggestedReminderText": "MAÑANA 10:30 - Audiencia vista de causa - Exp 12345/2023"}
 
 Email de vencimiento: "Se corre traslado por 5 dias. Expediente 5678/2024. Vence el 20 de febrero de 2024."
--> {"type": "DEADLINE", "confidence": 0.95, "summary": "Vencimiento traslado 5 dias - Exp 5678/2024", "deadlineInfo": {"title": "Traslado por 5 dias", "dueDate": "2024-02-20T23:59:00-03:00", "caseNumber": "5678/2024", "deadlineType": "procesal", "action": "Contestar traslado", "entity": null}, "deliveryInfo": null, "appointmentInfo": null, "meetingInfo": null, "purchaseInfo": null, "flightInfo": null, "legalHearingInfo": null, "courseInfo": null, "taskInfo": null, "legalInfoData": null, "eventInfo": null, "shouldCreateReminder": true, "suggestedReminderDateTime": "2024-02-18T10:00:00-03:00", "suggestedReminderText": "VENCE EN 2 DIAS: Traslado Exp 5678/2024"}
+-> {"type": "DEADLINE", "confidence": 0.95, "summary": "Vencimiento traslado 5 dias - Exp 5678/2024", "deadlineInfo": {"title": "Traslado por 5 dias", "dueDate": "2024-02-20T23:59:00-03:00", "caseNumber": "5678/2024", "deadlineType": "procesal", "action": "Contestar traslado", "entity": null}, "deliveryInfo": null, "appointmentInfo": null, "meetingInfo": null, "purchaseInfo": null, "flightInfo": null, "legalHearingInfo": null, "securityInfo": null, "courseInfo": null, "taskInfo": null, "legalInfoData": null, "eventInfo": null, "shouldCreateReminder": true, "suggestedReminderDateTime": "2024-02-18T10:00:00-03:00", "suggestedReminderText": "VENCE EN 2 DIAS: Traslado Exp 5678/2024"}
 
 Email de curso: "Colegio de Abogados - Curso de Actualizacion en Derecho Laboral. Inicio: 10 de abril 2024 a las 18:00. Modalidad virtual via Zoom. Dictado por Dr. Martinez."
--> {"type": "COURSE", "confidence": 0.95, "summary": "Curso Derecho Laboral - Colegio de Abogados", "courseInfo": {"title": "Curso de Actualizacion en Derecho Laboral", "dateTime": "2024-04-10T18:00:00-03:00", "endDateTime": null, "organizer": "Colegio de Abogados", "location": null, "meetingLink": null, "instructor": "Dr. Martinez", "topic": "Derecho Laboral"}, "deliveryInfo": null, "appointmentInfo": null, "meetingInfo": null, "purchaseInfo": null, "flightInfo": null, "legalHearingInfo": null, "deadlineInfo": null, "taskInfo": null, "legalInfoData": null, "eventInfo": null, "shouldCreateReminder": true, "suggestedReminderDateTime": "2024-04-10T17:00:00-03:00", "suggestedReminderText": "Curso Derecho Laboral en 1 hora - via Zoom"}
+-> {"type": "COURSE", "confidence": 0.95, "summary": "Curso Derecho Laboral - Colegio de Abogados", "courseInfo": {"title": "Curso de Actualizacion en Derecho Laboral", "dateTime": "2024-04-10T18:00:00-03:00", "endDateTime": null, "organizer": "Colegio de Abogados", "location": null, "meetingLink": null, "instructor": "Dr. Martinez", "topic": "Derecho Laboral"}, "deliveryInfo": null, "appointmentInfo": null, "meetingInfo": null, "purchaseInfo": null, "flightInfo": null, "legalHearingInfo": null, "securityInfo": null, "deadlineInfo": null, "taskInfo": null, "legalInfoData": null, "eventInfo": null, "shouldCreateReminder": true, "suggestedReminderDateTime": "2024-04-10T17:00:00-03:00", "suggestedReminderText": "Curso Derecho Laboral en 1 hora - via Zoom"}
 
 Email de tarea: "Hola, necesito que prepares el escrito de contestacion para el expediente Garcia c/ Lopez. Seria para el viernes."
--> {"type": "TASK", "confidence": 0.85, "summary": "Preparar escrito contestacion - Garcia c/ Lopez", "taskInfo": {"title": "Preparar escrito de contestacion", "dueDate": null, "assignedBy": null, "priority": null, "relatedCase": "Garcia c/ Lopez", "details": "Para el viernes"}, "deliveryInfo": null, "appointmentInfo": null, "meetingInfo": null, "purchaseInfo": null, "flightInfo": null, "legalHearingInfo": null, "deadlineInfo": null, "courseInfo": null, "legalInfoData": null, "eventInfo": null, "shouldCreateReminder": true, "suggestedReminderDateTime": "{{tomorrowAt9AM}}", "suggestedReminderText": "TAREA: Preparar escrito contestacion Garcia c/ Lopez"}
+-> {"type": "TASK", "confidence": 0.85, "summary": "Preparar escrito contestacion - Garcia c/ Lopez", "taskInfo": {"title": "Preparar escrito de contestacion", "dueDate": null, "assignedBy": null, "priority": null, "relatedCase": "Garcia c/ Lopez", "details": "Para el viernes"}, "deliveryInfo": null, "appointmentInfo": null, "meetingInfo": null, "purchaseInfo": null, "flightInfo": null, "legalHearingInfo": null, "securityInfo": null, "deadlineInfo": null, "courseInfo": null, "legalInfoData": null, "eventInfo": null, "shouldCreateReminder": true, "suggestedReminderDateTime": "{{tomorrowAt9AM}}", "suggestedReminderText": "TAREA: Preparar escrito contestacion Garcia c/ Lopez"}
 
 Email de jurisprudencia: "CSJN - Nuevo fallo: Rodriguez c/ Estado Nacional. Se establece doctrina sobre responsabilidad del Estado..."
--> {"type": "LEGAL_INFO", "confidence": 0.90, "summary": "Fallo CSJN - Rodriguez c/ Estado Nacional", "legalInfoData": {"title": "Rodriguez c/ Estado Nacional", "source": "CSJN", "date": null, "caseNumber": null, "summary": "Doctrina sobre responsabilidad del Estado", "relevance": "Nueva doctrina", "link": null}, "deliveryInfo": null, "appointmentInfo": null, "meetingInfo": null, "purchaseInfo": null, "flightInfo": null, "legalHearingInfo": null, "deadlineInfo": null, "courseInfo": null, "taskInfo": null, "eventInfo": null, "shouldCreateReminder": true, "suggestedReminderDateTime": "{{tomorrowAt10AM}}", "suggestedReminderText": "Revisar fallo CSJN: Rodriguez c/ Estado Nacional"}
+-> {"type": "LEGAL_INFO", "confidence": 0.90, "summary": "Fallo CSJN - Rodriguez c/ Estado Nacional", "legalInfoData": {"title": "Rodriguez c/ Estado Nacional", "source": "CSJN", "date": null, "caseNumber": null, "summary": "Doctrina sobre responsabilidad del Estado", "relevance": "Nueva doctrina", "link": null}, "deliveryInfo": null, "appointmentInfo": null, "meetingInfo": null, "purchaseInfo": null, "flightInfo": null, "legalHearingInfo": null, "securityInfo": null, "deadlineInfo": null, "courseInfo": null, "taskInfo": null, "eventInfo": null, "shouldCreateReminder": true, "suggestedReminderDateTime": "{{tomorrowAt10AM}}", "suggestedReminderText": "Revisar fallo CSJN: Rodriguez c/ Estado Nacional"}
 
 Email de Zoom: "Te invito a la reunion de seguimiento del caso Martinez. Fecha: 5 de marzo 2024 a las 15:00. Link: https://zoom.us/j/123456"
--> {"type": "MEETING", "confidence": 0.95, "summary": "Reunion seguimiento caso Martinez via Zoom", "meetingInfo": {"title": "Reunion seguimiento caso Martinez", "dateTime": "2024-03-05T15:00:00-03:00", "organizer": null, "location": null, "meetingLink": "https://zoom.us/j/123456"}, "deliveryInfo": null, "appointmentInfo": null, "purchaseInfo": null, "flightInfo": null, "legalHearingInfo": null, "deadlineInfo": null, "courseInfo": null, "taskInfo": null, "legalInfoData": null, "eventInfo": null, "shouldCreateReminder": true, "suggestedReminderDateTime": "2024-03-05T14:45:00-03:00", "suggestedReminderText": "Reunion en 15 min: Seguimiento caso Martinez"}
+-> {"type": "MEETING", "confidence": 0.95, "summary": "Reunion seguimiento caso Martinez via Zoom", "meetingInfo": {"title": "Reunion seguimiento caso Martinez", "dateTime": "2024-03-05T15:00:00-03:00", "organizer": null, "location": null, "meetingLink": "https://zoom.us/j/123456"}, "deliveryInfo": null, "appointmentInfo": null, "purchaseInfo": null, "flightInfo": null, "legalHearingInfo": null, "securityInfo": null, "deadlineInfo": null, "courseInfo": null, "taskInfo": null, "legalInfoData": null, "eventInfo": null, "shouldCreateReminder": true, "suggestedReminderDateTime": "2024-03-05T14:45:00-03:00", "suggestedReminderText": "Reunion en 15 min: Seguimiento caso Martinez"}
 
 Email de MercadoLibre: "Tu pedido de Auriculares Bluetooth esta en camino. Llega el 15 de febrero. Enviado por OCA."
--> {"type": "DELIVERY", "confidence": 0.95, "summary": "Envio de auriculares por OCA", "deliveryInfo": {"carrier": "OCA", "trackingNumber": null, "estimatedDelivery": "2024-02-15T00:00:00-03:00", "itemDescription": "Auriculares Bluetooth"}, "appointmentInfo": null, "meetingInfo": null, "purchaseInfo": null, "flightInfo": null, "legalHearingInfo": null, "deadlineInfo": null, "courseInfo": null, "taskInfo": null, "legalInfoData": null, "eventInfo": null, "shouldCreateReminder": true, "suggestedReminderDateTime": "2024-02-15T10:00:00-03:00", "suggestedReminderText": "Hoy llega tu pedido de MercadoLibre (auriculares)"}
+-> {"type": "DELIVERY", "confidence": 0.95, "summary": "Envio de auriculares por OCA", "deliveryInfo": {"carrier": "OCA", "trackingNumber": null, "estimatedDelivery": "2024-02-15T00:00:00-03:00", "itemDescription": "Auriculares Bluetooth"}, "appointmentInfo": null, "meetingInfo": null, "purchaseInfo": null, "flightInfo": null, "legalHearingInfo": null, "securityInfo": null, "deadlineInfo": null, "courseInfo": null, "taskInfo": null, "legalInfoData": null, "eventInfo": null, "shouldCreateReminder": true, "suggestedReminderDateTime": "2024-02-15T10:00:00-03:00", "suggestedReminderText": "Hoy llega tu pedido de MercadoLibre (auriculares)"}
 
 Email de promocion: "50% OFF en toda la tienda! Solo por hoy."
--> {"type": "OTHER", "confidence": 0.90, "summary": "Promocion de tienda", "deliveryInfo": null, "appointmentInfo": null, "meetingInfo": null, "purchaseInfo": null, "flightInfo": null, "legalHearingInfo": null, "deadlineInfo": null, "courseInfo": null, "taskInfo": null, "legalInfoData": null, "eventInfo": null, "shouldCreateReminder": false, "suggestedReminderDateTime": null, "suggestedReminderText": null}`;
+-> {"type": "OTHER", "confidence": 0.90, "summary": "Promocion de tienda", "deliveryInfo": null, "appointmentInfo": null, "meetingInfo": null, "purchaseInfo": null, "flightInfo": null, "legalHearingInfo": null, "securityInfo": null, "deadlineInfo": null, "courseInfo": null, "taskInfo": null, "legalInfoData": null, "eventInfo": null, "shouldCreateReminder": false, "suggestedReminderDateTime": null, "suggestedReminderText": null}`;
 
 export function buildEmailAnalysisPrompt(): string {
   const now = new Date();

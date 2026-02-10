@@ -25,21 +25,42 @@ export type AggregateUser = {
 
 export type UserMinAggregateOutputType = {
   id: string | null;
+  email: string | null;
+  emailVerified: Date | null;
+  passwordHash: string | null;
+  name: string | null;
+  image: string | null;
+  role: $Enums.UserRole | null;
   chatId: string | null;
+  locale: string | null;
   createdAt: Date | null;
   updatedAt: Date | null;
 };
 
 export type UserMaxAggregateOutputType = {
   id: string | null;
+  email: string | null;
+  emailVerified: Date | null;
+  passwordHash: string | null;
+  name: string | null;
+  image: string | null;
+  role: $Enums.UserRole | null;
   chatId: string | null;
+  locale: string | null;
   createdAt: Date | null;
   updatedAt: Date | null;
 };
 
 export type UserCountAggregateOutputType = {
   id: number;
+  email: number;
+  emailVerified: number;
+  passwordHash: number;
+  name: number;
+  image: number;
+  role: number;
   chatId: number;
+  locale: number;
   createdAt: number;
   updatedAt: number;
   _all: number;
@@ -47,21 +68,42 @@ export type UserCountAggregateOutputType = {
 
 export type UserMinAggregateInputType = {
   id?: true;
+  email?: true;
+  emailVerified?: true;
+  passwordHash?: true;
+  name?: true;
+  image?: true;
+  role?: true;
   chatId?: true;
+  locale?: true;
   createdAt?: true;
   updatedAt?: true;
 };
 
 export type UserMaxAggregateInputType = {
   id?: true;
+  email?: true;
+  emailVerified?: true;
+  passwordHash?: true;
+  name?: true;
+  image?: true;
+  role?: true;
   chatId?: true;
+  locale?: true;
   createdAt?: true;
   updatedAt?: true;
 };
 
 export type UserCountAggregateInputType = {
   id?: true;
+  email?: true;
+  emailVerified?: true;
+  passwordHash?: true;
+  name?: true;
+  image?: true;
+  role?: true;
   chatId?: true;
+  locale?: true;
   createdAt?: true;
   updatedAt?: true;
   _all?: true;
@@ -142,7 +184,14 @@ export type UserGroupByArgs<
 
 export type UserGroupByOutputType = {
   id: string;
-  chatId: string;
+  email: string | null;
+  emailVerified: Date | null;
+  passwordHash: string | null;
+  name: string | null;
+  image: string | null;
+  role: $Enums.UserRole;
+  chatId: string | null;
+  locale: string;
   createdAt: Date;
   updatedAt: Date;
   _count: UserCountAggregateOutputType | null;
@@ -167,9 +216,23 @@ export type UserWhereInput = {
   OR?: Prisma.UserWhereInput[];
   NOT?: Prisma.UserWhereInput | Prisma.UserWhereInput[];
   id?: Prisma.StringFilter<"User"> | string;
-  chatId?: Prisma.StringFilter<"User"> | string;
+  email?: Prisma.StringNullableFilter<"User"> | string | null;
+  emailVerified?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null;
+  passwordHash?: Prisma.StringNullableFilter<"User"> | string | null;
+  name?: Prisma.StringNullableFilter<"User"> | string | null;
+  image?: Prisma.StringNullableFilter<"User"> | string | null;
+  role?: Prisma.EnumUserRoleFilter<"User"> | $Enums.UserRole;
+  chatId?: Prisma.StringNullableFilter<"User"> | string | null;
+  locale?: Prisma.StringFilter<"User"> | string;
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string;
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string;
+  accounts?: Prisma.AccountListRelationFilter;
+  sessions?: Prisma.SessionListRelationFilter;
+  reminders?: Prisma.ReminderListRelationFilter;
+  subscription?: Prisma.XOR<
+    Prisma.SubscriptionNullableScalarRelationFilter,
+    Prisma.SubscriptionWhereInput
+  > | null;
   emailToken?: Prisma.XOR<
     Prisma.EmailTokenNullableScalarRelationFilter,
     Prisma.EmailTokenWhereInput
@@ -179,9 +242,20 @@ export type UserWhereInput = {
 
 export type UserOrderByWithRelationInput = {
   id?: Prisma.SortOrder;
-  chatId?: Prisma.SortOrder;
+  email?: Prisma.SortOrderInput | Prisma.SortOrder;
+  emailVerified?: Prisma.SortOrderInput | Prisma.SortOrder;
+  passwordHash?: Prisma.SortOrderInput | Prisma.SortOrder;
+  name?: Prisma.SortOrderInput | Prisma.SortOrder;
+  image?: Prisma.SortOrderInput | Prisma.SortOrder;
+  role?: Prisma.SortOrder;
+  chatId?: Prisma.SortOrderInput | Prisma.SortOrder;
+  locale?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
   updatedAt?: Prisma.SortOrder;
+  accounts?: Prisma.AccountOrderByRelationAggregateInput;
+  sessions?: Prisma.SessionOrderByRelationAggregateInput;
+  reminders?: Prisma.ReminderOrderByRelationAggregateInput;
+  subscription?: Prisma.SubscriptionOrderByWithRelationInput;
   emailToken?: Prisma.EmailTokenOrderByWithRelationInput;
   processedEmails?: Prisma.ProcessedEmailOrderByRelationAggregateInput;
 };
@@ -189,24 +263,45 @@ export type UserOrderByWithRelationInput = {
 export type UserWhereUniqueInput = Prisma.AtLeast<
   {
     id?: string;
+    email?: string;
     chatId?: string;
     AND?: Prisma.UserWhereInput | Prisma.UserWhereInput[];
     OR?: Prisma.UserWhereInput[];
     NOT?: Prisma.UserWhereInput | Prisma.UserWhereInput[];
+    emailVerified?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null;
+    passwordHash?: Prisma.StringNullableFilter<"User"> | string | null;
+    name?: Prisma.StringNullableFilter<"User"> | string | null;
+    image?: Prisma.StringNullableFilter<"User"> | string | null;
+    role?: Prisma.EnumUserRoleFilter<"User"> | $Enums.UserRole;
+    locale?: Prisma.StringFilter<"User"> | string;
     createdAt?: Prisma.DateTimeFilter<"User"> | Date | string;
     updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string;
+    accounts?: Prisma.AccountListRelationFilter;
+    sessions?: Prisma.SessionListRelationFilter;
+    reminders?: Prisma.ReminderListRelationFilter;
+    subscription?: Prisma.XOR<
+      Prisma.SubscriptionNullableScalarRelationFilter,
+      Prisma.SubscriptionWhereInput
+    > | null;
     emailToken?: Prisma.XOR<
       Prisma.EmailTokenNullableScalarRelationFilter,
       Prisma.EmailTokenWhereInput
     > | null;
     processedEmails?: Prisma.ProcessedEmailListRelationFilter;
   },
-  "id" | "chatId"
+  "id" | "email" | "chatId"
 >;
 
 export type UserOrderByWithAggregationInput = {
   id?: Prisma.SortOrder;
-  chatId?: Prisma.SortOrder;
+  email?: Prisma.SortOrderInput | Prisma.SortOrder;
+  emailVerified?: Prisma.SortOrderInput | Prisma.SortOrder;
+  passwordHash?: Prisma.SortOrderInput | Prisma.SortOrder;
+  name?: Prisma.SortOrderInput | Prisma.SortOrder;
+  image?: Prisma.SortOrderInput | Prisma.SortOrder;
+  role?: Prisma.SortOrder;
+  chatId?: Prisma.SortOrderInput | Prisma.SortOrder;
+  locale?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
   updatedAt?: Prisma.SortOrder;
   _count?: Prisma.UserCountOrderByAggregateInput;
@@ -219,85 +314,178 @@ export type UserScalarWhereWithAggregatesInput = {
   OR?: Prisma.UserScalarWhereWithAggregatesInput[];
   NOT?: Prisma.UserScalarWhereWithAggregatesInput | Prisma.UserScalarWhereWithAggregatesInput[];
   id?: Prisma.StringWithAggregatesFilter<"User"> | string;
-  chatId?: Prisma.StringWithAggregatesFilter<"User"> | string;
+  email?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null;
+  emailVerified?: Prisma.DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null;
+  passwordHash?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null;
+  name?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null;
+  image?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null;
+  role?: Prisma.EnumUserRoleWithAggregatesFilter<"User"> | $Enums.UserRole;
+  chatId?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null;
+  locale?: Prisma.StringWithAggregatesFilter<"User"> | string;
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string;
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string;
 };
 
 export type UserCreateInput = {
   id?: string;
-  chatId: string;
+  email?: string | null;
+  emailVerified?: Date | string | null;
+  passwordHash?: string | null;
+  name?: string | null;
+  image?: string | null;
+  role?: $Enums.UserRole;
+  chatId?: string | null;
+  locale?: string;
   createdAt?: Date | string;
   updatedAt?: Date | string;
+  accounts?: Prisma.AccountCreateNestedManyWithoutUserInput;
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput;
+  reminders?: Prisma.ReminderCreateNestedManyWithoutUserInput;
+  subscription?: Prisma.SubscriptionCreateNestedOneWithoutUserInput;
   emailToken?: Prisma.EmailTokenCreateNestedOneWithoutUserInput;
   processedEmails?: Prisma.ProcessedEmailCreateNestedManyWithoutUserInput;
 };
 
 export type UserUncheckedCreateInput = {
   id?: string;
-  chatId: string;
+  email?: string | null;
+  emailVerified?: Date | string | null;
+  passwordHash?: string | null;
+  name?: string | null;
+  image?: string | null;
+  role?: $Enums.UserRole;
+  chatId?: string | null;
+  locale?: string;
   createdAt?: Date | string;
   updatedAt?: Date | string;
+  accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput;
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput;
+  reminders?: Prisma.ReminderUncheckedCreateNestedManyWithoutUserInput;
+  subscription?: Prisma.SubscriptionUncheckedCreateNestedOneWithoutUserInput;
   emailToken?: Prisma.EmailTokenUncheckedCreateNestedOneWithoutUserInput;
   processedEmails?: Prisma.ProcessedEmailUncheckedCreateNestedManyWithoutUserInput;
 };
 
 export type UserUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
-  chatId?: Prisma.StringFieldUpdateOperationsInput | string;
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole;
+  chatId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  locale?: Prisma.StringFieldUpdateOperationsInput | string;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput;
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput;
+  reminders?: Prisma.ReminderUpdateManyWithoutUserNestedInput;
+  subscription?: Prisma.SubscriptionUpdateOneWithoutUserNestedInput;
   emailToken?: Prisma.EmailTokenUpdateOneWithoutUserNestedInput;
   processedEmails?: Prisma.ProcessedEmailUpdateManyWithoutUserNestedInput;
 };
 
 export type UserUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
-  chatId?: Prisma.StringFieldUpdateOperationsInput | string;
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole;
+  chatId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  locale?: Prisma.StringFieldUpdateOperationsInput | string;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput;
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput;
+  reminders?: Prisma.ReminderUncheckedUpdateManyWithoutUserNestedInput;
+  subscription?: Prisma.SubscriptionUncheckedUpdateOneWithoutUserNestedInput;
   emailToken?: Prisma.EmailTokenUncheckedUpdateOneWithoutUserNestedInput;
   processedEmails?: Prisma.ProcessedEmailUncheckedUpdateManyWithoutUserNestedInput;
 };
 
 export type UserCreateManyInput = {
   id?: string;
-  chatId: string;
+  email?: string | null;
+  emailVerified?: Date | string | null;
+  passwordHash?: string | null;
+  name?: string | null;
+  image?: string | null;
+  role?: $Enums.UserRole;
+  chatId?: string | null;
+  locale?: string;
   createdAt?: Date | string;
   updatedAt?: Date | string;
 };
 
 export type UserUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
-  chatId?: Prisma.StringFieldUpdateOperationsInput | string;
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole;
+  chatId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  locale?: Prisma.StringFieldUpdateOperationsInput | string;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
 export type UserUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
-  chatId?: Prisma.StringFieldUpdateOperationsInput | string;
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole;
+  chatId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  locale?: Prisma.StringFieldUpdateOperationsInput | string;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
 export type UserCountOrderByAggregateInput = {
   id?: Prisma.SortOrder;
+  email?: Prisma.SortOrder;
+  emailVerified?: Prisma.SortOrder;
+  passwordHash?: Prisma.SortOrder;
+  name?: Prisma.SortOrder;
+  image?: Prisma.SortOrder;
+  role?: Prisma.SortOrder;
   chatId?: Prisma.SortOrder;
+  locale?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
   updatedAt?: Prisma.SortOrder;
 };
 
 export type UserMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder;
+  email?: Prisma.SortOrder;
+  emailVerified?: Prisma.SortOrder;
+  passwordHash?: Prisma.SortOrder;
+  name?: Prisma.SortOrder;
+  image?: Prisma.SortOrder;
+  role?: Prisma.SortOrder;
   chatId?: Prisma.SortOrder;
+  locale?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
   updatedAt?: Prisma.SortOrder;
 };
 
 export type UserMinOrderByAggregateInput = {
   id?: Prisma.SortOrder;
+  email?: Prisma.SortOrder;
+  emailVerified?: Prisma.SortOrder;
+  passwordHash?: Prisma.SortOrder;
+  name?: Prisma.SortOrder;
+  image?: Prisma.SortOrder;
+  role?: Prisma.SortOrder;
   chatId?: Prisma.SortOrder;
+  locale?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
   updatedAt?: Prisma.SortOrder;
 };
@@ -305,6 +493,137 @@ export type UserMinOrderByAggregateInput = {
 export type UserScalarRelationFilter = {
   is?: Prisma.UserWhereInput;
   isNot?: Prisma.UserWhereInput;
+};
+
+export type UserNullableScalarRelationFilter = {
+  is?: Prisma.UserWhereInput | null;
+  isNot?: Prisma.UserWhereInput | null;
+};
+
+export type StringFieldUpdateOperationsInput = {
+  set?: string;
+};
+
+export type NullableStringFieldUpdateOperationsInput = {
+  set?: string | null;
+};
+
+export type NullableDateTimeFieldUpdateOperationsInput = {
+  set?: Date | string | null;
+};
+
+export type EnumUserRoleFieldUpdateOperationsInput = {
+  set?: $Enums.UserRole;
+};
+
+export type DateTimeFieldUpdateOperationsInput = {
+  set?: Date | string;
+};
+
+export type UserCreateNestedOneWithoutAccountsInput = {
+  create?: Prisma.XOR<
+    Prisma.UserCreateWithoutAccountsInput,
+    Prisma.UserUncheckedCreateWithoutAccountsInput
+  >;
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutAccountsInput;
+  connect?: Prisma.UserWhereUniqueInput;
+};
+
+export type UserUpdateOneRequiredWithoutAccountsNestedInput = {
+  create?: Prisma.XOR<
+    Prisma.UserCreateWithoutAccountsInput,
+    Prisma.UserUncheckedCreateWithoutAccountsInput
+  >;
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutAccountsInput;
+  upsert?: Prisma.UserUpsertWithoutAccountsInput;
+  connect?: Prisma.UserWhereUniqueInput;
+  update?: Prisma.XOR<
+    Prisma.XOR<
+      Prisma.UserUpdateToOneWithWhereWithoutAccountsInput,
+      Prisma.UserUpdateWithoutAccountsInput
+    >,
+    Prisma.UserUncheckedUpdateWithoutAccountsInput
+  >;
+};
+
+export type UserCreateNestedOneWithoutSessionsInput = {
+  create?: Prisma.XOR<
+    Prisma.UserCreateWithoutSessionsInput,
+    Prisma.UserUncheckedCreateWithoutSessionsInput
+  >;
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutSessionsInput;
+  connect?: Prisma.UserWhereUniqueInput;
+};
+
+export type UserUpdateOneRequiredWithoutSessionsNestedInput = {
+  create?: Prisma.XOR<
+    Prisma.UserCreateWithoutSessionsInput,
+    Prisma.UserUncheckedCreateWithoutSessionsInput
+  >;
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutSessionsInput;
+  upsert?: Prisma.UserUpsertWithoutSessionsInput;
+  connect?: Prisma.UserWhereUniqueInput;
+  update?: Prisma.XOR<
+    Prisma.XOR<
+      Prisma.UserUpdateToOneWithWhereWithoutSessionsInput,
+      Prisma.UserUpdateWithoutSessionsInput
+    >,
+    Prisma.UserUncheckedUpdateWithoutSessionsInput
+  >;
+};
+
+export type UserCreateNestedOneWithoutSubscriptionInput = {
+  create?: Prisma.XOR<
+    Prisma.UserCreateWithoutSubscriptionInput,
+    Prisma.UserUncheckedCreateWithoutSubscriptionInput
+  >;
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutSubscriptionInput;
+  connect?: Prisma.UserWhereUniqueInput;
+};
+
+export type UserUpdateOneRequiredWithoutSubscriptionNestedInput = {
+  create?: Prisma.XOR<
+    Prisma.UserCreateWithoutSubscriptionInput,
+    Prisma.UserUncheckedCreateWithoutSubscriptionInput
+  >;
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutSubscriptionInput;
+  upsert?: Prisma.UserUpsertWithoutSubscriptionInput;
+  connect?: Prisma.UserWhereUniqueInput;
+  update?: Prisma.XOR<
+    Prisma.XOR<
+      Prisma.UserUpdateToOneWithWhereWithoutSubscriptionInput,
+      Prisma.UserUpdateWithoutSubscriptionInput
+    >,
+    Prisma.UserUncheckedUpdateWithoutSubscriptionInput
+  >;
+};
+
+export type UserCreateNestedOneWithoutRemindersInput = {
+  create?: Prisma.XOR<
+    Prisma.UserCreateWithoutRemindersInput,
+    Prisma.UserUncheckedCreateWithoutRemindersInput
+  >;
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutRemindersInput;
+  connect?: Prisma.UserWhereUniqueInput;
+};
+
+export type UserUpdateOneWithoutRemindersNestedInput = {
+  create?: Prisma.XOR<
+    Prisma.UserCreateWithoutRemindersInput,
+    Prisma.UserUncheckedCreateWithoutRemindersInput
+  >;
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutRemindersInput;
+  upsert?: Prisma.UserUpsertWithoutRemindersInput;
+  disconnect?: Prisma.UserWhereInput | boolean;
+  delete?: Prisma.UserWhereInput | boolean;
+  connect?: Prisma.UserWhereUniqueInput;
+  update?: Prisma.XOR<
+    Prisma.XOR<
+      Prisma.UserUpdateToOneWithWhereWithoutRemindersInput,
+      Prisma.UserUpdateWithoutRemindersInput
+    >,
+    Prisma.UserUncheckedUpdateWithoutRemindersInput
+  >;
 };
 
 export type UserCreateNestedOneWithoutEmailTokenInput = {
@@ -359,19 +678,457 @@ export type UserUpdateOneRequiredWithoutProcessedEmailsNestedInput = {
   >;
 };
 
-export type UserCreateWithoutEmailTokenInput = {
+export type UserCreateWithoutAccountsInput = {
   id?: string;
-  chatId: string;
+  email?: string | null;
+  emailVerified?: Date | string | null;
+  passwordHash?: string | null;
+  name?: string | null;
+  image?: string | null;
+  role?: $Enums.UserRole;
+  chatId?: string | null;
+  locale?: string;
   createdAt?: Date | string;
   updatedAt?: Date | string;
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput;
+  reminders?: Prisma.ReminderCreateNestedManyWithoutUserInput;
+  subscription?: Prisma.SubscriptionCreateNestedOneWithoutUserInput;
+  emailToken?: Prisma.EmailTokenCreateNestedOneWithoutUserInput;
+  processedEmails?: Prisma.ProcessedEmailCreateNestedManyWithoutUserInput;
+};
+
+export type UserUncheckedCreateWithoutAccountsInput = {
+  id?: string;
+  email?: string | null;
+  emailVerified?: Date | string | null;
+  passwordHash?: string | null;
+  name?: string | null;
+  image?: string | null;
+  role?: $Enums.UserRole;
+  chatId?: string | null;
+  locale?: string;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput;
+  reminders?: Prisma.ReminderUncheckedCreateNestedManyWithoutUserInput;
+  subscription?: Prisma.SubscriptionUncheckedCreateNestedOneWithoutUserInput;
+  emailToken?: Prisma.EmailTokenUncheckedCreateNestedOneWithoutUserInput;
+  processedEmails?: Prisma.ProcessedEmailUncheckedCreateNestedManyWithoutUserInput;
+};
+
+export type UserCreateOrConnectWithoutAccountsInput = {
+  where: Prisma.UserWhereUniqueInput;
+  create: Prisma.XOR<
+    Prisma.UserCreateWithoutAccountsInput,
+    Prisma.UserUncheckedCreateWithoutAccountsInput
+  >;
+};
+
+export type UserUpsertWithoutAccountsInput = {
+  update: Prisma.XOR<
+    Prisma.UserUpdateWithoutAccountsInput,
+    Prisma.UserUncheckedUpdateWithoutAccountsInput
+  >;
+  create: Prisma.XOR<
+    Prisma.UserCreateWithoutAccountsInput,
+    Prisma.UserUncheckedCreateWithoutAccountsInput
+  >;
+  where?: Prisma.UserWhereInput;
+};
+
+export type UserUpdateToOneWithWhereWithoutAccountsInput = {
+  where?: Prisma.UserWhereInput;
+  data: Prisma.XOR<
+    Prisma.UserUpdateWithoutAccountsInput,
+    Prisma.UserUncheckedUpdateWithoutAccountsInput
+  >;
+};
+
+export type UserUpdateWithoutAccountsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole;
+  chatId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  locale?: Prisma.StringFieldUpdateOperationsInput | string;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput;
+  reminders?: Prisma.ReminderUpdateManyWithoutUserNestedInput;
+  subscription?: Prisma.SubscriptionUpdateOneWithoutUserNestedInput;
+  emailToken?: Prisma.EmailTokenUpdateOneWithoutUserNestedInput;
+  processedEmails?: Prisma.ProcessedEmailUpdateManyWithoutUserNestedInput;
+};
+
+export type UserUncheckedUpdateWithoutAccountsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole;
+  chatId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  locale?: Prisma.StringFieldUpdateOperationsInput | string;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput;
+  reminders?: Prisma.ReminderUncheckedUpdateManyWithoutUserNestedInput;
+  subscription?: Prisma.SubscriptionUncheckedUpdateOneWithoutUserNestedInput;
+  emailToken?: Prisma.EmailTokenUncheckedUpdateOneWithoutUserNestedInput;
+  processedEmails?: Prisma.ProcessedEmailUncheckedUpdateManyWithoutUserNestedInput;
+};
+
+export type UserCreateWithoutSessionsInput = {
+  id?: string;
+  email?: string | null;
+  emailVerified?: Date | string | null;
+  passwordHash?: string | null;
+  name?: string | null;
+  image?: string | null;
+  role?: $Enums.UserRole;
+  chatId?: string | null;
+  locale?: string;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  accounts?: Prisma.AccountCreateNestedManyWithoutUserInput;
+  reminders?: Prisma.ReminderCreateNestedManyWithoutUserInput;
+  subscription?: Prisma.SubscriptionCreateNestedOneWithoutUserInput;
+  emailToken?: Prisma.EmailTokenCreateNestedOneWithoutUserInput;
+  processedEmails?: Prisma.ProcessedEmailCreateNestedManyWithoutUserInput;
+};
+
+export type UserUncheckedCreateWithoutSessionsInput = {
+  id?: string;
+  email?: string | null;
+  emailVerified?: Date | string | null;
+  passwordHash?: string | null;
+  name?: string | null;
+  image?: string | null;
+  role?: $Enums.UserRole;
+  chatId?: string | null;
+  locale?: string;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput;
+  reminders?: Prisma.ReminderUncheckedCreateNestedManyWithoutUserInput;
+  subscription?: Prisma.SubscriptionUncheckedCreateNestedOneWithoutUserInput;
+  emailToken?: Prisma.EmailTokenUncheckedCreateNestedOneWithoutUserInput;
+  processedEmails?: Prisma.ProcessedEmailUncheckedCreateNestedManyWithoutUserInput;
+};
+
+export type UserCreateOrConnectWithoutSessionsInput = {
+  where: Prisma.UserWhereUniqueInput;
+  create: Prisma.XOR<
+    Prisma.UserCreateWithoutSessionsInput,
+    Prisma.UserUncheckedCreateWithoutSessionsInput
+  >;
+};
+
+export type UserUpsertWithoutSessionsInput = {
+  update: Prisma.XOR<
+    Prisma.UserUpdateWithoutSessionsInput,
+    Prisma.UserUncheckedUpdateWithoutSessionsInput
+  >;
+  create: Prisma.XOR<
+    Prisma.UserCreateWithoutSessionsInput,
+    Prisma.UserUncheckedCreateWithoutSessionsInput
+  >;
+  where?: Prisma.UserWhereInput;
+};
+
+export type UserUpdateToOneWithWhereWithoutSessionsInput = {
+  where?: Prisma.UserWhereInput;
+  data: Prisma.XOR<
+    Prisma.UserUpdateWithoutSessionsInput,
+    Prisma.UserUncheckedUpdateWithoutSessionsInput
+  >;
+};
+
+export type UserUpdateWithoutSessionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole;
+  chatId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  locale?: Prisma.StringFieldUpdateOperationsInput | string;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput;
+  reminders?: Prisma.ReminderUpdateManyWithoutUserNestedInput;
+  subscription?: Prisma.SubscriptionUpdateOneWithoutUserNestedInput;
+  emailToken?: Prisma.EmailTokenUpdateOneWithoutUserNestedInput;
+  processedEmails?: Prisma.ProcessedEmailUpdateManyWithoutUserNestedInput;
+};
+
+export type UserUncheckedUpdateWithoutSessionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole;
+  chatId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  locale?: Prisma.StringFieldUpdateOperationsInput | string;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput;
+  reminders?: Prisma.ReminderUncheckedUpdateManyWithoutUserNestedInput;
+  subscription?: Prisma.SubscriptionUncheckedUpdateOneWithoutUserNestedInput;
+  emailToken?: Prisma.EmailTokenUncheckedUpdateOneWithoutUserNestedInput;
+  processedEmails?: Prisma.ProcessedEmailUncheckedUpdateManyWithoutUserNestedInput;
+};
+
+export type UserCreateWithoutSubscriptionInput = {
+  id?: string;
+  email?: string | null;
+  emailVerified?: Date | string | null;
+  passwordHash?: string | null;
+  name?: string | null;
+  image?: string | null;
+  role?: $Enums.UserRole;
+  chatId?: string | null;
+  locale?: string;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  accounts?: Prisma.AccountCreateNestedManyWithoutUserInput;
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput;
+  reminders?: Prisma.ReminderCreateNestedManyWithoutUserInput;
+  emailToken?: Prisma.EmailTokenCreateNestedOneWithoutUserInput;
+  processedEmails?: Prisma.ProcessedEmailCreateNestedManyWithoutUserInput;
+};
+
+export type UserUncheckedCreateWithoutSubscriptionInput = {
+  id?: string;
+  email?: string | null;
+  emailVerified?: Date | string | null;
+  passwordHash?: string | null;
+  name?: string | null;
+  image?: string | null;
+  role?: $Enums.UserRole;
+  chatId?: string | null;
+  locale?: string;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput;
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput;
+  reminders?: Prisma.ReminderUncheckedCreateNestedManyWithoutUserInput;
+  emailToken?: Prisma.EmailTokenUncheckedCreateNestedOneWithoutUserInput;
+  processedEmails?: Prisma.ProcessedEmailUncheckedCreateNestedManyWithoutUserInput;
+};
+
+export type UserCreateOrConnectWithoutSubscriptionInput = {
+  where: Prisma.UserWhereUniqueInput;
+  create: Prisma.XOR<
+    Prisma.UserCreateWithoutSubscriptionInput,
+    Prisma.UserUncheckedCreateWithoutSubscriptionInput
+  >;
+};
+
+export type UserUpsertWithoutSubscriptionInput = {
+  update: Prisma.XOR<
+    Prisma.UserUpdateWithoutSubscriptionInput,
+    Prisma.UserUncheckedUpdateWithoutSubscriptionInput
+  >;
+  create: Prisma.XOR<
+    Prisma.UserCreateWithoutSubscriptionInput,
+    Prisma.UserUncheckedCreateWithoutSubscriptionInput
+  >;
+  where?: Prisma.UserWhereInput;
+};
+
+export type UserUpdateToOneWithWhereWithoutSubscriptionInput = {
+  where?: Prisma.UserWhereInput;
+  data: Prisma.XOR<
+    Prisma.UserUpdateWithoutSubscriptionInput,
+    Prisma.UserUncheckedUpdateWithoutSubscriptionInput
+  >;
+};
+
+export type UserUpdateWithoutSubscriptionInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole;
+  chatId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  locale?: Prisma.StringFieldUpdateOperationsInput | string;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput;
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput;
+  reminders?: Prisma.ReminderUpdateManyWithoutUserNestedInput;
+  emailToken?: Prisma.EmailTokenUpdateOneWithoutUserNestedInput;
+  processedEmails?: Prisma.ProcessedEmailUpdateManyWithoutUserNestedInput;
+};
+
+export type UserUncheckedUpdateWithoutSubscriptionInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole;
+  chatId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  locale?: Prisma.StringFieldUpdateOperationsInput | string;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput;
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput;
+  reminders?: Prisma.ReminderUncheckedUpdateManyWithoutUserNestedInput;
+  emailToken?: Prisma.EmailTokenUncheckedUpdateOneWithoutUserNestedInput;
+  processedEmails?: Prisma.ProcessedEmailUncheckedUpdateManyWithoutUserNestedInput;
+};
+
+export type UserCreateWithoutRemindersInput = {
+  id?: string;
+  email?: string | null;
+  emailVerified?: Date | string | null;
+  passwordHash?: string | null;
+  name?: string | null;
+  image?: string | null;
+  role?: $Enums.UserRole;
+  chatId?: string | null;
+  locale?: string;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  accounts?: Prisma.AccountCreateNestedManyWithoutUserInput;
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput;
+  subscription?: Prisma.SubscriptionCreateNestedOneWithoutUserInput;
+  emailToken?: Prisma.EmailTokenCreateNestedOneWithoutUserInput;
+  processedEmails?: Prisma.ProcessedEmailCreateNestedManyWithoutUserInput;
+};
+
+export type UserUncheckedCreateWithoutRemindersInput = {
+  id?: string;
+  email?: string | null;
+  emailVerified?: Date | string | null;
+  passwordHash?: string | null;
+  name?: string | null;
+  image?: string | null;
+  role?: $Enums.UserRole;
+  chatId?: string | null;
+  locale?: string;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput;
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput;
+  subscription?: Prisma.SubscriptionUncheckedCreateNestedOneWithoutUserInput;
+  emailToken?: Prisma.EmailTokenUncheckedCreateNestedOneWithoutUserInput;
+  processedEmails?: Prisma.ProcessedEmailUncheckedCreateNestedManyWithoutUserInput;
+};
+
+export type UserCreateOrConnectWithoutRemindersInput = {
+  where: Prisma.UserWhereUniqueInput;
+  create: Prisma.XOR<
+    Prisma.UserCreateWithoutRemindersInput,
+    Prisma.UserUncheckedCreateWithoutRemindersInput
+  >;
+};
+
+export type UserUpsertWithoutRemindersInput = {
+  update: Prisma.XOR<
+    Prisma.UserUpdateWithoutRemindersInput,
+    Prisma.UserUncheckedUpdateWithoutRemindersInput
+  >;
+  create: Prisma.XOR<
+    Prisma.UserCreateWithoutRemindersInput,
+    Prisma.UserUncheckedCreateWithoutRemindersInput
+  >;
+  where?: Prisma.UserWhereInput;
+};
+
+export type UserUpdateToOneWithWhereWithoutRemindersInput = {
+  where?: Prisma.UserWhereInput;
+  data: Prisma.XOR<
+    Prisma.UserUpdateWithoutRemindersInput,
+    Prisma.UserUncheckedUpdateWithoutRemindersInput
+  >;
+};
+
+export type UserUpdateWithoutRemindersInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole;
+  chatId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  locale?: Prisma.StringFieldUpdateOperationsInput | string;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput;
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput;
+  subscription?: Prisma.SubscriptionUpdateOneWithoutUserNestedInput;
+  emailToken?: Prisma.EmailTokenUpdateOneWithoutUserNestedInput;
+  processedEmails?: Prisma.ProcessedEmailUpdateManyWithoutUserNestedInput;
+};
+
+export type UserUncheckedUpdateWithoutRemindersInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole;
+  chatId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  locale?: Prisma.StringFieldUpdateOperationsInput | string;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput;
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput;
+  subscription?: Prisma.SubscriptionUncheckedUpdateOneWithoutUserNestedInput;
+  emailToken?: Prisma.EmailTokenUncheckedUpdateOneWithoutUserNestedInput;
+  processedEmails?: Prisma.ProcessedEmailUncheckedUpdateManyWithoutUserNestedInput;
+};
+
+export type UserCreateWithoutEmailTokenInput = {
+  id?: string;
+  email?: string | null;
+  emailVerified?: Date | string | null;
+  passwordHash?: string | null;
+  name?: string | null;
+  image?: string | null;
+  role?: $Enums.UserRole;
+  chatId?: string | null;
+  locale?: string;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  accounts?: Prisma.AccountCreateNestedManyWithoutUserInput;
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput;
+  reminders?: Prisma.ReminderCreateNestedManyWithoutUserInput;
+  subscription?: Prisma.SubscriptionCreateNestedOneWithoutUserInput;
   processedEmails?: Prisma.ProcessedEmailCreateNestedManyWithoutUserInput;
 };
 
 export type UserUncheckedCreateWithoutEmailTokenInput = {
   id?: string;
-  chatId: string;
+  email?: string | null;
+  emailVerified?: Date | string | null;
+  passwordHash?: string | null;
+  name?: string | null;
+  image?: string | null;
+  role?: $Enums.UserRole;
+  chatId?: string | null;
+  locale?: string;
   createdAt?: Date | string;
   updatedAt?: Date | string;
+  accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput;
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput;
+  reminders?: Prisma.ReminderUncheckedCreateNestedManyWithoutUserInput;
+  subscription?: Prisma.SubscriptionUncheckedCreateNestedOneWithoutUserInput;
   processedEmails?: Prisma.ProcessedEmailUncheckedCreateNestedManyWithoutUserInput;
 };
 
@@ -405,33 +1162,77 @@ export type UserUpdateToOneWithWhereWithoutEmailTokenInput = {
 
 export type UserUpdateWithoutEmailTokenInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
-  chatId?: Prisma.StringFieldUpdateOperationsInput | string;
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole;
+  chatId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  locale?: Prisma.StringFieldUpdateOperationsInput | string;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput;
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput;
+  reminders?: Prisma.ReminderUpdateManyWithoutUserNestedInput;
+  subscription?: Prisma.SubscriptionUpdateOneWithoutUserNestedInput;
   processedEmails?: Prisma.ProcessedEmailUpdateManyWithoutUserNestedInput;
 };
 
 export type UserUncheckedUpdateWithoutEmailTokenInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
-  chatId?: Prisma.StringFieldUpdateOperationsInput | string;
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole;
+  chatId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  locale?: Prisma.StringFieldUpdateOperationsInput | string;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput;
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput;
+  reminders?: Prisma.ReminderUncheckedUpdateManyWithoutUserNestedInput;
+  subscription?: Prisma.SubscriptionUncheckedUpdateOneWithoutUserNestedInput;
   processedEmails?: Prisma.ProcessedEmailUncheckedUpdateManyWithoutUserNestedInput;
 };
 
 export type UserCreateWithoutProcessedEmailsInput = {
   id?: string;
-  chatId: string;
+  email?: string | null;
+  emailVerified?: Date | string | null;
+  passwordHash?: string | null;
+  name?: string | null;
+  image?: string | null;
+  role?: $Enums.UserRole;
+  chatId?: string | null;
+  locale?: string;
   createdAt?: Date | string;
   updatedAt?: Date | string;
+  accounts?: Prisma.AccountCreateNestedManyWithoutUserInput;
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput;
+  reminders?: Prisma.ReminderCreateNestedManyWithoutUserInput;
+  subscription?: Prisma.SubscriptionCreateNestedOneWithoutUserInput;
   emailToken?: Prisma.EmailTokenCreateNestedOneWithoutUserInput;
 };
 
 export type UserUncheckedCreateWithoutProcessedEmailsInput = {
   id?: string;
-  chatId: string;
+  email?: string | null;
+  emailVerified?: Date | string | null;
+  passwordHash?: string | null;
+  name?: string | null;
+  image?: string | null;
+  role?: $Enums.UserRole;
+  chatId?: string | null;
+  locale?: string;
   createdAt?: Date | string;
   updatedAt?: Date | string;
+  accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput;
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput;
+  reminders?: Prisma.ReminderUncheckedCreateNestedManyWithoutUserInput;
+  subscription?: Prisma.SubscriptionUncheckedCreateNestedOneWithoutUserInput;
   emailToken?: Prisma.EmailTokenUncheckedCreateNestedOneWithoutUserInput;
 };
 
@@ -465,17 +1266,39 @@ export type UserUpdateToOneWithWhereWithoutProcessedEmailsInput = {
 
 export type UserUpdateWithoutProcessedEmailsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
-  chatId?: Prisma.StringFieldUpdateOperationsInput | string;
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole;
+  chatId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  locale?: Prisma.StringFieldUpdateOperationsInput | string;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput;
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput;
+  reminders?: Prisma.ReminderUpdateManyWithoutUserNestedInput;
+  subscription?: Prisma.SubscriptionUpdateOneWithoutUserNestedInput;
   emailToken?: Prisma.EmailTokenUpdateOneWithoutUserNestedInput;
 };
 
 export type UserUncheckedUpdateWithoutProcessedEmailsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
-  chatId?: Prisma.StringFieldUpdateOperationsInput | string;
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole;
+  chatId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  locale?: Prisma.StringFieldUpdateOperationsInput | string;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput;
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput;
+  reminders?: Prisma.ReminderUncheckedUpdateManyWithoutUserNestedInput;
+  subscription?: Prisma.SubscriptionUncheckedUpdateOneWithoutUserNestedInput;
   emailToken?: Prisma.EmailTokenUncheckedUpdateOneWithoutUserNestedInput;
 };
 
@@ -484,12 +1307,18 @@ export type UserUncheckedUpdateWithoutProcessedEmailsInput = {
  */
 
 export type UserCountOutputType = {
+  accounts: number;
+  sessions: number;
+  reminders: number;
   processedEmails: number;
 };
 
 export type UserCountOutputTypeSelect<
   ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs
 > = {
+  accounts?: boolean | UserCountOutputTypeCountAccountsArgs;
+  sessions?: boolean | UserCountOutputTypeCountSessionsArgs;
+  reminders?: boolean | UserCountOutputTypeCountRemindersArgs;
   processedEmails?: boolean | UserCountOutputTypeCountProcessedEmailsArgs;
 };
 
@@ -508,6 +1337,33 @@ export type UserCountOutputTypeDefaultArgs<
 /**
  * UserCountOutputType without action
  */
+export type UserCountOutputTypeCountAccountsArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs
+> = {
+  where?: Prisma.AccountWhereInput;
+};
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountSessionsArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs
+> = {
+  where?: Prisma.SessionWhereInput;
+};
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountRemindersArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs
+> = {
+  where?: Prisma.ReminderWhereInput;
+};
+
+/**
+ * UserCountOutputType without action
+ */
 export type UserCountOutputTypeCountProcessedEmailsArgs<
   ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs
 > = {
@@ -519,9 +1375,20 @@ export type UserSelect<
 > = runtime.Types.Extensions.GetSelect<
   {
     id?: boolean;
+    email?: boolean;
+    emailVerified?: boolean;
+    passwordHash?: boolean;
+    name?: boolean;
+    image?: boolean;
+    role?: boolean;
     chatId?: boolean;
+    locale?: boolean;
     createdAt?: boolean;
     updatedAt?: boolean;
+    accounts?: boolean | Prisma.User$accountsArgs<ExtArgs>;
+    sessions?: boolean | Prisma.User$sessionsArgs<ExtArgs>;
+    reminders?: boolean | Prisma.User$remindersArgs<ExtArgs>;
+    subscription?: boolean | Prisma.User$subscriptionArgs<ExtArgs>;
     emailToken?: boolean | Prisma.User$emailTokenArgs<ExtArgs>;
     processedEmails?: boolean | Prisma.User$processedEmailsArgs<ExtArgs>;
     _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>;
@@ -534,7 +1401,14 @@ export type UserSelectCreateManyAndReturn<
 > = runtime.Types.Extensions.GetSelect<
   {
     id?: boolean;
+    email?: boolean;
+    emailVerified?: boolean;
+    passwordHash?: boolean;
+    name?: boolean;
+    image?: boolean;
+    role?: boolean;
     chatId?: boolean;
+    locale?: boolean;
     createdAt?: boolean;
     updatedAt?: boolean;
   },
@@ -546,7 +1420,14 @@ export type UserSelectUpdateManyAndReturn<
 > = runtime.Types.Extensions.GetSelect<
   {
     id?: boolean;
+    email?: boolean;
+    emailVerified?: boolean;
+    passwordHash?: boolean;
+    name?: boolean;
+    image?: boolean;
+    role?: boolean;
     chatId?: boolean;
+    locale?: boolean;
     createdAt?: boolean;
     updatedAt?: boolean;
   },
@@ -555,7 +1436,14 @@ export type UserSelectUpdateManyAndReturn<
 
 export type UserSelectScalar = {
   id?: boolean;
+  email?: boolean;
+  emailVerified?: boolean;
+  passwordHash?: boolean;
+  name?: boolean;
+  image?: boolean;
+  role?: boolean;
   chatId?: boolean;
+  locale?: boolean;
   createdAt?: boolean;
   updatedAt?: boolean;
 };
@@ -563,12 +1451,26 @@ export type UserSelectScalar = {
 export type UserOmit<
   ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs
 > = runtime.Types.Extensions.GetOmit<
-  "id" | "chatId" | "createdAt" | "updatedAt",
+  | "id"
+  | "email"
+  | "emailVerified"
+  | "passwordHash"
+  | "name"
+  | "image"
+  | "role"
+  | "chatId"
+  | "locale"
+  | "createdAt"
+  | "updatedAt",
   ExtArgs["result"]["user"]
 >;
 export type UserInclude<
   ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs
 > = {
+  accounts?: boolean | Prisma.User$accountsArgs<ExtArgs>;
+  sessions?: boolean | Prisma.User$sessionsArgs<ExtArgs>;
+  reminders?: boolean | Prisma.User$remindersArgs<ExtArgs>;
+  subscription?: boolean | Prisma.User$subscriptionArgs<ExtArgs>;
   emailToken?: boolean | Prisma.User$emailTokenArgs<ExtArgs>;
   processedEmails?: boolean | Prisma.User$processedEmailsArgs<ExtArgs>;
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>;
@@ -585,13 +1487,24 @@ export type $UserPayload<
 > = {
   name: "User";
   objects: {
+    accounts: Prisma.$AccountPayload<ExtArgs>[];
+    sessions: Prisma.$SessionPayload<ExtArgs>[];
+    reminders: Prisma.$ReminderPayload<ExtArgs>[];
+    subscription: Prisma.$SubscriptionPayload<ExtArgs> | null;
     emailToken: Prisma.$EmailTokenPayload<ExtArgs> | null;
     processedEmails: Prisma.$ProcessedEmailPayload<ExtArgs>[];
   };
   scalars: runtime.Types.Extensions.GetPayloadResult<
     {
       id: string;
-      chatId: string;
+      email: string | null;
+      emailVerified: Date | null;
+      passwordHash: string | null;
+      name: string | null;
+      image: string | null;
+      role: $Enums.UserRole;
+      chatId: string | null;
+      locale: string;
       createdAt: Date;
       updatedAt: Date;
     },
@@ -1104,6 +2017,52 @@ export interface Prisma__UserClient<
   GlobalOmitOptions = {}
 > extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise";
+  accounts<T extends Prisma.User$accountsArgs<ExtArgs> = {}>(
+    args?: Prisma.Subset<T, Prisma.User$accountsArgs<ExtArgs>>
+  ): Prisma.PrismaPromise<
+    | runtime.Types.Result.GetResult<
+        Prisma.$AccountPayload<ExtArgs>,
+        T,
+        "findMany",
+        GlobalOmitOptions
+      >
+    | Null
+  >;
+  sessions<T extends Prisma.User$sessionsArgs<ExtArgs> = {}>(
+    args?: Prisma.Subset<T, Prisma.User$sessionsArgs<ExtArgs>>
+  ): Prisma.PrismaPromise<
+    | runtime.Types.Result.GetResult<
+        Prisma.$SessionPayload<ExtArgs>,
+        T,
+        "findMany",
+        GlobalOmitOptions
+      >
+    | Null
+  >;
+  reminders<T extends Prisma.User$remindersArgs<ExtArgs> = {}>(
+    args?: Prisma.Subset<T, Prisma.User$remindersArgs<ExtArgs>>
+  ): Prisma.PrismaPromise<
+    | runtime.Types.Result.GetResult<
+        Prisma.$ReminderPayload<ExtArgs>,
+        T,
+        "findMany",
+        GlobalOmitOptions
+      >
+    | Null
+  >;
+  subscription<T extends Prisma.User$subscriptionArgs<ExtArgs> = {}>(
+    args?: Prisma.Subset<T, Prisma.User$subscriptionArgs<ExtArgs>>
+  ): Prisma.Prisma__SubscriptionClient<
+    runtime.Types.Result.GetResult<
+      Prisma.$SubscriptionPayload<ExtArgs>,
+      T,
+      "findUniqueOrThrow",
+      GlobalOmitOptions
+    > | null,
+    null,
+    ExtArgs,
+    GlobalOmitOptions
+  >;
   emailToken<T extends Prisma.User$emailTokenArgs<ExtArgs> = {}>(
     args?: Prisma.Subset<T, Prisma.User$emailTokenArgs<ExtArgs>>
   ): Prisma.Prisma__EmailTokenClient<
@@ -1160,7 +2119,14 @@ export interface Prisma__UserClient<
  */
 export interface UserFieldRefs {
   readonly id: Prisma.FieldRef<"User", "String">;
+  readonly email: Prisma.FieldRef<"User", "String">;
+  readonly emailVerified: Prisma.FieldRef<"User", "DateTime">;
+  readonly passwordHash: Prisma.FieldRef<"User", "String">;
+  readonly name: Prisma.FieldRef<"User", "String">;
+  readonly image: Prisma.FieldRef<"User", "String">;
+  readonly role: Prisma.FieldRef<"User", "UserRole">;
   readonly chatId: Prisma.FieldRef<"User", "String">;
+  readonly locale: Prisma.FieldRef<"User", "String">;
   readonly createdAt: Prisma.FieldRef<"User", "DateTime">;
   readonly updatedAt: Prisma.FieldRef<"User", "DateTime">;
 }
@@ -1575,6 +2541,105 @@ export type UserDeleteManyArgs<
    * Limit how many Users to delete.
    */
   limit?: number;
+};
+
+/**
+ * User.accounts
+ */
+export type User$accountsArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs
+> = {
+  /**
+   * Select specific fields to fetch from the Account
+   */
+  select?: Prisma.AccountSelect<ExtArgs> | null;
+  /**
+   * Omit specific fields from the Account
+   */
+  omit?: Prisma.AccountOmit<ExtArgs> | null;
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AccountInclude<ExtArgs> | null;
+  where?: Prisma.AccountWhereInput;
+  orderBy?: Prisma.AccountOrderByWithRelationInput | Prisma.AccountOrderByWithRelationInput[];
+  cursor?: Prisma.AccountWhereUniqueInput;
+  take?: number;
+  skip?: number;
+  distinct?: Prisma.AccountScalarFieldEnum | Prisma.AccountScalarFieldEnum[];
+};
+
+/**
+ * User.sessions
+ */
+export type User$sessionsArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs
+> = {
+  /**
+   * Select specific fields to fetch from the Session
+   */
+  select?: Prisma.SessionSelect<ExtArgs> | null;
+  /**
+   * Omit specific fields from the Session
+   */
+  omit?: Prisma.SessionOmit<ExtArgs> | null;
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SessionInclude<ExtArgs> | null;
+  where?: Prisma.SessionWhereInput;
+  orderBy?: Prisma.SessionOrderByWithRelationInput | Prisma.SessionOrderByWithRelationInput[];
+  cursor?: Prisma.SessionWhereUniqueInput;
+  take?: number;
+  skip?: number;
+  distinct?: Prisma.SessionScalarFieldEnum | Prisma.SessionScalarFieldEnum[];
+};
+
+/**
+ * User.reminders
+ */
+export type User$remindersArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs
+> = {
+  /**
+   * Select specific fields to fetch from the Reminder
+   */
+  select?: Prisma.ReminderSelect<ExtArgs> | null;
+  /**
+   * Omit specific fields from the Reminder
+   */
+  omit?: Prisma.ReminderOmit<ExtArgs> | null;
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ReminderInclude<ExtArgs> | null;
+  where?: Prisma.ReminderWhereInput;
+  orderBy?: Prisma.ReminderOrderByWithRelationInput | Prisma.ReminderOrderByWithRelationInput[];
+  cursor?: Prisma.ReminderWhereUniqueInput;
+  take?: number;
+  skip?: number;
+  distinct?: Prisma.ReminderScalarFieldEnum | Prisma.ReminderScalarFieldEnum[];
+};
+
+/**
+ * User.subscription
+ */
+export type User$subscriptionArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs
+> = {
+  /**
+   * Select specific fields to fetch from the Subscription
+   */
+  select?: Prisma.SubscriptionSelect<ExtArgs> | null;
+  /**
+   * Omit specific fields from the Subscription
+   */
+  omit?: Prisma.SubscriptionOmit<ExtArgs> | null;
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SubscriptionInclude<ExtArgs> | null;
+  where?: Prisma.SubscriptionWhereInput;
 };
 
 /**

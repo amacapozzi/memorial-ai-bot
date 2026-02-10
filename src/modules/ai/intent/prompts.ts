@@ -66,7 +66,9 @@ Tipos de intenciones:
 5. "link_email" - Vincular/conectar email/Gmail (ej: "conecta mi email", "vincula mi gmail", "quiero conectar mi correo", "link email")
 6. "unlink_email" - Desvincular/desconectar email (ej: "desconecta mi email", "quita gmail", "elimina acceso al correo")
 7. "email_status" - Consultar estado del email (ej: "mi email esta conectado?", "tengo email vinculado?", "estado de gmail")
-8. "unknown" - No es ninguna de las anteriores
+8. "reply_email" - Responder a un email (ej: "respondele a ese mail diciendo que acepto", "contesta el email que me llego diciendo que no puedo", "reply to that email saying I'll be there")
+9. "search_email" - Buscar un email especifico (ej: "busca el mail donde me mandaron la foto del presupuesto", "encontra el email de Juan sobre la reunion", "busca el correo de MercadoLibre")
+10. "unknown" - No es ninguna de las anteriores
 
 IMPORTANTE para CREATE_REMINDER:
 - Si el usuario menciona MULTIPLES recordatorios en un mensaje, extrae TODOS
@@ -105,7 +107,7 @@ Para interpretar fechas/horas:
 
 Responde UNICAMENTE con JSON valido (sin markdown, sin explicaciones):
 {
-  "intentType": "create_reminder" | "list_tasks" | "cancel_task" | "modify_task" | "link_email" | "unlink_email" | "email_status" | "unknown",
+  "intentType": "create_reminder" | "list_tasks" | "cancel_task" | "modify_task" | "link_email" | "unlink_email" | "email_status" | "reply_email" | "search_email" | "unknown",
   "taskNumber": number | null,
   "reminderDetails": [
     {
@@ -118,6 +120,8 @@ Responde UNICAMENTE con JSON valido (sin markdown, sin explicaciones):
   ] | null,
   "newDateTime": "string ISO 8601" | null,
   "missingDateTime": boolean,
+  "emailReplyInstruction": "string | null - what the user wants to say in the reply",
+  "emailSearchQuery": "string | null - keywords/query to search for an email (convert natural language to search terms, e.g. from:Juan reunion, presupuesto foto, from:MercadoLibre)",
   "confidence": number (0-1)
 }
 
@@ -153,8 +157,23 @@ Ejemplos:
 - "conecta mi email"
   -> {"intentType": "link_email", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "confidence": 0.95}
 
+- "respondele a ese mail diciendo que acepto la reunion"
+  -> {"intentType": "reply_email", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": "que acepto la reunion", "confidence": 0.95}
+
+- "contesta el email diciendo que no voy a poder ir"
+  -> {"intentType": "reply_email", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": "que no voy a poder ir", "confidence": 0.95}
+
+- "busca el mail donde me mandaron la foto del presupuesto"
+  -> {"intentType": "search_email", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": "presupuesto foto", "confidence": 0.95}
+
+- "encontra el email de Juan sobre la reunion"
+  -> {"intentType": "search_email", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": "from:Juan reunion", "confidence": 0.95}
+
+- "busca el correo de MercadoLibre"
+  -> {"intentType": "search_email", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": "from:MercadoLibre", "confidence": 0.95}
+
 - "hola como estas"
-  -> {"intentType": "unknown", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "confidence": 0.90}`;
+  -> {"intentType": "unknown", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": null, "confidence": 0.90}`;
 
 export function buildReminderIntentPrompt(): string {
   const now = new Date();

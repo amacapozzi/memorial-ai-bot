@@ -13,7 +13,8 @@ export {
   type AppointmentInfo,
   type MeetingInfo,
   type PurchaseInfo,
-  type FlightInfo
+  type FlightInfo,
+  type SecurityInfo
 } from "./analyzer";
 
 // Processor
@@ -21,6 +22,9 @@ export { ProcessedEmailRepository, EmailProcessorService } from "./processor";
 
 // Sync
 export { EmailSyncService } from "./sync";
+
+// Reply
+export { EmailReplyService, type OriginalEmail } from "./reply";
 
 // Module
 export { createEmailModule } from "./email.module";

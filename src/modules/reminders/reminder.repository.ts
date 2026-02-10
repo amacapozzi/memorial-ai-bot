@@ -19,13 +19,30 @@ export interface CreateReminderData {
 export class ReminderRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
+  /**
+   * Find or create a user by chatId, returning the userId
+   */
+  private async getOrCreateUserId(chatId: string): Promise<string> {
+    const user = await this.prisma.user.upsert({
+      where: { chatId },
+      create: { chatId },
+      update: {},
+      select: { id: true }
+    });
+    return user.id;
+  }
+
   async create(data: CreateReminderData): Promise<Reminder> {
+    // Get or create user by chatId
+    const userId = await this.getOrCreateUserId(data.chatId);
+
     return this.prisma.reminder.create({
       data: {
         originalText: data.originalText,
         reminderText: data.reminderText,
         scheduledAt: data.scheduledAt,
         chatId: data.chatId,
+        userId, // Include userId for web compatibility
         calendarEventId: data.calendarEventId,
         recurrence: data.recurrence || "NONE",
         recurrenceDay: data.recurrenceDay,
@@ -107,5 +124,54 @@ export class ReminderRepository {
       },
       orderBy: { scheduledAt: "asc" }
     });
+  }
+
+  /**
+   * Count reminders for a user (by chatId) - useful for subscription limits
+   */
+  async countByChat(chatId: string): Promise<number> {
+    return this.prisma.reminder.count({
+      where: { chatId }
+    });
+  }
+
+  /**
+   * Get user's subscription plan limits (if any)
+   */
+  async getUserPlanLimits(chatId: string): Promise<{ maxReminders: number | null } | null> {
+    const user = await this.prisma.user.findUnique({
+      where: { chatId },
+      include: {
+        subscription: {
+          include: { plan: true }
+        }
+      }
+    });
+
+    if (!user?.subscription?.plan) {
+      return null;
+    }
+
+    return {
+      maxReminders: user.subscription.plan.maxReminders
+    };
+  }
+
+  /**
+   * Check if user can create more reminders based on their plan
+   */
+  async canCreateReminder(chatId: string): Promise<boolean> {
+    const limits = await this.getUserPlanLimits(chatId);
+
+    // No subscription or no limit = free tier (5 reminders)
+    const maxReminders = limits?.maxReminders ?? 5;
+
+    // null means unlimited
+    if (maxReminders === null) {
+      return true;
+    }
+
+    const currentCount = await this.countByChat(chatId);
+    return currentCount < maxReminders;
   }
 }

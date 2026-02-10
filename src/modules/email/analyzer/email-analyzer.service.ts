@@ -11,6 +11,7 @@ export type EmailType =
   | "MEETING"
   | "FLIGHT"
   | "LEGAL_HEARING"
+  | "SECURITY"
   | "DEADLINE"
   | "COURSE"
   | "TASK"
@@ -64,6 +65,15 @@ export interface LegalHearingInfo {
   hearingType: string;
   judge: string | null;
   notes: string | null;
+}
+
+export interface SecurityInfo {
+  alertType: string;
+  service: string;
+  details: string;
+  ipOrLocation: string | null;
+  actionRequired: string;
+  urgency: "high" | "medium" | "low";
 }
 
 export interface DeadlineInfo {
@@ -126,6 +136,7 @@ export interface AnalyzedEmail {
   purchaseInfo: PurchaseInfo | null;
   flightInfo: FlightInfo | null;
   legalHearingInfo: LegalHearingInfo | null;
+  securityInfo: SecurityInfo | null;
   deadlineInfo: DeadlineInfo | null;
   courseInfo: CourseInfo | null;
   taskInfo: TaskInfo | null;
@@ -188,6 +199,15 @@ interface RawEmailAnalysis {
     hearingType: string;
     judge: string | null;
     notes: string | null;
+  } | null;
+
+  securityInfo: {
+    alertType: string;
+    service: string;
+    details: string;
+    ipOrLocation: string | null;
+    actionRequired: string;
+    urgency: "high" | "medium" | "low";
   } | null;
 
   deadlineInfo: {
@@ -275,6 +295,7 @@ export class EmailAnalyzerService {
         purchaseInfo: null,
         flightInfo: null,
         legalHearingInfo: null,
+        securityInfo: null,
         deadlineInfo: null,
         courseInfo: null,
         taskInfo: null,
@@ -311,6 +332,7 @@ export class EmailAnalyzerService {
       purchaseInfo: null,
       flightInfo: null,
       legalHearingInfo: null,
+      securityInfo: null,
       deadlineInfo: null,
       courseInfo: null,
       taskInfo: null,
@@ -394,6 +416,18 @@ export class EmailAnalyzerService {
         hearingType: raw.legalHearingInfo.hearingType,
         judge: raw.legalHearingInfo.judge,
         notes: raw.legalHearingInfo.notes
+      };
+    }
+
+    // Transform security info
+    if (raw.securityInfo) {
+      result.securityInfo = {
+        alertType: raw.securityInfo.alertType,
+        service: raw.securityInfo.service,
+        details: raw.securityInfo.details,
+        ipOrLocation: raw.securityInfo.ipOrLocation,
+        actionRequired: raw.securityInfo.actionRequired,
+        urgency: raw.securityInfo.urgency
       };
     }
 

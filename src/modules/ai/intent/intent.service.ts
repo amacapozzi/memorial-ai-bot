@@ -21,6 +21,8 @@ export type IntentType =
   | "link_email"
   | "unlink_email"
   | "email_status"
+  | "reply_email"
+  | "search_email"
   | "unknown";
 
 export interface ParsedIntent {
@@ -30,6 +32,8 @@ export interface ParsedIntent {
   originalText?: string;
   newDateTime?: Date;
   missingDateTime?: boolean;
+  emailReplyInstruction?: string;
+  emailSearchQuery?: string;
   confidence: number;
 }
 
@@ -45,6 +49,8 @@ interface IntentResponse {
   }> | null;
   newDateTime: string | null;
   missingDateTime: boolean;
+  emailReplyInstruction: string | null;
+  emailSearchQuery: string | null;
   confidence: number;
 }
 
@@ -81,6 +87,16 @@ export class IntentService {
           newDateTime.setDate(newDateTime.getDate() + 1);
           result.newDateTime = newDateTime;
         }
+      }
+
+      // Handle email reply instruction
+      if (response.emailReplyInstruction) {
+        result.emailReplyInstruction = response.emailReplyInstruction;
+      }
+
+      // Handle email search query
+      if (response.emailSearchQuery) {
+        result.emailSearchQuery = response.emailSearchQuery;
       }
 
       // Handle reminder details for create (supports multiple reminders)

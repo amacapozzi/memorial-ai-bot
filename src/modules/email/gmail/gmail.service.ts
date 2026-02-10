@@ -72,6 +72,43 @@ export class GmailService {
     return messages;
   }
 
+  async searchMessages(
+    userId: string,
+    query: string,
+    maxResults: number = 5
+  ): Promise<EmailMessage[]> {
+    this.logger.debug(`Searching messages for user ${userId}: "${query}"`);
+
+    const gmail = await this.getGmail(userId);
+
+    const response = await gmail.users.messages.list({
+      userId: "me",
+      maxResults,
+      q: query
+    });
+
+    const messageIds = response.data.messages || [];
+
+    if (messageIds.length === 0) {
+      return [];
+    }
+
+    const messages: EmailMessage[] = [];
+
+    for (const { id } of messageIds) {
+      if (!id) continue;
+
+      try {
+        const message = await this.getMessage(userId, id);
+        messages.push(message);
+      } catch (error) {
+        this.logger.warn(`Failed to fetch message ${id}: ${error}`);
+      }
+    }
+
+    return messages;
+  }
+
   async getMessage(userId: string, messageId: string): Promise<EmailMessage> {
     const gmail = await this.getGmail(userId);
 
@@ -156,6 +193,47 @@ export class GmailService {
       }
       throw error;
     }
+  }
+
+  async sendReply(
+    userId: string,
+    originalMessageId: string,
+    threadId: string,
+    replyContent: { to: string; subject: string; body: string }
+  ): Promise<string> {
+    this.logger.info(`Sending reply for user ${userId} to thread ${threadId}`);
+
+    const gmail = await this.getGmail(userId);
+
+    // Build RFC 2822 formatted email
+    const messageParts = [
+      `To: ${replyContent.to}`,
+      `Subject: ${replyContent.subject}`,
+      `In-Reply-To: ${originalMessageId}`,
+      `References: ${originalMessageId}`,
+      "Content-Type: text/plain; charset=utf-8",
+      "",
+      replyContent.body
+    ];
+
+    const rawMessage = messageParts.join("\r\n");
+    const encodedMessage = Buffer.from(rawMessage)
+      .toString("base64")
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/, "");
+
+    const response = await gmail.users.messages.send({
+      userId: "me",
+      requestBody: {
+        raw: encodedMessage,
+        threadId
+      }
+    });
+
+    const sentId = response.data.id || "";
+    this.logger.info(`Reply sent successfully: ${sentId}`);
+    return sentId;
   }
 
   private extractBody(payload: gmail_v1.Schema$MessagePart | undefined): string {

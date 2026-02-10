@@ -25,7 +25,10 @@ export const envSchema = z.object({
   EMAIL_SYNC_INTERVAL_MS: z.coerce.number().default(120000), // 2 minutes
 
   // Public host URL for OAuth callbacks
-  HOST_URL: z.string().url().default("http://localhost:3000")
+  HOST_URL: z.string().url().default("http://localhost:3000"),
+
+  // Shared secret for webhook endpoints (website → bot)
+  WEBHOOK_SECRET: z.string().min(1).default("change-me")
 });
 
 export type Env = z.infer<typeof envSchema>;

@@ -72,6 +72,56 @@ export class ProcessedEmailRepository {
     });
   }
 
+  async findRecentForChat(userId: string, limit: number = 1): Promise<ProcessedEmail[]> {
+    return this.prisma.processedEmail.findMany({
+      where: { userId, status: { not: "SKIPPED" } },
+      orderBy: { processedAt: "desc" },
+      take: limit
+    });
+  }
+
+  async searchByKeywords(
+    userId: string,
+    keywords: string,
+    limit: number = 5
+  ): Promise<ProcessedEmail[]> {
+    // Clean Gmail operators and extract raw terms
+    const terms = keywords
+      .replace(/(?:from|to|subject|in|is|has|label):\S*/gi, "")
+      .split(/\s+/)
+      .filter((t) => t.length > 0);
+
+    // Also extract from: values as sender search terms
+    const fromMatches = keywords.match(/from:(\S+)/gi) || [];
+    const fromTerms = fromMatches.map((m) => m.replace(/^from:/i, ""));
+
+    const conditions: Prisma.ProcessedEmailWhereInput[] = [];
+
+    for (const term of terms) {
+      conditions.push(
+        { subject: { contains: term, mode: "insensitive" } },
+        { sender: { contains: term, mode: "insensitive" } }
+      );
+    }
+
+    for (const from of fromTerms) {
+      conditions.push({ sender: { contains: from, mode: "insensitive" } });
+    }
+
+    if (conditions.length === 0) {
+      return [];
+    }
+
+    return this.prisma.processedEmail.findMany({
+      where: {
+        userId,
+        OR: conditions
+      },
+      orderBy: { receivedAt: "desc" },
+      take: limit
+    });
+  }
+
   async existsByGmailId(userId: string, gmailMessageId: string): Promise<boolean> {
     const count = await this.prisma.processedEmail.count({
       where: {

@@ -1,3 +1,4 @@
+import type { SubscriptionRepository } from "@modules/subscription/subscription.repository";
 import { env } from "@shared/env/env";
 import { createLogger } from "@shared/logger/logger";
 
@@ -14,7 +15,8 @@ export class EmailSyncService {
   constructor(
     private readonly userRepository: UserRepository,
     private readonly emailProcessorService: EmailProcessorService,
-    private readonly gmailAuthService: GmailAuthService
+    private readonly gmailAuthService: GmailAuthService,
+    private readonly subscriptionRepository?: SubscriptionRepository
   ) {
     this.syncIntervalMs = env().EMAIL_SYNC_INTERVAL_MS;
   }
@@ -70,6 +72,17 @@ export class EmailSyncService {
     this.logger.info(`Syncing emails for ${users.length} user(s)`);
 
     for (const user of users) {
+      if (!user.chatId) continue;
+
+      // Check if user's plan includes email sync
+      if (this.subscriptionRepository) {
+        const info = await this.subscriptionRepository.getUserSubscriptionInfo(user.chatId);
+        if (!info.hasActiveSubscription || !info.hasEmailSync) {
+          this.logger.debug(`Skipping user ${user.id}: plan does not include email sync`);
+          continue;
+        }
+      }
+
       try {
         await this.syncUser(user.id, user.chatId);
       } catch (error) {

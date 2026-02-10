@@ -48,12 +48,19 @@ export const JsonNull = runtime.JsonNull;
 export const AnyNull = runtime.AnyNull;
 
 export const ModelName = {
-  WhatsAppSession: "WhatsAppSession",
-  Reminder: "Reminder",
-  GoogleAuthToken: "GoogleAuthToken",
   User: "User",
+  Account: "Account",
+  Session: "Session",
+  VerificationToken: "VerificationToken",
+  Plan: "Plan",
+  Subscription: "Subscription",
+  Payment: "Payment",
+  Reminder: "Reminder",
+  WhatsAppSession: "WhatsAppSession",
+  GoogleAuthToken: "GoogleAuthToken",
   EmailToken: "EmailToken",
-  ProcessedEmail: "ProcessedEmail"
+  ProcessedEmail: "ProcessedEmail",
+  LinkingCode: "LinkingCode"
 } as const;
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName];
@@ -72,6 +79,137 @@ export const TransactionIsolationLevel = runtime.makeStrictEnum({
 export type TransactionIsolationLevel =
   (typeof TransactionIsolationLevel)[keyof typeof TransactionIsolationLevel];
 
+export const UserScalarFieldEnum = {
+  id: "id",
+  email: "email",
+  emailVerified: "emailVerified",
+  passwordHash: "passwordHash",
+  name: "name",
+  image: "image",
+  role: "role",
+  chatId: "chatId",
+  locale: "locale",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt"
+} as const;
+
+export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum];
+
+export const AccountScalarFieldEnum = {
+  id: "id",
+  userId: "userId",
+  type: "type",
+  provider: "provider",
+  providerAccountId: "providerAccountId",
+  refresh_token: "refresh_token",
+  access_token: "access_token",
+  expires_at: "expires_at",
+  token_type: "token_type",
+  scope: "scope",
+  id_token: "id_token",
+  session_state: "session_state"
+} as const;
+
+export type AccountScalarFieldEnum =
+  (typeof AccountScalarFieldEnum)[keyof typeof AccountScalarFieldEnum];
+
+export const SessionScalarFieldEnum = {
+  id: "id",
+  sessionToken: "sessionToken",
+  userId: "userId",
+  expires: "expires"
+} as const;
+
+export type SessionScalarFieldEnum =
+  (typeof SessionScalarFieldEnum)[keyof typeof SessionScalarFieldEnum];
+
+export const VerificationTokenScalarFieldEnum = {
+  identifier: "identifier",
+  token: "token",
+  expires: "expires"
+} as const;
+
+export type VerificationTokenScalarFieldEnum =
+  (typeof VerificationTokenScalarFieldEnum)[keyof typeof VerificationTokenScalarFieldEnum];
+
+export const PlanScalarFieldEnum = {
+  id: "id",
+  name: "name",
+  description: "description",
+  priceMonthly: "priceMonthly",
+  priceYearly: "priceYearly",
+  currency: "currency",
+  mpPlanIdMonthly: "mpPlanIdMonthly",
+  mpPlanIdYearly: "mpPlanIdYearly",
+  features: "features",
+  maxReminders: "maxReminders",
+  maxEmailAccounts: "maxEmailAccounts",
+  hasCalendarSync: "hasCalendarSync",
+  hasEmailSync: "hasEmailSync",
+  hasEmailReply: "hasEmailReply",
+  trialDays: "trialDays",
+  isActive: "isActive",
+  sortOrder: "sortOrder",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt"
+} as const;
+
+export type PlanScalarFieldEnum = (typeof PlanScalarFieldEnum)[keyof typeof PlanScalarFieldEnum];
+
+export const SubscriptionScalarFieldEnum = {
+  id: "id",
+  userId: "userId",
+  planId: "planId",
+  status: "status",
+  billingCycle: "billingCycle",
+  mpSubscriptionId: "mpSubscriptionId",
+  mpPayerId: "mpPayerId",
+  currentPeriodStart: "currentPeriodStart",
+  currentPeriodEnd: "currentPeriodEnd",
+  trialEndsAt: "trialEndsAt",
+  cancelledAt: "cancelledAt",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt"
+} as const;
+
+export type SubscriptionScalarFieldEnum =
+  (typeof SubscriptionScalarFieldEnum)[keyof typeof SubscriptionScalarFieldEnum];
+
+export const PaymentScalarFieldEnum = {
+  id: "id",
+  subscriptionId: "subscriptionId",
+  amount: "amount",
+  currency: "currency",
+  status: "status",
+  mpPaymentId: "mpPaymentId",
+  mpStatus: "mpStatus",
+  paidAt: "paidAt",
+  createdAt: "createdAt"
+} as const;
+
+export type PaymentScalarFieldEnum =
+  (typeof PaymentScalarFieldEnum)[keyof typeof PaymentScalarFieldEnum];
+
+export const ReminderScalarFieldEnum = {
+  id: "id",
+  originalText: "originalText",
+  reminderText: "reminderText",
+  scheduledAt: "scheduledAt",
+  userId: "userId",
+  chatId: "chatId",
+  status: "status",
+  calendarEventId: "calendarEventId",
+  recurrence: "recurrence",
+  recurrenceDay: "recurrenceDay",
+  recurrenceTime: "recurrenceTime",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+  sentAt: "sentAt"
+} as const;
+
+export type ReminderScalarFieldEnum =
+  (typeof ReminderScalarFieldEnum)[keyof typeof ReminderScalarFieldEnum];
+
 export const WhatsAppSessionScalarFieldEnum = {
   id: "id",
   data: "data",
@@ -81,25 +219,6 @@ export const WhatsAppSessionScalarFieldEnum = {
 
 export type WhatsAppSessionScalarFieldEnum =
   (typeof WhatsAppSessionScalarFieldEnum)[keyof typeof WhatsAppSessionScalarFieldEnum];
-
-export const ReminderScalarFieldEnum = {
-  id: "id",
-  originalText: "originalText",
-  reminderText: "reminderText",
-  scheduledAt: "scheduledAt",
-  chatId: "chatId",
-  status: "status",
-  calendarEventId: "calendarEventId",
-  createdAt: "createdAt",
-  updatedAt: "updatedAt",
-  sentAt: "sentAt",
-  recurrence: "recurrence",
-  recurrenceDay: "recurrenceDay",
-  recurrenceTime: "recurrenceTime"
-} as const;
-
-export type ReminderScalarFieldEnum =
-  (typeof ReminderScalarFieldEnum)[keyof typeof ReminderScalarFieldEnum];
 
 export const GoogleAuthTokenScalarFieldEnum = {
   id: "id",
@@ -114,15 +233,6 @@ export const GoogleAuthTokenScalarFieldEnum = {
 
 export type GoogleAuthTokenScalarFieldEnum =
   (typeof GoogleAuthTokenScalarFieldEnum)[keyof typeof GoogleAuthTokenScalarFieldEnum];
-
-export const UserScalarFieldEnum = {
-  id: "id",
-  chatId: "chatId",
-  createdAt: "createdAt",
-  updatedAt: "updatedAt"
-} as const;
-
-export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum];
 
 export const EmailTokenScalarFieldEnum = {
   id: "id",
@@ -159,6 +269,19 @@ export const ProcessedEmailScalarFieldEnum = {
 export type ProcessedEmailScalarFieldEnum =
   (typeof ProcessedEmailScalarFieldEnum)[keyof typeof ProcessedEmailScalarFieldEnum];
 
+export const LinkingCodeScalarFieldEnum = {
+  id: "id",
+  code: "code",
+  chatId: "chatId",
+  expiresAt: "expiresAt",
+  usedAt: "usedAt",
+  usedBy: "usedBy",
+  createdAt: "createdAt"
+} as const;
+
+export type LinkingCodeScalarFieldEnum =
+  (typeof LinkingCodeScalarFieldEnum)[keyof typeof LinkingCodeScalarFieldEnum];
+
 export const SortOrder = {
   asc: "asc",
   desc: "desc"
@@ -187,6 +310,13 @@ export const QueryMode = {
 
 export type QueryMode = (typeof QueryMode)[keyof typeof QueryMode];
 
+export const NullsOrder = {
+  first: "first",
+  last: "last"
+} as const;
+
+export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder];
+
 export const JsonNullValueFilter = {
   DbNull: DbNull,
   JsonNull: JsonNull,
@@ -194,10 +324,3 @@ export const JsonNullValueFilter = {
 } as const;
 
 export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter];
-
-export const NullsOrder = {
-  first: "first",
-  last: "last"
-} as const;
-
-export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder];
