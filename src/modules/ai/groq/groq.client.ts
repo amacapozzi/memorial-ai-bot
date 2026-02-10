@@ -3,6 +3,10 @@ import Groq from "groq-sdk";
 import { env } from "@shared/env/env";
 import { createLogger } from "@shared/logger/logger";
 
+const MAX_RETRIES = 3;
+const BASE_DELAY_MS = 1000;
+const MAX_DELAY_MS = 30000;
+
 export class GroqClient {
   private readonly client: Groq;
   private readonly logger = createLogger("groq");
@@ -13,19 +17,87 @@ export class GroqClient {
     });
   }
 
+  private async withRetry<T>(operation: () => Promise<T>, label: string): Promise<T> {
+    let lastError: unknown;
+
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        return await operation();
+      } catch (error) {
+        lastError = error;
+
+        if (attempt === MAX_RETRIES || !this.isRetryable(error)) {
+          throw error;
+        }
+
+        const delay = this.getRetryDelay(error, attempt);
+        this.logger.warn(
+          `${label} failed (attempt ${attempt + 1}/${MAX_RETRIES + 1}), retrying in ${delay}ms...`,
+          { status: (error as Record<string, unknown>).status }
+        );
+        await this.sleep(delay);
+      }
+    }
+
+    throw lastError;
+  }
+
+  private isRetryable(error: unknown): boolean {
+    if (typeof error !== "object" || error === null) return false;
+    const status = (error as Record<string, unknown>).status;
+    // 429 = rate limit, 500/502/503/504 = server errors
+    if (status === 429 || status === 500 || status === 502 || status === 503 || status === 504) {
+      return true;
+    }
+    // Network errors (no status code)
+    if (
+      (error as Record<string, unknown>).code === "ECONNRESET" ||
+      (error as Record<string, unknown>).code === "ETIMEDOUT"
+    ) {
+      return true;
+    }
+    return false;
+  }
+
+  private getRetryDelay(error: unknown, attempt: number): number {
+    // Use Retry-After header if available (GROQ sends this on 429)
+    if (typeof error === "object" && error !== null) {
+      const headers = (error as Record<string, unknown>).headers as
+        | Record<string, string>
+        | undefined;
+      const retryAfter = headers?.["retry-after"];
+      if (retryAfter) {
+        const seconds = Number(retryAfter);
+        if (!isNaN(seconds) && seconds > 0) {
+          return Math.min(seconds * 1000, MAX_DELAY_MS);
+        }
+      }
+    }
+    // Exponential backoff with jitter
+    const exponential = BASE_DELAY_MS * Math.pow(2, attempt);
+    const jitter = Math.random() * BASE_DELAY_MS;
+    return Math.min(exponential + jitter, MAX_DELAY_MS);
+  }
+
+  private sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
   async transcribeAudio(audioBuffer: Buffer, mimeType: string): Promise<string> {
     this.logger.debug("Transcribing audio with Whisper...");
 
-    // Convert buffer to File-like object for the API
-    const blob = new Blob([new Uint8Array(audioBuffer)], { type: mimeType });
-    const file = new File([blob], "audio.ogg", { type: mimeType });
+    const transcription = await this.withRetry(async () => {
+      // Convert buffer to File-like object for the API
+      const blob = new Blob([new Uint8Array(audioBuffer)], { type: mimeType });
+      const file = new File([blob], "audio.ogg", { type: mimeType });
 
-    const transcription = await this.client.audio.transcriptions.create({
-      file,
-      model: env().GROQ_WHISPER_MODEL,
-      language: "es",
-      response_format: "text"
-    });
+      return this.client.audio.transcriptions.create({
+        file,
+        model: env().GROQ_WHISPER_MODEL,
+        language: "es",
+        response_format: "text"
+      });
+    }, "Transcription");
 
     this.logger.debug("Transcription completed");
     // response_format: "text" returns a string directly
@@ -35,15 +107,19 @@ export class GroqClient {
   async chat(systemPrompt: string, userMessage: string): Promise<string> {
     this.logger.debug("Sending chat request to GROQ...");
 
-    const completion = await this.client.chat.completions.create({
-      model: env().GROQ_LLM_MODEL,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userMessage }
-      ],
-      temperature: 0.7,
-      max_tokens: 1024
-    });
+    const completion = await this.withRetry(
+      () =>
+        this.client.chat.completions.create({
+          model: env().GROQ_LLM_MODEL,
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userMessage }
+          ],
+          temperature: 0.7,
+          max_tokens: 1024
+        }),
+      "Chat"
+    );
 
     const response = completion.choices[0]?.message?.content || "";
     this.logger.debug("Chat response received");
