@@ -21,18 +21,47 @@ const CONFIRM_SEND = ["enviar", "si", "send", "yes"];
 const CANCEL_SEND = ["cancelar", "cancel", "no"];
 
 function extractRateLimitWait(error: unknown): string | null {
-  const msg =
-    typeof error === "object" && error !== null ? (error as Record<string, unknown>).message : null;
-  if (typeof msg !== "string") return null;
-  const match = msg.match(/try again in (\d+h)?(\d+m)?(\d+(?:\.\d+)?s)?/i);
-  if (!match) return null;
-  const hours = match[1] ? parseInt(match[1]) : 0;
-  const minutes = match[2] ? parseInt(match[2]) : 0;
-  const parts: string[] = [];
-  if (hours > 0) parts.push(`${hours} hora${hours > 1 ? "s" : ""}`);
-  if (minutes > 0) parts.push(`${minutes} minuto${minutes > 1 ? "s" : ""}`);
-  if (parts.length === 0) parts.push("unos segundos");
-  return parts.join(" y ");
+  if (typeof error !== "object" || error === null) return null;
+
+  const err = error as Record<string, unknown>;
+
+  // Try parsing from error message (GROQ includes "try again in Xh Ym Zs")
+  const msg = typeof err.message === "string" ? err.message : "";
+  const match = msg.match(/try again in\s+((?:\d+h)?(?:\d+m)?(?:\d+(?:\.\d+)?s)?)/i);
+
+  if (match?.[1]) {
+    const timeStr = match[1];
+    const h = timeStr.match(/(\d+)h/);
+    const m = timeStr.match(/(\d+)m/);
+    const s = timeStr.match(/(\d+)/); // fallback to any number
+
+    const hours = h ? parseInt(h[1]) : 0;
+    const minutes = m ? parseInt(m[1]) : 0;
+
+    const parts: string[] = [];
+    if (hours > 0) parts.push(`${hours} hora${hours > 1 ? "s" : ""}`);
+    if (minutes > 0) parts.push(`${minutes} minuto${minutes > 1 ? "s" : ""}`);
+    if (parts.length === 0 && s) parts.push(`${parseInt(s[1])} segundos`);
+    if (parts.length > 0) return parts.join(" y ");
+  }
+
+  // Fallback: try Retry-After header (seconds)
+  const headers = err.headers as Record<string, string> | undefined;
+  const retryAfter = headers?.["retry-after"];
+  if (retryAfter) {
+    const totalSeconds = Math.ceil(Number(retryAfter));
+    if (!isNaN(totalSeconds) && totalSeconds > 0) {
+      const h = Math.floor(totalSeconds / 3600);
+      const m = Math.floor((totalSeconds % 3600) / 60);
+      const parts: string[] = [];
+      if (h > 0) parts.push(`${h} hora${h > 1 ? "s" : ""}`);
+      if (m > 0) parts.push(`${m} minuto${m > 1 ? "s" : ""}`);
+      if (parts.length === 0) parts.push(`${totalSeconds} segundos`);
+      return parts.join(" y ");
+    }
+  }
+
+  return null;
 }
 
 function isRateLimitError(error: unknown): boolean {
@@ -108,7 +137,7 @@ export class MessageHandler {
           const wait = extractRateLimitWait(error) || "unos minutos";
           await this.whatsappClient.sendMessage(
             message.chatId,
-            `Estoy saturado en este momento. Intenta de nuevo en ${wait}.`
+            `Llegue al limite de consultas. Deberas esperar ${wait} para volver a usarme.`
           );
         } else {
           await this.whatsappClient.sendMessage(
@@ -220,7 +249,7 @@ export class MessageHandler {
         const wait = extractRateLimitWait(error) || "unos minutos";
         await this.whatsappClient.sendMessage(
           message.chatId,
-          `Estoy saturado en este momento. Intenta de nuevo en ${wait}.`
+          `Llegue al limite de consultas. Deberas esperar ${wait} para volver a usarme.`
         );
       } else {
         await this.whatsappClient.sendMessage(
