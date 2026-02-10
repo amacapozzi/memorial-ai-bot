@@ -4,11 +4,30 @@ export type AccessResult =
   | { allowed: true; info: UserSubscriptionInfo }
   | { allowed: false; reason: string; message: string };
 
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
 export class SubscriptionService {
+  private readonly cache = new Map<string, { data: UserSubscriptionInfo; expiry: number }>();
+
   constructor(private readonly subscriptionRepository: SubscriptionRepository) {}
 
-  async checkBotAccess(chatId: string): Promise<AccessResult> {
+  invalidateCache(chatId: string): void {
+    this.cache.delete(chatId);
+  }
+
+  private async getCachedInfo(chatId: string): Promise<UserSubscriptionInfo> {
+    const cached = this.cache.get(chatId);
+    if (cached && Date.now() < cached.expiry) {
+      return cached.data;
+    }
+
     const info = await this.subscriptionRepository.getUserSubscriptionInfo(chatId);
+    this.cache.set(chatId, { data: info, expiry: Date.now() + CACHE_TTL_MS });
+    return info;
+  }
+
+  async checkBotAccess(chatId: string): Promise<AccessResult> {
+    const info = await this.getCachedInfo(chatId);
 
     if (!info.hasLinkedAccount) {
       return {

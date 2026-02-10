@@ -244,7 +244,7 @@ export class MessageHandler {
     }> = [];
 
     for (const detail of intent.reminderDetails) {
-      const funMessage = await this.intentService.generateFunReminderMessage(detail.description);
+      const funMessage = detail.funMessage ?? detail.description;
 
       // Calculate scheduledAt based on recurrence or specific date
       let scheduledAt: Date;

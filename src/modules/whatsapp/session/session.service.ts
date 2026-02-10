@@ -53,6 +53,29 @@ export class SessionService {
       this.logger.debug("Session credentials saved");
     };
 
+    // Debounced version: coalesces rapid key updates into a single DB write
+    let saveTimer: ReturnType<typeof setTimeout> | null = null;
+    let pendingSave: Promise<void> | null = null;
+    let pendingResolve: (() => void) | null = null;
+
+    const debouncedSaveCreds = () => {
+      if (saveTimer) clearTimeout(saveTimer);
+
+      if (!pendingSave) {
+        pendingSave = new Promise<void>((resolve) => {
+          pendingResolve = resolve;
+        });
+      }
+
+      saveTimer = setTimeout(() => {
+        saveTimer = null;
+        const resolve = pendingResolve!;
+        pendingSave = null;
+        pendingResolve = null;
+        saveCreds().then(resolve, resolve);
+      }, 2000);
+    };
+
     const keyStore = {
       get: async <T extends keyof SignalDataTypeMap>(type: T, ids: string[]) => {
         const result: { [id: string]: SignalDataTypeMap[T] } = {};
@@ -75,7 +98,8 @@ export class SessionService {
             }
           }
         }
-        await saveCreds();
+        // Fire-and-forget: don't await the debounced save
+        debouncedSaveCreds();
       }
     };
 

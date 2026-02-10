@@ -37,6 +37,21 @@ export class GmailService {
     return profile.data.historyId;
   }
 
+  async listNewMessageIds(userId: string, maxResults: number = 10): Promise<string[]> {
+    this.logger.debug(`Listing new message IDs for user: ${userId}`);
+
+    const gmail = await this.getGmail(userId);
+
+    const response = await gmail.users.messages.list({
+      userId: "me",
+      maxResults,
+      labelIds: ["INBOX"],
+      q: "is:unread"
+    });
+
+    return (response.data.messages || []).map((m) => m.id).filter((id): id is string => !!id);
+  }
+
   async getNewMessages(userId: string, maxResults: number = 10): Promise<EmailMessage[]> {
     this.logger.debug(`Fetching new messages for user: ${userId}`);
 

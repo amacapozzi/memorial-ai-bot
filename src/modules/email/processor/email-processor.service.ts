@@ -34,6 +34,21 @@ export class EmailProcessorService {
       return null;
     }
 
+    // Pre-filter obvious non-actionable emails to save AI calls
+    if (this.shouldSkipEmail(email)) {
+      this.logger.debug(`Email ${email.id} pre-filtered as non-actionable, skipping AI analysis`);
+      return this.processedEmailRepository.create({
+        userId,
+        gmailMessageId: email.id,
+        threadId: email.threadId,
+        subject: email.subject,
+        sender: email.from,
+        receivedAt: email.date,
+        emailType: "OTHER",
+        status: "SKIPPED"
+      });
+    }
+
     // Analyze the email with AI
     const analysis = await this.emailAnalyzerService.analyzeEmail(email);
 
@@ -102,20 +117,42 @@ export class EmailProcessorService {
     this.logger.info(`Processing new emails for user ${userId}`);
 
     try {
-      const emails = await this.gmailService.getNewMessages(userId, 10);
+      // Step 1: Get only message IDs (lightweight, no body fetching)
+      const messageIds = await this.gmailService.listNewMessageIds(userId, 10);
 
-      this.logger.info(`Found ${emails.length} new emails for user ${userId}`);
+      if (messageIds.length === 0) {
+        this.logger.info(`No new emails for user ${userId}`);
+        return [];
+      }
 
+      // Step 2: Batch-check which are already processed
+      const alreadyProcessed = await this.processedEmailRepository.existsByGmailIds(
+        userId,
+        messageIds
+      );
+
+      const newIds = messageIds.filter((id) => !alreadyProcessed.has(id));
+
+      this.logger.info(
+        `Found ${messageIds.length} emails, ${alreadyProcessed.size} already processed, ${newIds.length} new`
+      );
+
+      if (newIds.length === 0) {
+        return [];
+      }
+
+      // Step 3: Fetch full content and process only truly new emails
       const processed: ProcessedEmail[] = [];
 
-      for (const email of emails) {
+      for (const id of newIds) {
         try {
+          const email = await this.gmailService.getMessage(userId, id);
           const result = await this.processEmail(userId, chatId, email);
           if (result) {
             processed.push(result);
           }
         } catch (error) {
-          this.logger.error(`Failed to process email ${email.id}: ${error}`);
+          this.logger.error(`Failed to process email ${id}: ${error}`);
         }
       }
 
@@ -380,6 +417,61 @@ export class EmailProcessorService {
     } catch (error) {
       this.logger.error(`Failed to notify user ${chatId}: ${error}`);
     }
+  }
+
+  private shouldSkipEmail(email: EmailMessage): boolean {
+    const senderLower = email.from.toLowerCase();
+    const subjectLower = email.subject.toLowerCase();
+
+    // Skip known non-actionable sender patterns
+    const skipSenderPatterns = [
+      "noreply@",
+      "no-reply@",
+      "no_reply@",
+      "mailer-daemon@",
+      "notifications@",
+      "marketing@",
+      "newsletter@",
+      "promo@",
+      "promotions@",
+      "news@",
+      "digest@",
+      "updates@",
+      "bulk@"
+    ];
+
+    const skipSenderDomains = [
+      "mailchimp.com",
+      "sendgrid.net",
+      "amazonses.com",
+      "mailgun.org",
+      "constantcontact.com",
+      "campaign-archive.com"
+    ];
+
+    const isSkipSender =
+      skipSenderPatterns.some((p) => senderLower.includes(p)) ||
+      skipSenderDomains.some((d) => senderLower.includes(d));
+
+    if (!isSkipSender) return false;
+
+    // Only skip if subject also looks non-actionable (avoid filtering transactional emails from noreply)
+    const skipSubjectPatterns = [
+      "unsubscribe",
+      "newsletter",
+      "weekly digest",
+      "daily digest",
+      "promotional",
+      "special offer",
+      "% off",
+      "descuento",
+      "oferta",
+      "sale ends",
+      "black friday",
+      "cyber monday"
+    ];
+
+    return skipSubjectPatterns.some((p) => subjectLower.includes(p));
   }
 
   private buildExtractedData(analysis: AnalyzedEmail): Record<string, unknown> {

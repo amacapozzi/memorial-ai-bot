@@ -42,6 +42,9 @@ export class WhatsAppClient {
   async connect(): Promise<void> {
     this.logger.info("Connecting to WhatsApp...");
 
+    // Clean up previous socket to prevent duplicate event listeners
+    this.cleanup();
+
     const { state, saveCreds } = await this.sessionService.getAuthState();
 
     this.socket = makeWASocket({
@@ -57,10 +60,17 @@ export class WhatsAppClient {
   }
 
   async disconnect(): Promise<void> {
+    this.cleanup();
+    this.logger.info("Disconnected from WhatsApp");
+  }
+
+  private cleanup(): void {
     if (this.socket) {
+      this.socket.ev.removeAllListeners("creds.update");
+      this.socket.ev.removeAllListeners("connection.update");
+      this.socket.ev.removeAllListeners("messages.upsert");
       this.socket.end(undefined);
       this.socket = null;
-      this.logger.info("Disconnected from WhatsApp");
     }
   }
 

@@ -105,6 +105,10 @@ Para interpretar fechas/horas:
 - Si dice dia pero no hora, usar 9:00 por defecto
 - Si es recurrente y dice la hora, usar esa hora para recurrenceTime
 
+Para cada recordatorio, genera tambien un "funMessage": un mensaje corto (maximo 2 lineas) y divertido en espanol rioplatense (vos en lugar de tu) que se usara como notificacion del recordatorio. Puede tener 1-2 emojis. Ejemplos:
+- "Ey! No te olvides de tu cita con el dentista. Hora de mostrar esos dientitos! 🦷"
+- "Che! Tenes que comprar leche. El cafe solo no es lo mismo 🥛"
+
 Responde UNICAMENTE con JSON valido (sin markdown, sin explicaciones):
 {
   "intentType": "create_reminder" | "list_tasks" | "cancel_task" | "modify_task" | "link_email" | "unlink_email" | "email_status" | "reply_email" | "search_email" | "unknown",
@@ -115,7 +119,8 @@ Responde UNICAMENTE con JSON valido (sin markdown, sin explicaciones):
       "dateTime": "string ISO 8601 | null",
       "recurrence": "NONE" | "DAILY" | "WEEKLY" | "MONTHLY",
       "recurrenceDay": number | null,
-      "recurrenceTime": "HH:MM | null"
+      "recurrenceTime": "HH:MM | null",
+      "funMessage": "string - short fun reminder notification message"
     }
   ] | null,
   "newDateTime": "string ISO 8601" | null,
@@ -128,22 +133,22 @@ Responde UNICAMENTE con JSON valido (sin markdown, sin explicaciones):
 Ejemplos:
 
 - "recuerdame manana a las 4 ir al dentista"
-  -> {"intentType": "create_reminder", "taskNumber": null, "reminderDetails": [{"description": "ir al dentista", "dateTime": "2024-01-16T16:00:00-03:00", "recurrence": "NONE", "recurrenceDay": null, "recurrenceTime": null}], "newDateTime": null, "missingDateTime": false, "confidence": 0.95}
+  -> {"intentType": "create_reminder", "taskNumber": null, "reminderDetails": [{"description": "ir al dentista", "dateTime": "2024-01-16T16:00:00-03:00", "recurrence": "NONE", "recurrenceDay": null, "recurrenceTime": null, "funMessage": "Ey! No te olvides del dentista. Hora de mostrar esos dientitos! 🦷"}], "newDateTime": null, "missingDateTime": false, "confidence": 0.95}
 
 - "recuerdame todos los dias a las 8 tomar la pastilla"
-  -> {"intentType": "create_reminder", "taskNumber": null, "reminderDetails": [{"description": "tomar la pastilla", "dateTime": null, "recurrence": "DAILY", "recurrenceDay": null, "recurrenceTime": "08:00"}], "newDateTime": null, "missingDateTime": false, "confidence": 0.95}
+  -> {"intentType": "create_reminder", "taskNumber": null, "reminderDetails": [{"description": "tomar la pastilla", "dateTime": null, "recurrence": "DAILY", "recurrenceDay": null, "recurrenceTime": "08:00", "funMessage": "Che! Hora de la pastilla. Tu cuerpo te lo va a agradecer 💊"}], "newDateTime": null, "missingDateTime": false, "confidence": 0.95}
 
 - "recuerdame todos los domingos a las 10 ir a la iglesia"
-  -> {"intentType": "create_reminder", "taskNumber": null, "reminderDetails": [{"description": "ir a la iglesia", "dateTime": null, "recurrence": "WEEKLY", "recurrenceDay": 0, "recurrenceTime": "10:00"}], "newDateTime": null, "missingDateTime": false, "confidence": 0.95}
+  -> {"intentType": "create_reminder", "taskNumber": null, "reminderDetails": [{"description": "ir a la iglesia", "dateTime": null, "recurrence": "WEEKLY", "recurrenceDay": 0, "recurrenceTime": "10:00", "funMessage": "Domingo de fe! A prepararse para la iglesia 🙏"}], "newDateTime": null, "missingDateTime": false, "confidence": 0.95}
 
 - "recuerdame los lunes y miercoles a las 7 ir al gimnasio"
-  -> {"intentType": "create_reminder", "taskNumber": null, "reminderDetails": [{"description": "ir al gimnasio", "dateTime": null, "recurrence": "WEEKLY", "recurrenceDay": 1, "recurrenceTime": "07:00"}, {"description": "ir al gimnasio", "dateTime": null, "recurrence": "WEEKLY", "recurrenceDay": 3, "recurrenceTime": "07:00"}], "newDateTime": null, "missingDateTime": false, "confidence": 0.95}
+  -> {"intentType": "create_reminder", "taskNumber": null, "reminderDetails": [{"description": "ir al gimnasio", "dateTime": null, "recurrence": "WEEKLY", "recurrenceDay": 1, "recurrenceTime": "07:00", "funMessage": "Dale que arrancamos la semana con todo! A mover el esqueleto 💪"}, {"description": "ir al gimnasio", "dateTime": null, "recurrence": "WEEKLY", "recurrenceDay": 3, "recurrenceTime": "07:00", "funMessage": "Mitad de semana y vos no aflojas! Al gimnasio se ha dicho 🏋️"}], "newDateTime": null, "missingDateTime": false, "confidence": 0.95}
 
 - "recuerdame llamar a mama"
-  -> {"intentType": "create_reminder", "taskNumber": null, "reminderDetails": [{"description": "llamar a mama", "dateTime": null, "recurrence": "NONE", "recurrenceDay": null, "recurrenceTime": null}], "newDateTime": null, "missingDateTime": true, "confidence": 0.90}
+  -> {"intentType": "create_reminder", "taskNumber": null, "reminderDetails": [{"description": "llamar a mama", "dateTime": null, "recurrence": "NONE", "recurrenceDay": null, "recurrenceTime": null, "funMessage": "Ey! Llama a mama que seguro te extraña 📞"}], "newDateTime": null, "missingDateTime": true, "confidence": 0.90}
 
 - "creame un recordatorio de pagar las cuentas"
-  -> {"intentType": "create_reminder", "taskNumber": null, "reminderDetails": [{"description": "pagar las cuentas", "dateTime": null, "recurrence": "NONE", "recurrenceDay": null, "recurrenceTime": null}], "newDateTime": null, "missingDateTime": true, "confidence": 0.90}
+  -> {"intentType": "create_reminder", "taskNumber": null, "reminderDetails": [{"description": "pagar las cuentas", "dateTime": null, "recurrence": "NONE", "recurrenceDay": null, "recurrenceTime": null, "funMessage": "Ojo! Las cuentas no se pagan solas. A ponerse las pilas 💸"}], "newDateTime": null, "missingDateTime": true, "confidence": 0.90}
 
 - "que tareas tengo pendientes"
   -> {"intentType": "list_tasks", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "confidence": 0.95}

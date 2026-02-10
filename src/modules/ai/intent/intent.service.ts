@@ -11,6 +11,7 @@ export interface ReminderDetail {
   recurrence: RecurrenceType;
   recurrenceDay: number | null;
   recurrenceTime: string | null;
+  funMessage: string | null;
 }
 
 export type IntentType =
@@ -46,6 +47,7 @@ interface IntentResponse {
     recurrence: RecurrenceType;
     recurrenceDay: number | null;
     recurrenceTime: string | null;
+    funMessage: string | null;
   }> | null;
   newDateTime: string | null;
   missingDateTime: boolean;
@@ -126,7 +128,8 @@ export class IntentService {
             dateTime,
             recurrence: detail.recurrence || "NONE",
             recurrenceDay: detail.recurrenceDay,
-            recurrenceTime: detail.recurrenceTime
+            recurrenceTime: detail.recurrenceTime,
+            funMessage: detail.funMessage || null
           };
         });
         result.originalText = text;

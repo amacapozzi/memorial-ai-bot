@@ -131,4 +131,18 @@ export class ProcessedEmailRepository {
     });
     return count > 0;
   }
+
+  async existsByGmailIds(userId: string, gmailMessageIds: string[]): Promise<Set<string>> {
+    if (gmailMessageIds.length === 0) return new Set();
+
+    const existing = await this.prisma.processedEmail.findMany({
+      where: {
+        userId,
+        gmailMessageId: { in: gmailMessageIds }
+      },
+      select: { gmailMessageId: true }
+    });
+
+    return new Set(existing.map((e) => e.gmailMessageId));
+  }
 }
