@@ -98,7 +98,6 @@ export class SessionService {
             }
           }
         }
-        // Fire-and-forget: don't await the debounced save
         debouncedSaveCreds();
       }
     };
