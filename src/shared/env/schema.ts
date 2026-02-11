@@ -28,7 +28,10 @@ export const envSchema = z.object({
   HOST_URL: z.string().url().default("http://localhost:3000"),
 
   // Shared secret for webhook endpoints (website → bot)
-  WEBHOOK_SECRET: z.string().min(1).default("change-me")
+  WEBHOOK_SECRET: z.string().min(1).default("change-me"),
+
+  // GitHub webhook secret (for push event tracking)
+  GITHUB_WEBHOOK_SECRET: z.string().min(1).optional()
 });
 
 export type Env = z.infer<typeof envSchema>;

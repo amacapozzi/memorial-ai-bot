@@ -77,6 +77,11 @@ export type EmailToken = Prisma.EmailTokenModel;
  */
 export type ProcessedEmail = Prisma.ProcessedEmailModel;
 /**
+ * Model Commit
+ *
+ */
+export type Commit = Prisma.CommitModel;
+/**
  * Model LinkingCode
  *
  */

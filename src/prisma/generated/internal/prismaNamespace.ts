@@ -387,6 +387,7 @@ export const ModelName = {
   GoogleAuthToken: "GoogleAuthToken",
   EmailToken: "EmailToken",
   ProcessedEmail: "ProcessedEmail",
+  Commit: "Commit",
   LinkingCode: "LinkingCode"
 } as const;
 
@@ -420,6 +421,7 @@ export type TypeMap<
       | "googleAuthToken"
       | "emailToken"
       | "processedEmail"
+      | "commit"
       | "linkingCode";
     txIsolationLevel: TransactionIsolationLevel;
   };
@@ -1322,6 +1324,80 @@ export type TypeMap<
         };
       };
     };
+    Commit: {
+      payload: Prisma.$CommitPayload<ExtArgs>;
+      fields: Prisma.CommitFieldRefs;
+      operations: {
+        findUnique: {
+          args: Prisma.CommitFindUniqueArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CommitPayload> | null;
+        };
+        findUniqueOrThrow: {
+          args: Prisma.CommitFindUniqueOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CommitPayload>;
+        };
+        findFirst: {
+          args: Prisma.CommitFindFirstArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CommitPayload> | null;
+        };
+        findFirstOrThrow: {
+          args: Prisma.CommitFindFirstOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CommitPayload>;
+        };
+        findMany: {
+          args: Prisma.CommitFindManyArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CommitPayload>[];
+        };
+        create: {
+          args: Prisma.CommitCreateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CommitPayload>;
+        };
+        createMany: {
+          args: Prisma.CommitCreateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        createManyAndReturn: {
+          args: Prisma.CommitCreateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CommitPayload>[];
+        };
+        delete: {
+          args: Prisma.CommitDeleteArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CommitPayload>;
+        };
+        update: {
+          args: Prisma.CommitUpdateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CommitPayload>;
+        };
+        deleteMany: {
+          args: Prisma.CommitDeleteManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateMany: {
+          args: Prisma.CommitUpdateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateManyAndReturn: {
+          args: Prisma.CommitUpdateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CommitPayload>[];
+        };
+        upsert: {
+          args: Prisma.CommitUpsertArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CommitPayload>;
+        };
+        aggregate: {
+          args: Prisma.CommitAggregateArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.AggregateCommit>;
+        };
+        groupBy: {
+          args: Prisma.CommitGroupByArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.CommitGroupByOutputType>[];
+        };
+        count: {
+          args: Prisma.CommitCountArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.CommitCountAggregateOutputType> | number;
+        };
+      };
+    };
     LinkingCode: {
       payload: Prisma.$LinkingCodePayload<ExtArgs>;
       fields: Prisma.LinkingCodeFieldRefs;
@@ -1624,6 +1700,21 @@ export const ProcessedEmailScalarFieldEnum = {
 
 export type ProcessedEmailScalarFieldEnum =
   (typeof ProcessedEmailScalarFieldEnum)[keyof typeof ProcessedEmailScalarFieldEnum];
+
+export const CommitScalarFieldEnum = {
+  id: "id",
+  sha: "sha",
+  message: "message",
+  author: "author",
+  url: "url",
+  repository: "repository",
+  branch: "branch",
+  timestamp: "timestamp",
+  createdAt: "createdAt"
+} as const;
+
+export type CommitScalarFieldEnum =
+  (typeof CommitScalarFieldEnum)[keyof typeof CommitScalarFieldEnum];
 
 export const LinkingCodeScalarFieldEnum = {
   id: "id",
@@ -1977,6 +2068,7 @@ export type GlobalOmitConfig = {
   googleAuthToken?: Prisma.GoogleAuthTokenOmit;
   emailToken?: Prisma.EmailTokenOmit;
   processedEmail?: Prisma.ProcessedEmailOmit;
+  commit?: Prisma.CommitOmit;
   linkingCode?: Prisma.LinkingCodeOmit;
 };
 

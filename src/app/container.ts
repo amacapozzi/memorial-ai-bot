@@ -5,6 +5,7 @@ import {
   GoogleCalendarService,
   createCalendarModule
 } from "@modules/calendar";
+import { CommitRepository, CommitService, createCommitModule } from "@modules/commits";
 import {
   UserRepository,
   UserService,
@@ -30,6 +31,7 @@ import {
   MessageHandler
 } from "@modules/whatsapp";
 import { getPrismaClient } from "@shared/database";
+import { env } from "@shared/env/env";
 import { createLogger } from "@shared/logger/logger";
 
 export function buildApp() {
@@ -45,6 +47,7 @@ export function buildApp() {
   const processedEmailRepository = new ProcessedEmailRepository(prisma);
   const linkingCodeRepository = new LinkingCodeRepository(prisma);
   const subscriptionRepository = new SubscriptionRepository(prisma);
+  const commitRepository = new CommitRepository(prisma);
 
   // AI Services
   const groqClient = new GroqClient();
@@ -114,11 +117,15 @@ export function buildApp() {
   // Scheduler
   const schedulerService = new SchedulerService(reminderService, whatsappClient);
 
+  // Commit Service
+  const commitService = new CommitService(commitRepository);
+
   // Elysia modules
   const calendarModule = createCalendarModule(googleAuthService);
   const emailModule = createEmailModule(gmailAuthService, userService);
   const linkingModule = createLinkingModule(whatsappClient);
   const notificationModule = createNotificationModule(whatsappClient, prisma);
+  const commitModule = createCommitModule(commitService, env().GITHUB_WEBHOOK_SECRET);
 
   // Start function to initialize services
   const startServices = async () => {
@@ -151,7 +158,7 @@ export function buildApp() {
 
   return {
     logger,
-    modules: [calendarModule, emailModule, linkingModule, notificationModule],
+    modules: [calendarModule, emailModule, linkingModule, notificationModule, commitModule],
     startServices,
     stopServices
   };

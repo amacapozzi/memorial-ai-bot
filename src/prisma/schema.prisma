@@ -336,6 +336,26 @@ enum ProcessedEmailStatus {
 }
 
 // =============================================
+// COMMITS (GitHub webhook tracking)
+// =============================================
+
+model Commit {
+  id         String   @id @default(cuid())
+  sha        String   @unique
+  message    String
+  author     String
+  url        String
+  repository String
+  branch     String
+  timestamp  DateTime
+
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([repository, timestamp])
+  @@map("commits")
+}
+
+// =============================================
 // LINKING CODES (WhatsApp ↔ Website)
 // =============================================
 
