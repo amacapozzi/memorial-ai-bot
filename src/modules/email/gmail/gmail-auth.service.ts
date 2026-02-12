@@ -34,7 +34,7 @@ export class GmailAuthService {
       access_type: "offline",
       scope: getGmailScopes(includeSend),
       prompt: "consent",
-      state: userId // Pass userId to identify user on callback
+      state: userId 
     });
   }
 
