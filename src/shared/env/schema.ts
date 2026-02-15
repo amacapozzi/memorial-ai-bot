@@ -11,6 +11,13 @@ export const envSchema = z.object({
   GROQ_API_KEY: z.string().min(1),
   GROQ_WHISPER_MODEL: z.string().default("whisper-large-v3"),
   GROQ_LLM_MODEL: z.string().default("llama-3.3-70b-versatile"),
+  // Comma-separated list of models for automatic rotation on rate limits
+  GROQ_LLM_MODELS: z
+    .string()
+    .default(
+      "llama-3.3-70b-versatile,meta-llama/llama-4-scout-17b-16e-instruct,llama-3.1-8b-instant,qwen/qwen3-32b,openai/gpt-oss-120b"
+    ),
+  GROQ_WHISPER_MODELS: z.string().default("whisper-large-v3,whisper-large-v3-turbo"),
 
   // Google Calendar OAuth2
   GOOGLE_CLIENT_ID: z.string().min(1),
@@ -31,7 +38,15 @@ export const envSchema = z.object({
   WEBHOOK_SECRET: z.string().min(1).default("change-me"),
 
   // GitHub webhook secret (for push event tracking)
-  GITHUB_WEBHOOK_SECRET: z.string().min(1).optional()
+  GITHUB_WEBHOOK_SECRET: z.string().min(1).optional(),
+
+  // SerpAPI key for Google Shopping search (optional)
+  SERPAPI_API_KEY: z.string().min(1).optional(),
+
+  // MercadoLibre OAuth (optional)
+  MELI_APP_ID: z.string().min(1).optional(),
+  MELI_CLIENT_SECRET: z.string().min(1).optional(),
+  MELI_REDIRECT_URI: z.string().url().default("http://localhost:3000/auth/mercadolibre/callback")
 });
 
 export type Env = z.infer<typeof envSchema>;
