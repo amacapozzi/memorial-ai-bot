@@ -138,8 +138,12 @@ export class MessageHandler {
 
     this.logger.info(`Received ${message.type} message from ${message.chatId}`);
 
-    // Handle interactive button/list responses before text extraction
-    if (message.type === "buttonResponse" || message.type === "listResponse") {
+    // Handle interactive responses (poll votes, button taps, list selections)
+    if (
+      message.type === "pollResponse" ||
+      message.type === "buttonResponse" ||
+      message.type === "listResponse"
+    ) {
       await this.handleInteractiveResponse(message);
       return;
     }
@@ -591,8 +595,28 @@ export class MessageHandler {
       response += `*${index + 1}.* ${reminder.reminderText}${recurrenceIcon}\n   📅 ${dateStr}\n\n`;
     });
 
-    response += "_Podes decir 'cancela la tarea X' o 'cambia la tarea X a las Y'_";
     await this.whatsappClient.sendMessage(chatId, response);
+
+    // Max 11 tasks per poll (12 options - 1 "Ninguna")
+    const pollReminders = reminders.slice(0, 11);
+    const noneOption = { id: "cancel_none", text: "Ninguna" };
+    const cancelOptions = [
+      ...pollReminders.map((r, i) => ({
+        id: `cancel_${i}`,
+        text: `${i + 1}. ${r.reminderText.substring(0, 60)}`
+      })),
+      noneOption
+    ];
+    const modifyOptions = [
+      ...pollReminders.map((r, i) => ({
+        id: `modify_${i}`,
+        text: `${i + 1}. ${r.reminderText.substring(0, 60)}`
+      })),
+      { id: "modify_none", text: "Ninguna" }
+    ];
+
+    await this.whatsappClient.sendPoll(chatId, "¿Qué tarea querés cancelar?", cancelOptions);
+    await this.whatsappClient.sendPoll(chatId, "¿Qué tarea querés reprogramar?", modifyOptions);
   }
 
   private async handleCancelTask(chatId: string, taskNumber?: number): Promise<void> {
@@ -939,9 +963,13 @@ ${privacyLine}`
         `*Preview de tu respuesta:*\n\n` +
           `*Para:* ${fullEmail.from}\n` +
           `*Asunto:* ${reply.subject}\n\n` +
-          `${reply.body}\n\n` +
-          `_Responde "enviar" para enviar o "cancelar" para descartar._`
+          `${reply.body}`
       );
+
+      await this.whatsappClient.sendPoll(chatId, "¿Qué hacemos con esta respuesta?", [
+        { id: "enviar", text: "✅ Enviar" },
+        { id: "cancelar", text: "❌ Descartar" }
+      ]);
 
       // Store pending reply
       this.pendingReplies.set(chatId, {
@@ -1156,8 +1184,12 @@ ${privacyLine}`
         message += `\n${contentPreview}`;
       }
 
-      message += `\n_¿Querés responder? Decime "si" o "no"_`;
       await this.whatsappClient.sendMessage(chatId, message);
+
+      await this.whatsappClient.sendPoll(chatId, "¿Querés responder a este email?", [
+        { id: "si", text: "✅ Sí, responder" },
+        { id: "no", text: "❌ No gracias" }
+      ]);
 
       // Save state
       this.lastViewedEmail.set(chatId, {
@@ -1261,9 +1293,13 @@ ${privacyLine}`
         `*Preview de tu respuesta:*\n\n` +
           `*Para:* ${fullEmail.from}\n` +
           `*Asunto:* ${reply.subject}\n\n` +
-          `${reply.body}\n\n` +
-          `_Responde "enviar" para enviar o "cancelar" para descartar._`
+          `${reply.body}`
       );
+
+      await this.whatsappClient.sendPoll(chatId, "¿Qué hacemos con esta respuesta?", [
+        { id: "enviar", text: "✅ Enviar" },
+        { id: "cancelar", text: "❌ Descartar" }
+      ]);
 
       // Store pending reply (reuses existing send/cancel flow)
       this.pendingReplies.set(chatId, {
@@ -1610,35 +1646,35 @@ ${privacyLine}`
 
   private async handleInteractiveResponse(message: MessageContent): Promise<void> {
     const chatId = message.chatId;
+    // polls and buttons share selectedButtonId; lists use selectedRowId
+    const selectedId = message.selectedButtonId ?? message.selectedRowId ?? "";
 
-    if (message.type === "buttonResponse") {
-      const selectedId = message.selectedButtonId ?? "";
-
-      if (this.pendingReplies.has(chatId)) {
-        await this.handlePendingReplyResponse(chatId, selectedId);
-        return;
-      }
-
-      if (this.pendingSearchReply.has(chatId)) {
-        await this.handlePendingSearchReplyResponse(chatId, selectedId);
-        return;
-      }
+    // Email flows: pending reply confirmation (enviar / cancelar)
+    if (this.pendingReplies.has(chatId)) {
+      await this.handlePendingReplyResponse(chatId, selectedId);
+      return;
     }
 
-    if (message.type === "listResponse") {
-      const rowId = message.selectedRowId ?? "";
+    // Email flows: pending search reply (si / no)
+    if (this.pendingSearchReply.has(chatId)) {
+      await this.handlePendingSearchReplyResponse(chatId, selectedId);
+      return;
+    }
 
-      if (rowId.startsWith("cancel_")) {
-        const idx = parseInt(rowId.replace("cancel_", ""), 10);
-        await this.handleCancelTask(chatId, idx + 1);
-      } else if (rowId.startsWith("modify_")) {
-        const idx = parseInt(rowId.replace("modify_", ""), 10);
-        this.pendingModifyTask.set(chatId, idx + 1);
-        await this.whatsappClient.sendMessage(
-          chatId,
-          "¿A qué hora querés cambiar la tarea? Ej: 'mañana a las 5pm'"
-        );
-      }
+    // Task actions from polls/lists (cancel_N, modify_N)
+    if (selectedId.startsWith("cancel_") && selectedId !== "cancel_none") {
+      const idx = parseInt(selectedId.replace("cancel_", ""), 10);
+      await this.handleCancelTask(chatId, idx + 1);
+      return;
+    }
+
+    if (selectedId.startsWith("modify_") && selectedId !== "modify_none") {
+      const idx = parseInt(selectedId.replace("modify_", ""), 10);
+      this.pendingModifyTask.set(chatId, idx + 1);
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "¿A qué hora querés cambiar la tarea? Ej: 'mañana a las 5pm'"
+      );
     }
   }
 

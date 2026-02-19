@@ -11,6 +11,7 @@ export interface MessageContent {
     | "document"
     | "buttonResponse"
     | "listResponse"
+    | "pollResponse"
     | "unknown";
   text?: string;
   audioBuffer?: Buffer;
