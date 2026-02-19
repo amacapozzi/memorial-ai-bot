@@ -24,6 +24,12 @@ export type IntentType =
   | "email_status"
   | "reply_email"
   | "search_email"
+  | "search_product"
+  | "link_mercadolibre"
+  | "unlink_mercadolibre"
+  | "track_order"
+  | "enable_digest"
+  | "disable_digest"
   | "unknown";
 
 export interface ParsedIntent {
@@ -35,6 +41,8 @@ export interface ParsedIntent {
   missingDateTime?: boolean;
   emailReplyInstruction?: string;
   emailSearchQuery?: string;
+  productSearchQuery?: string;
+  digestHour?: number;
   confidence: number;
 }
 
@@ -53,6 +61,8 @@ interface IntentResponse {
   missingDateTime: boolean;
   emailReplyInstruction: string | null;
   emailSearchQuery: string | null;
+  productSearchQuery: string | null;
+  digestHour: number | null;
   confidence: number;
 }
 
@@ -99,6 +109,16 @@ export class IntentService {
       // Handle email search query
       if (response.emailSearchQuery) {
         result.emailSearchQuery = response.emailSearchQuery;
+      }
+
+      // Handle product search query
+      if (response.productSearchQuery) {
+        result.productSearchQuery = response.productSearchQuery;
+      }
+
+      // Handle digest hour
+      if (response.digestHour !== null && response.digestHour !== undefined) {
+        result.digestHour = response.digestHour;
       }
 
       // Handle reminder details for create (supports multiple reminders)

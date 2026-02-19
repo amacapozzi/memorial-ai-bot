@@ -59,6 +59,7 @@ export const ModelName = {
   WhatsAppSession: "WhatsAppSession",
   GoogleAuthToken: "GoogleAuthToken",
   EmailToken: "EmailToken",
+  MercadoLibreToken: "MercadoLibreToken",
   ProcessedEmail: "ProcessedEmail",
   Commit: "Commit",
   LinkingCode: "LinkingCode"
@@ -90,6 +91,8 @@ export const UserScalarFieldEnum = {
   role: "role",
   chatId: "chatId",
   locale: "locale",
+  digestEnabled: "digestEnabled",
+  digestHour: "digestHour",
   createdAt: "createdAt",
   updatedAt: "updatedAt"
 } as const;
@@ -251,6 +254,22 @@ export const EmailTokenScalarFieldEnum = {
 
 export type EmailTokenScalarFieldEnum =
   (typeof EmailTokenScalarFieldEnum)[keyof typeof EmailTokenScalarFieldEnum];
+
+export const MercadoLibreTokenScalarFieldEnum = {
+  id: "id",
+  userId: "userId",
+  accessToken: "accessToken",
+  refreshToken: "refreshToken",
+  expiresAt: "expiresAt",
+  scope: "scope",
+  tokenType: "tokenType",
+  mlUserId: "mlUserId",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt"
+} as const;
+
+export type MercadoLibreTokenScalarFieldEnum =
+  (typeof MercadoLibreTokenScalarFieldEnum)[keyof typeof MercadoLibreTokenScalarFieldEnum];
 
 export const ProcessedEmailScalarFieldEnum = {
   id: "id",

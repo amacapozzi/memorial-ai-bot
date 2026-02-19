@@ -6,6 +6,9 @@ import type { ProcessedEmailRepository } from "@modules/email/processor/processe
 import type { EmailReplyService } from "@modules/email/reply/email-reply.service";
 import type { UserService } from "@modules/email/user/user.service";
 import type { LinkingCodeService } from "@modules/linking/linking.service";
+import type { MeliApiService } from "@modules/mercadolibre/api/meli-api.service";
+import type { MeliAuthService } from "@modules/mercadolibre/auth/meli-auth.service";
+import type { ProductSearchService } from "@modules/product-search/product-search.service";
 import type { ReminderService } from "@modules/reminders/reminder.service";
 import type { SubscriptionService } from "@modules/subscription/subscription.service";
 import type { RecurrenceType } from "@prisma-module/generated/client";
@@ -103,7 +106,10 @@ export class MessageHandler {
     private readonly subscriptionService?: SubscriptionService,
     private readonly emailReplyService?: EmailReplyService,
     private readonly gmailService?: GmailService,
-    private readonly processedEmailRepository?: ProcessedEmailRepository
+    private readonly processedEmailRepository?: ProcessedEmailRepository,
+    private readonly productSearchService?: ProductSearchService,
+    private readonly meliAuthService?: MeliAuthService,
+    private readonly meliApiService?: MeliApiService
   ) {}
 
   async handle(message: MessageContent): Promise<void> {
@@ -228,6 +234,30 @@ export class MessageHandler {
           await this.handleSearchEmail(message.chatId, intent.emailSearchQuery);
           break;
 
+        case "search_product":
+          await this.handleSearchProduct(message.chatId, intent.productSearchQuery);
+          break;
+
+        case "link_mercadolibre":
+          await this.handleLinkMercadoLibre(message.chatId);
+          break;
+
+        case "unlink_mercadolibre":
+          await this.handleUnlinkMercadoLibre(message.chatId);
+          break;
+
+        case "track_order":
+          await this.handleTrackOrder(message.chatId);
+          break;
+
+        case "enable_digest":
+          await this.handleEnableDigest(message.chatId, intent.digestHour);
+          break;
+
+        case "disable_digest":
+          await this.handleDisableDigest(message.chatId);
+          break;
+
         default:
           await this.whatsappClient.sendMessage(
             message.chatId,
@@ -240,6 +270,10 @@ export class MessageHandler {
               "- Conectar email: 'conecta mi email'\n" +
               "- Responder email: 'respondele al mail diciendo que acepto'\n" +
               "- Buscar email: 'busca el mail de Juan sobre el presupuesto'\n" +
+              "- Buscar productos: 'buscame auriculares bluetooth'\n" +
+              "- Conectar MercadoLibre: 'conecta mi mercado libre'\n" +
+              "- Rastrear pedido: 'donde esta mi paquete'\n" +
+              "- Resumen diario: 'activar resumen diario' / 'desactivar resumen diario'\n" +
               "- Vincular con la web: /connect"
           );
       }
@@ -1199,6 +1233,327 @@ ${privacyLine}`
         "Hubo un error preparando la respuesta. Intenta de nuevo mas tarde."
       );
       this.lastViewedEmail.delete(chatId);
+    }
+  }
+
+  private async handleSearchProduct(chatId: string, query?: string): Promise<void> {
+    if (!this.productSearchService) {
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "La funcion de busqueda de productos no esta disponible en este momento."
+      );
+      return;
+    }
+
+    if (!query) {
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "Decime que producto buscas. Ej: 'buscame auriculares bluetooth'"
+      );
+      return;
+    }
+
+    try {
+      await this.whatsappClient.sendMessage(chatId, "Buscando productos... 🔍");
+
+      // Try to get ML access token for authenticated search
+      let mlAccessToken: string | undefined;
+      if (this.meliAuthService && this.userService) {
+        try {
+          const user = await this.userService.getUserByChatId(chatId);
+          if (user && (await this.meliAuthService.isAuthenticated(user.id))) {
+            const { accessToken } = await this.meliAuthService.getAccessToken(user.id);
+            mlAccessToken = accessToken;
+          }
+        } catch {
+          // Proceed without ML token
+        }
+      }
+
+      const results = await this.productSearchService.search(query, mlAccessToken);
+
+      if (results.length === 0) {
+        await this.whatsappClient.sendMessage(
+          chatId,
+          "No encontre resultados para tu busqueda. Intenta con otros terminos."
+        );
+        return;
+      }
+
+      let message = `🛒 *Mejores precios para "${query}":*\n\n`;
+
+      results.forEach((product, index) => {
+        const priceStr = this.formatPrice(product.price, product.currency);
+        const bestTag = index === 0 ? " 🏷️ *Mejor precio!*" : "";
+
+        message += `*${index + 1}.* ${product.title}\n`;
+        message += `   💰 ${priceStr}${bestTag}\n`;
+        message += `   🏪 ${product.seller} (${product.source})\n`;
+        message += `   🔗 ${product.link}\n\n`;
+      });
+
+      message += `_Mostrando ${results.length} resultado${results.length > 1 ? "s" : ""} ordenados por precio._`;
+
+      await this.whatsappClient.sendMessage(chatId, message);
+
+      this.logger.info(`Product search results sent for "${query}" to ${chatId}`);
+    } catch (error) {
+      this.logger.error(`Failed to search products for ${chatId}`, error);
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "Hubo un error buscando productos. Intenta de nuevo mas tarde."
+      );
+    }
+  }
+
+  private async handleLinkMercadoLibre(chatId: string): Promise<void> {
+    if (!this.userService || !this.meliAuthService) {
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "La funcion de MercadoLibre no esta disponible en este momento."
+      );
+      return;
+    }
+
+    try {
+      const user = await this.userService.getOrCreateUser(chatId);
+
+      const isLinked = await this.meliAuthService.isAuthenticated(user.id);
+      if (isLinked) {
+        await this.whatsappClient.sendMessage(
+          chatId,
+          "Ya tenes tu MercadoLibre conectado! 🛒\n\n" +
+            "Puedo buscar productos y rastrear tus pedidos.\n\n" +
+            "Si queres desconectarlo, decime 'desconecta mercado libre'."
+        );
+        return;
+      }
+
+      const hostUrl = env().HOST_URL;
+      const authUrl = `${hostUrl}/auth/mercadolibre?userId=${user.id}`;
+
+      await this.whatsappClient.sendMessage(
+        chatId,
+        `🛒 *Conectar MercadoLibre*\n\n` +
+          `Para vincular tu cuenta, hace click en este link:\n\n` +
+          `${authUrl}\n\n` +
+          `Una vez que autorices, voy a poder:\n` +
+          `🔍 Buscar productos con tu cuenta\n` +
+          `📦 Rastrear tus pedidos y envios\n\n` +
+          `_Tu privacidad es importante: solo accedo a tus compras y busquedas._`
+      );
+
+      this.logger.info(`MercadoLibre link URL sent to ${chatId}`);
+    } catch (error) {
+      this.logger.error(`Failed to handle link MercadoLibre for ${chatId}`, error);
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "Hubo un error generando el link. Intenta de nuevo mas tarde."
+      );
+    }
+  }
+
+  private async handleUnlinkMercadoLibre(chatId: string): Promise<void> {
+    if (!this.userService || !this.meliAuthService) {
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "La funcion de MercadoLibre no esta disponible en este momento."
+      );
+      return;
+    }
+
+    try {
+      const user = await this.userService.getUserByChatId(chatId);
+
+      if (!user) {
+        await this.whatsappClient.sendMessage(chatId, "No tenes MercadoLibre conectado.");
+        return;
+      }
+
+      const isLinked = await this.meliAuthService.isAuthenticated(user.id);
+
+      if (!isLinked) {
+        await this.whatsappClient.sendMessage(chatId, "No tenes MercadoLibre conectado.");
+        return;
+      }
+
+      await this.meliAuthService.revokeAccess(user.id);
+
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "MercadoLibre desconectado exitosamente. ✅\n\n" +
+          "Ya no voy a poder rastrear tus pedidos.\n" +
+          "Si queres volver a conectarlo, decime 'conecta mi mercado libre'."
+      );
+
+      this.logger.info(`MercadoLibre unlinked for ${chatId}`);
+    } catch (error) {
+      this.logger.error(`Failed to unlink MercadoLibre for ${chatId}`, error);
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "Hubo un error desconectando MercadoLibre. Intenta de nuevo mas tarde."
+      );
+    }
+  }
+
+  private async handleTrackOrder(chatId: string): Promise<void> {
+    if (!this.userService || !this.meliAuthService || !this.meliApiService) {
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "La funcion de rastreo de pedidos no esta disponible en este momento."
+      );
+      return;
+    }
+
+    try {
+      const user = await this.userService.getUserByChatId(chatId);
+
+      if (!user) {
+        await this.whatsappClient.sendMessage(
+          chatId,
+          "No tenes cuenta vinculada. Decime 'conecta mi mercado libre' para empezar."
+        );
+        return;
+      }
+
+      const isLinked = await this.meliAuthService.isAuthenticated(user.id);
+
+      if (!isLinked) {
+        await this.whatsappClient.sendMessage(
+          chatId,
+          "No tenes MercadoLibre conectado. Decime 'conecta mi mercado libre' para vincularlo."
+        );
+        return;
+      }
+
+      await this.whatsappClient.sendMessage(chatId, "Buscando tus pedidos recientes... 📦");
+
+      const orders = await this.meliApiService.getRecentOrders(user.id, 5);
+
+      if (orders.length === 0) {
+        await this.whatsappClient.sendMessage(
+          chatId,
+          "No encontre pedidos recientes en tu cuenta de MercadoLibre."
+        );
+        return;
+      }
+
+      let message = "📦 *Tus pedidos recientes:*\n\n";
+
+      for (let i = 0; i < orders.length; i++) {
+        const order = orders[i];
+        const itemNames = order.order_items.map((oi) => oi.item.title).join(", ");
+        const dateStr = new Date(order.date_created).toLocaleDateString("es-AR", {
+          timeZone: "America/Argentina/Buenos_Aires",
+          day: "numeric",
+          month: "short"
+        });
+
+        message += `*${i + 1}.* ${itemNames}\n`;
+        message += `   💰 $${order.total_amount.toLocaleString("es-AR")} ${order.currency_id}\n`;
+        message += `   📅 ${dateStr}\n`;
+
+        // Get shipment info if available
+        if (order.shipping?.id) {
+          const shipment = await this.meliApiService.getShipment(user.id, order.shipping.id);
+          if (shipment) {
+            const statusText = this.translateShipmentStatus(shipment.status);
+            message += `   🚚 ${statusText}`;
+            if (shipment.tracking_number) {
+              message += ` (${shipment.tracking_number})`;
+            }
+            message += "\n";
+          }
+        }
+
+        message += "\n";
+      }
+
+      await this.whatsappClient.sendMessage(chatId, message);
+
+      this.logger.info(`Order tracking results sent to ${chatId}`);
+    } catch (error) {
+      this.logger.error(`Failed to track orders for ${chatId}`, error);
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "Hubo un error consultando tus pedidos. Intenta de nuevo mas tarde."
+      );
+    }
+  }
+
+  private translateShipmentStatus(status: string): string {
+    const statusMap: Record<string, string> = {
+      pending: "Pendiente",
+      handling: "En preparacion",
+      ready_to_ship: "Listo para enviar",
+      shipped: "En camino 🚚",
+      delivered: "Entregado ✅",
+      not_delivered: "No entregado ❌",
+      cancelled: "Cancelado"
+    };
+    return statusMap[status] || status;
+  }
+
+  private formatPrice(price: number, currency: string): string {
+    if (currency === "ARS") {
+      return `$${price.toLocaleString("es-AR")} ARS`;
+    }
+    if (currency === "USD") {
+      return `US$${price.toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
+    }
+    return `${price.toLocaleString()} ${currency}`;
+  }
+
+  private async handleEnableDigest(chatId: string, hour?: number | null): Promise<void> {
+    if (!this.userService) {
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "La funcion de resumen diario no esta disponible en este momento."
+      );
+      return;
+    }
+
+    const digestHour = hour ?? 8;
+
+    try {
+      await this.userService.updateDigestSettings(chatId, true, digestHour);
+      const hourStr = String(digestHour).padStart(2, "0");
+      await this.whatsappClient.sendMessage(
+        chatId,
+        `✅ Resumen diario activado a las ${hourStr}:00 hs.\n\nCada mañana te voy a mandar un resumen con tus recordatorios del dia.`
+      );
+      this.logger.info(`Digest enabled for ${chatId} at hour ${digestHour}`);
+    } catch (error) {
+      this.logger.error(`Failed to enable digest for ${chatId}`, error);
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "Hubo un error activando el resumen diario. Intenta de nuevo mas tarde."
+      );
+    }
+  }
+
+  private async handleDisableDigest(chatId: string): Promise<void> {
+    if (!this.userService) {
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "La funcion de resumen diario no esta disponible en este momento."
+      );
+      return;
+    }
+
+    try {
+      await this.userService.updateDigestSettings(chatId, false);
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "✅ Resumen diario desactivado.\n\nYa no voy a mandarte el resumen matutino. Podes volver a activarlo cuando quieras."
+      );
+      this.logger.info(`Digest disabled for ${chatId}`);
+    } catch (error) {
+      this.logger.error(`Failed to disable digest for ${chatId}`, error);
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "Hubo un error desactivando el resumen diario. Intenta de nuevo mas tarde."
+      );
     }
   }
 

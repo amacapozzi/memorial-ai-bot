@@ -72,6 +72,11 @@ export type GoogleAuthToken = Prisma.GoogleAuthTokenModel;
  */
 export type EmailToken = Prisma.EmailTokenModel;
 /**
+ * Model MercadoLibreToken
+ *
+ */
+export type MercadoLibreToken = Prisma.MercadoLibreTokenModel;
+/**
  * Model ProcessedEmail
  *
  */

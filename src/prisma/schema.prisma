@@ -26,6 +26,10 @@ model User {
   chatId        String?   @unique @map("chat_id")
   locale        String    @default("es")
 
+  // Daily digest settings
+  digestEnabled Boolean   @default(true) @map("digest_enabled")
+  digestHour    Int       @default(8)    @map("digest_hour")
+
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
 
@@ -37,6 +41,7 @@ model User {
   reminders     Reminder[]
   subscription  Subscription?
   emailToken    EmailToken?
+  mercadoLibreToken MercadoLibreToken?
   processedEmails ProcessedEmail[]
 
   @@map("users")
@@ -286,6 +291,23 @@ model EmailToken {
   updatedAt    DateTime  @updatedAt @map("updated_at")
 
   @@map("email_tokens")
+}
+
+// MercadoLibre OAuth tokens (per user)
+model MercadoLibreToken {
+  id           String    @id @default(cuid())
+  userId       String    @unique @map("user_id")
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken  String    @map("access_token")
+  refreshToken String    @map("refresh_token")
+  expiresAt    DateTime  @map("expires_at")
+  scope        String    @default("")
+  tokenType    String    @default("Bearer") @map("token_type")
+  mlUserId     String    @map("ml_user_id")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  @@map("mercadolibre_tokens")
 }
 
 // Track processed emails to avoid duplicates

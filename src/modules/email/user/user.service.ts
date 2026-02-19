@@ -29,4 +29,8 @@ export class UserService {
   async getUsersWithEmailLinked(): Promise<User[]> {
     return this.userRepository.findAllWithEmailTokens();
   }
+
+  async updateDigestSettings(chatId: string, enabled: boolean, hour?: number): Promise<User> {
+    return this.userRepository.updateDigest(chatId, enabled, hour);
+  }
 }

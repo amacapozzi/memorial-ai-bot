@@ -126,6 +126,17 @@ export class ReminderRepository {
     });
   }
 
+  async findTodayByChat(chatId: string, startOfDay: Date, endOfDay: Date): Promise<Reminder[]> {
+    return this.prisma.reminder.findMany({
+      where: {
+        chatId,
+        status: "PENDING",
+        scheduledAt: { gte: startOfDay, lte: endOfDay }
+      },
+      orderBy: { scheduledAt: "asc" }
+    });
+  }
+
   /**
    * Count reminders for a user (by chatId) - useful for subscription limits
    */

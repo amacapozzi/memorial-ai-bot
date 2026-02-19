@@ -20,8 +20,20 @@ import {
   createEmailModule
 } from "@modules/email";
 import { LinkingCodeRepository, LinkingCodeService, createLinkingModule } from "@modules/linking";
+import {
+  MeliAuthRepository,
+  MeliAuthService,
+  MeliApiService,
+  createMercadoLibreModule
+} from "@modules/mercadolibre";
 import { createNotificationModule } from "@modules/notification";
-import { ReminderService, ReminderRepository, SchedulerService } from "@modules/reminders";
+import { ProductSearchService } from "@modules/product-search";
+import {
+  ReminderService,
+  ReminderRepository,
+  SchedulerService,
+  DigestService
+} from "@modules/reminders";
 import { SubscriptionRepository, SubscriptionService } from "@modules/subscription";
 import {
   WhatsAppClient,
@@ -48,6 +60,7 @@ export function buildApp() {
   const linkingCodeRepository = new LinkingCodeRepository(prisma);
   const subscriptionRepository = new SubscriptionRepository(prisma);
   const commitRepository = new CommitRepository(prisma);
+  const meliAuthRepository = new MeliAuthRepository(prisma);
 
   // AI Services
   const groqClient = new GroqClient();
@@ -75,6 +88,13 @@ export function buildApp() {
   const gmailService = new GmailService(gmailAuthService);
   const emailAnalyzerService = new EmailAnalyzerService(groqClient);
   const emailReplyService = new EmailReplyService(groqClient);
+
+  // Product Search
+  const productSearchService = new ProductSearchService();
+
+  // MercadoLibre Services (optional — only if MELI_APP_ID configured)
+  const meliAuthService = env().MELI_APP_ID ? new MeliAuthService(meliAuthRepository) : undefined;
+  const meliApiService = meliAuthService ? new MeliApiService(meliAuthService) : undefined;
 
   // WhatsApp Services
   const sessionService = new SessionService(sessionRepository);
@@ -111,11 +131,17 @@ export function buildApp() {
     subscriptionService,
     emailReplyService,
     gmailService,
-    processedEmailRepository
+    processedEmailRepository,
+    productSearchService,
+    meliAuthService,
+    meliApiService
   );
 
+  // Digest Service
+  const digestService = new DigestService(reminderRepository, userRepository, whatsappClient);
+
   // Scheduler
-  const schedulerService = new SchedulerService(reminderService, whatsappClient);
+  const schedulerService = new SchedulerService(reminderService, whatsappClient, digestService);
 
   // Commit Service
   const commitService = new CommitService(commitRepository);
@@ -126,6 +152,9 @@ export function buildApp() {
   const linkingModule = createLinkingModule(whatsappClient);
   const notificationModule = createNotificationModule(whatsappClient, prisma);
   const commitModule = createCommitModule(commitService, env().GITHUB_WEBHOOK_SECRET);
+  const mercadoLibreModule = meliAuthService
+    ? createMercadoLibreModule(meliAuthService, userService)
+    : undefined;
 
   // Start function to initialize services
   const startServices = async () => {
@@ -158,7 +187,14 @@ export function buildApp() {
 
   return {
     logger,
-    modules: [calendarModule, emailModule, linkingModule, notificationModule, commitModule],
+    modules: [
+      calendarModule,
+      emailModule,
+      linkingModule,
+      notificationModule,
+      commitModule,
+      ...(mercadoLibreModule ? [mercadoLibreModule] : [])
+    ],
     startServices,
     stopServices
   };

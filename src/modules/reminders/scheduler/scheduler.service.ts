@@ -2,6 +2,7 @@ import type { WhatsAppClient } from "@modules/whatsapp";
 import type { Reminder } from "@prisma-module/generated/client";
 import { createLogger } from "@shared/logger/logger";
 
+import type { DigestService } from "../digest/digest.service";
 import type { ReminderService } from "../reminder.service";
 
 export class SchedulerService {
@@ -12,7 +13,8 @@ export class SchedulerService {
 
   constructor(
     private readonly reminderService: ReminderService,
-    private readonly whatsappClient: WhatsAppClient
+    private readonly whatsappClient: WhatsAppClient,
+    private readonly digestService?: DigestService
   ) {}
 
   start(): void {
@@ -56,6 +58,15 @@ export class SchedulerService {
 
       for (const reminder of pendingReminders) {
         await this.sendReminder(reminder);
+      }
+
+      // Send daily digests
+      if (this.digestService) {
+        const nowBsAs = new Date(
+          now.toLocaleString("en-US", { timeZone: "America/Argentina/Buenos_Aires" })
+        );
+        const hourBsAs = nowBsAs.getHours();
+        await this.digestService.sendDailyDigests(hourBsAs);
       }
     } catch (error) {
       this.logger.error("Error in scheduler tick", error);

@@ -28,6 +28,26 @@ export class UserRepository {
     });
   }
 
+  async findUsersForDigest(hour: number): Promise<User[]> {
+    return this.prisma.user.findMany({
+      where: {
+        chatId: { not: null },
+        digestEnabled: true,
+        digestHour: hour
+      }
+    });
+  }
+
+  async updateDigest(chatId: string, enabled: boolean, hour?: number): Promise<User> {
+    return this.prisma.user.update({
+      where: { chatId },
+      data: {
+        digestEnabled: enabled,
+        ...(hour !== undefined && { digestHour: hour })
+      }
+    });
+  }
+
   async delete(id: string): Promise<void> {
     await this.prisma.user.delete({ where: { id } });
   }

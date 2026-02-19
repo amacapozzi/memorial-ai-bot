@@ -68,7 +68,13 @@ Tipos de intenciones:
 7. "email_status" - Consultar estado del email (ej: "mi email esta conectado?", "tengo email vinculado?", "estado de gmail")
 8. "reply_email" - Responder a un email (ej: "respondele a ese mail diciendo que acepto", "contesta el email que me llego diciendo que no puedo", "reply to that email saying I'll be there")
 9. "search_email" - Buscar un email especifico (ej: "busca el mail donde me mandaron la foto del presupuesto", "encontra el email de Juan sobre la reunion", "busca el correo de MercadoLibre")
-10. "unknown" - No es ninguna de las anteriores
+10. "search_product" - Buscar un producto para comprar/comparar precios (ej: "buscame auriculares bluetooth", "quiero comprar una silla gamer", "cuanto sale un iphone 15", "busca precios de zapatillas nike", "donde consigo un teclado mecanico barato")
+11. "link_mercadolibre" - Vincular MercadoLibre (ej: "conecta mi mercado libre", "vincula ML", "conectar mercadolibre")
+12. "unlink_mercadolibre" - Desvincular MercadoLibre (ej: "desconecta mercado libre", "desvincular ML")
+13. "track_order" - Rastrear pedido/paquete (ej: "donde esta mi paquete", "estado de mi compra", "rastrear envio", "mis pedidos de mercado libre")
+14. "enable_digest" - Activar resumen diario matutino (ej: "activar resumen diario", "activar digest", "quiero recibir el resumen de manana", "activa el digest a las 7", "activa el resumen a las 9")
+15. "disable_digest" - Desactivar resumen diario (ej: "desactivar resumen diario", "no quiero el digest", "apagar resumen matutino", "desactivar digest")
+16. "unknown" - No es ninguna de las anteriores
 
 IMPORTANTE para CREATE_REMINDER:
 - Si el usuario menciona MULTIPLES recordatorios en un mensaje, extrae TODOS
@@ -111,7 +117,7 @@ Para cada recordatorio, genera tambien un "funMessage": un mensaje corto (maximo
 
 Responde UNICAMENTE con JSON valido (sin markdown, sin explicaciones):
 {
-  "intentType": "create_reminder" | "list_tasks" | "cancel_task" | "modify_task" | "link_email" | "unlink_email" | "email_status" | "reply_email" | "search_email" | "unknown",
+  "intentType": "create_reminder" | "list_tasks" | "cancel_task" | "modify_task" | "link_email" | "unlink_email" | "email_status" | "reply_email" | "search_email" | "search_product" | "link_mercadolibre" | "unlink_mercadolibre" | "track_order" | "enable_digest" | "disable_digest" | "unknown",
   "taskNumber": number | null,
   "reminderDetails": [
     {
@@ -127,58 +133,90 @@ Responde UNICAMENTE con JSON valido (sin markdown, sin explicaciones):
   "missingDateTime": boolean,
   "emailReplyInstruction": "string | null - what the user wants to say in the reply",
   "emailSearchQuery": "string | null - keywords/query to search for an email (convert natural language to search terms, e.g. from:Juan reunion, presupuesto foto, from:MercadoLibre)",
+  "productSearchQuery": "string | null - product search query extracted from the message (e.g. auriculares bluetooth, silla gamer, iphone 15)",
+  "digestHour": number | null,
   "confidence": number (0-1)
 }
 
 Ejemplos:
 
 - "recuerdame manana a las 4 ir al dentista"
-  -> {"intentType": "create_reminder", "taskNumber": null, "reminderDetails": [{"description": "ir al dentista", "dateTime": "2024-01-16T16:00:00-03:00", "recurrence": "NONE", "recurrenceDay": null, "recurrenceTime": null, "funMessage": "Ey! No te olvides del dentista. Hora de mostrar esos dientitos! 🦷"}], "newDateTime": null, "missingDateTime": false, "confidence": 0.95}
+  -> {"intentType": "create_reminder", "taskNumber": null, "reminderDetails": [{"description": "ir al dentista", "dateTime": "2024-01-16T16:00:00-03:00", "recurrence": "NONE", "recurrenceDay": null, "recurrenceTime": null, "funMessage": "Ey! No te olvides del dentista. Hora de mostrar esos dientitos! 🦷"}], "newDateTime": null, "missingDateTime": false, "productSearchQuery": null, "confidence": 0.95}
 
 - "recuerdame todos los dias a las 8 tomar la pastilla"
-  -> {"intentType": "create_reminder", "taskNumber": null, "reminderDetails": [{"description": "tomar la pastilla", "dateTime": null, "recurrence": "DAILY", "recurrenceDay": null, "recurrenceTime": "08:00", "funMessage": "Che! Hora de la pastilla. Tu cuerpo te lo va a agradecer 💊"}], "newDateTime": null, "missingDateTime": false, "confidence": 0.95}
+  -> {"intentType": "create_reminder", "taskNumber": null, "reminderDetails": [{"description": "tomar la pastilla", "dateTime": null, "recurrence": "DAILY", "recurrenceDay": null, "recurrenceTime": "08:00", "funMessage": "Che! Hora de la pastilla. Tu cuerpo te lo va a agradecer 💊"}], "newDateTime": null, "missingDateTime": false, "productSearchQuery": null, "confidence": 0.95}
 
 - "recuerdame todos los domingos a las 10 ir a la iglesia"
-  -> {"intentType": "create_reminder", "taskNumber": null, "reminderDetails": [{"description": "ir a la iglesia", "dateTime": null, "recurrence": "WEEKLY", "recurrenceDay": 0, "recurrenceTime": "10:00", "funMessage": "Domingo de fe! A prepararse para la iglesia 🙏"}], "newDateTime": null, "missingDateTime": false, "confidence": 0.95}
+  -> {"intentType": "create_reminder", "taskNumber": null, "reminderDetails": [{"description": "ir a la iglesia", "dateTime": null, "recurrence": "WEEKLY", "recurrenceDay": 0, "recurrenceTime": "10:00", "funMessage": "Domingo de fe! A prepararse para la iglesia 🙏"}], "newDateTime": null, "missingDateTime": false, "productSearchQuery": null, "confidence": 0.95}
 
 - "recuerdame los lunes y miercoles a las 7 ir al gimnasio"
-  -> {"intentType": "create_reminder", "taskNumber": null, "reminderDetails": [{"description": "ir al gimnasio", "dateTime": null, "recurrence": "WEEKLY", "recurrenceDay": 1, "recurrenceTime": "07:00", "funMessage": "Dale que arrancamos la semana con todo! A mover el esqueleto 💪"}, {"description": "ir al gimnasio", "dateTime": null, "recurrence": "WEEKLY", "recurrenceDay": 3, "recurrenceTime": "07:00", "funMessage": "Mitad de semana y vos no aflojas! Al gimnasio se ha dicho 🏋️"}], "newDateTime": null, "missingDateTime": false, "confidence": 0.95}
+  -> {"intentType": "create_reminder", "taskNumber": null, "reminderDetails": [{"description": "ir al gimnasio", "dateTime": null, "recurrence": "WEEKLY", "recurrenceDay": 1, "recurrenceTime": "07:00", "funMessage": "Dale que arrancamos la semana con todo! A mover el esqueleto 💪"}, {"description": "ir al gimnasio", "dateTime": null, "recurrence": "WEEKLY", "recurrenceDay": 3, "recurrenceTime": "07:00", "funMessage": "Mitad de semana y vos no aflojas! Al gimnasio se ha dicho 🏋️"}], "newDateTime": null, "missingDateTime": false, "productSearchQuery": null, "confidence": 0.95}
 
 - "recuerdame llamar a mama"
-  -> {"intentType": "create_reminder", "taskNumber": null, "reminderDetails": [{"description": "llamar a mama", "dateTime": null, "recurrence": "NONE", "recurrenceDay": null, "recurrenceTime": null, "funMessage": "Ey! Llama a mama que seguro te extraña 📞"}], "newDateTime": null, "missingDateTime": true, "confidence": 0.90}
+  -> {"intentType": "create_reminder", "taskNumber": null, "reminderDetails": [{"description": "llamar a mama", "dateTime": null, "recurrence": "NONE", "recurrenceDay": null, "recurrenceTime": null, "funMessage": "Ey! Llama a mama que seguro te extraña 📞"}], "newDateTime": null, "missingDateTime": true, "productSearchQuery": null, "confidence": 0.90}
 
 - "creame un recordatorio de pagar las cuentas"
-  -> {"intentType": "create_reminder", "taskNumber": null, "reminderDetails": [{"description": "pagar las cuentas", "dateTime": null, "recurrence": "NONE", "recurrenceDay": null, "recurrenceTime": null, "funMessage": "Ojo! Las cuentas no se pagan solas. A ponerse las pilas 💸"}], "newDateTime": null, "missingDateTime": true, "confidence": 0.90}
+  -> {"intentType": "create_reminder", "taskNumber": null, "reminderDetails": [{"description": "pagar las cuentas", "dateTime": null, "recurrence": "NONE", "recurrenceDay": null, "recurrenceTime": null, "funMessage": "Ojo! Las cuentas no se pagan solas. A ponerse las pilas 💸"}], "newDateTime": null, "missingDateTime": true, "productSearchQuery": null, "confidence": 0.90}
 
 - "que tareas tengo pendientes"
-  -> {"intentType": "list_tasks", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "confidence": 0.95}
+  -> {"intentType": "list_tasks", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "productSearchQuery": null, "confidence": 0.95}
 
 - "cancela la tarea 3"
-  -> {"intentType": "cancel_task", "taskNumber": 3, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "confidence": 0.95}
+  -> {"intentType": "cancel_task", "taskNumber": 3, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "productSearchQuery": null, "confidence": 0.95}
 
 - "cambia la hora de la tarea 2 a las 6 de la tarde"
-  -> {"intentType": "modify_task", "taskNumber": 2, "reminderDetails": null, "newDateTime": "2024-01-15T18:00:00-03:00", "missingDateTime": false, "confidence": 0.95}
+  -> {"intentType": "modify_task", "taskNumber": 2, "reminderDetails": null, "newDateTime": "2024-01-15T18:00:00-03:00", "missingDateTime": false, "productSearchQuery": null, "confidence": 0.95}
 
 - "conecta mi email"
-  -> {"intentType": "link_email", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "confidence": 0.95}
+  -> {"intentType": "link_email", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "productSearchQuery": null, "confidence": 0.95}
 
 - "respondele a ese mail diciendo que acepto la reunion"
-  -> {"intentType": "reply_email", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": "que acepto la reunion", "confidence": 0.95}
+  -> {"intentType": "reply_email", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": "que acepto la reunion", "productSearchQuery": null, "confidence": 0.95}
 
 - "contesta el email diciendo que no voy a poder ir"
-  -> {"intentType": "reply_email", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": "que no voy a poder ir", "confidence": 0.95}
+  -> {"intentType": "reply_email", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": "que no voy a poder ir", "productSearchQuery": null, "confidence": 0.95}
 
 - "busca el mail donde me mandaron la foto del presupuesto"
-  -> {"intentType": "search_email", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": "presupuesto foto", "confidence": 0.95}
+  -> {"intentType": "search_email", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": "presupuesto foto", "productSearchQuery": null, "confidence": 0.95}
 
 - "encontra el email de Juan sobre la reunion"
-  -> {"intentType": "search_email", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": "from:Juan reunion", "confidence": 0.95}
+  -> {"intentType": "search_email", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": "from:Juan reunion", "productSearchQuery": null, "confidence": 0.95}
 
 - "busca el correo de MercadoLibre"
-  -> {"intentType": "search_email", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": "from:MercadoLibre", "confidence": 0.95}
+  -> {"intentType": "search_email", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": "from:MercadoLibre", "productSearchQuery": null, "confidence": 0.95}
+
+- "buscame auriculares bluetooth"
+  -> {"intentType": "search_product", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": null, "productSearchQuery": "auriculares bluetooth", "confidence": 0.95}
+
+- "quiero comprar una silla gamer"
+  -> {"intentType": "search_product", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": null, "productSearchQuery": "silla gamer", "confidence": 0.95}
+
+- "cuanto sale un iphone 15"
+  -> {"intentType": "search_product", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": null, "productSearchQuery": "iphone 15", "confidence": 0.95}
+
+- "conecta mi mercado libre"
+  -> {"intentType": "link_mercadolibre", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": null, "productSearchQuery": null, "confidence": 0.95}
+
+- "desconecta mercadolibre"
+  -> {"intentType": "unlink_mercadolibre", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": null, "productSearchQuery": null, "confidence": 0.95}
+
+- "donde esta mi paquete"
+  -> {"intentType": "track_order", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": null, "productSearchQuery": null, "confidence": 0.95}
+
+- "estado de mi compra"
+  -> {"intentType": "track_order", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": null, "productSearchQuery": null, "confidence": 0.95}
 
 - "hola como estas"
-  -> {"intentType": "unknown", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": null, "confidence": 0.90}`;
+  -> {"intentType": "unknown", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": null, "productSearchQuery": null, "digestHour": null, "confidence": 0.90}
+
+- "activar resumen diario"
+  -> {"intentType": "enable_digest", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": null, "productSearchQuery": null, "digestHour": null, "confidence": 0.95}
+
+- "activa el digest a las 7"
+  -> {"intentType": "enable_digest", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": null, "productSearchQuery": null, "digestHour": 7, "confidence": 0.95}
+
+- "desactivar resumen diario"
+  -> {"intentType": "disable_digest", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": null, "productSearchQuery": null, "digestHour": null, "confidence": 0.95}`;
 
 export function buildReminderIntentPrompt(): string {
   const now = new Date();

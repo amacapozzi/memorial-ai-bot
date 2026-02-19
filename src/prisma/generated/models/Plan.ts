@@ -692,18 +692,6 @@ export type PlanScalarRelationFilter = {
   isNot?: Prisma.PlanWhereInput;
 };
 
-export type IntFieldUpdateOperationsInput = {
-  set?: number;
-  increment?: number;
-  decrement?: number;
-  multiply?: number;
-  divide?: number;
-};
-
-export type BoolFieldUpdateOperationsInput = {
-  set?: boolean;
-};
-
 export type PlanCreateNestedOneWithoutSubscriptionsInput = {
   create?: Prisma.XOR<
     Prisma.PlanCreateWithoutSubscriptionsInput,
