@@ -4,9 +4,7 @@ import makeWASocket, {
   DisconnectReason,
   type WASocket,
   type BaileysEventMap,
-  type WAProto,
-  downloadMediaMessage,
-  getAggregateVotesInPollMessage
+  downloadMediaMessage
 } from "@whiskeysockets/baileys";
 
 import { env } from "@shared/env/env";
@@ -30,12 +28,6 @@ const silentLogger = {
   fatal: () => {}
 };
 
-interface StoredPoll {
-  sentMsg: WAProto.IWebMessageInfo;
-  options: ButtonOption[];
-  pollUpdates: WAProto.IPollUpdate[];
-}
-
 export class WhatsAppClient {
   private socket: WASocket | null = null;
   private messageHandler: MessageHandler | null = null;
@@ -43,7 +35,6 @@ export class WhatsAppClient {
   private reconnectAttempts = 0;
   private readonly maxReconnectAttempts = 10;
   private reconnecting = false;
-  private readonly pollStore = new Map<string, StoredPoll>();
 
   constructor(
     private readonly sessionService: SessionService,
@@ -72,7 +63,6 @@ export class WhatsAppClient {
     this.socket.ev.on("creds.update", saveCreds);
     this.socket.ev.on("connection.update", (update) => this.handleConnectionUpdate(update));
     this.socket.ev.on("messages.upsert", (m) => this.handleMessages(m));
-    this.socket.ev.on("messages.update", (updates) => this.handlePollUpdates(updates));
   }
 
   async disconnect(): Promise<void> {
@@ -85,7 +75,6 @@ export class WhatsAppClient {
       this.socket.ev.removeAllListeners("creds.update");
       this.socket.ev.removeAllListeners("connection.update");
       this.socket.ev.removeAllListeners("messages.upsert");
-      this.socket.ev.removeAllListeners("messages.update");
       this.socket.end(undefined);
       this.socket = null;
     }
@@ -155,68 +144,6 @@ export class WhatsAppClient {
       }
     } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
     this.logger.debug(`List message sent to ${chatId}`);
-  }
-
-  async sendPoll(chatId: string, question: string, options: ButtonOption[]): Promise<void> {
-    if (!this.socket) {
-      throw new Error("WhatsApp not connected");
-    }
-
-    const sent = await this.socket.sendMessage(chatId, {
-      poll: {
-        name: question,
-        values: options.map((o) => o.text),
-        selectableCount: 1
-      }
-    });
-
-    if (sent?.key?.id) {
-      this.pollStore.set(sent.key.id, { sentMsg: sent, options, pollUpdates: [] });
-    }
-
-    this.logger.debug(`Poll sent to ${chatId}`);
-  }
-
-  private async handlePollUpdates(updates: BaileysEventMap["messages.update"]): Promise<void> {
-    if (!this.messageHandler) return;
-
-    for (const { key, update } of updates) {
-      if (!update.pollUpdates?.length) continue;
-
-      const pollId = key.id ?? "";
-      const stored = this.pollStore.get(pollId);
-      if (!stored) continue;
-
-      // Accumulate all updates
-      stored.pollUpdates.push(...update.pollUpdates);
-
-      try {
-        const votes = getAggregateVotesInPollMessage({
-          message: stored.sentMsg.message,
-          pollUpdates: stored.pollUpdates
-        });
-
-        const selected = votes.find((v) => v.voters.length > 0);
-        if (!selected) continue;
-
-        const option = stored.options.find((o) => o.text === selected.name);
-        if (!option) continue;
-
-        const chatId = key.remoteJid ?? "";
-        if (!chatId) continue;
-
-        await this.messageHandler({
-          type: "pollResponse",
-          selectedButtonId: option.id,
-          chatId,
-          messageId: pollId,
-          fromMe: key.fromMe ?? false,
-          timestamp: new Date()
-        });
-      } catch (err) {
-        this.logger.error("Failed to process poll vote", err);
-      }
-    }
   }
 
   private handleConnectionUpdate(update: BaileysEventMap["connection.update"]): void {

@@ -138,12 +138,8 @@ export class MessageHandler {
 
     this.logger.info(`Received ${message.type} message from ${message.chatId}`);
 
-    // Handle interactive responses (poll votes, button taps, list selections)
-    if (
-      message.type === "pollResponse" ||
-      message.type === "buttonResponse" ||
-      message.type === "listResponse"
-    ) {
+    // Handle interactive responses (button taps, list selections)
+    if (message.type === "buttonResponse" || message.type === "listResponse") {
       await this.handleInteractiveResponse(message);
       return;
     }
@@ -595,28 +591,8 @@ export class MessageHandler {
       response += `*${index + 1}.* ${reminder.reminderText}${recurrenceIcon}\n   📅 ${dateStr}\n\n`;
     });
 
+    response += `_Para cancelar: "cancela la tarea 2" • Para cambiar hora: "cambia la tarea 1 a las 5pm"_`;
     await this.whatsappClient.sendMessage(chatId, response);
-
-    // Max 11 tasks per poll (12 options - 1 "Ninguna")
-    const pollReminders = reminders.slice(0, 11);
-    const noneOption = { id: "cancel_none", text: "Ninguna" };
-    const cancelOptions = [
-      ...pollReminders.map((r, i) => ({
-        id: `cancel_${i}`,
-        text: `${i + 1}. ${r.reminderText.substring(0, 60)}`
-      })),
-      noneOption
-    ];
-    const modifyOptions = [
-      ...pollReminders.map((r, i) => ({
-        id: `modify_${i}`,
-        text: `${i + 1}. ${r.reminderText.substring(0, 60)}`
-      })),
-      { id: "modify_none", text: "Ninguna" }
-    ];
-
-    await this.whatsappClient.sendPoll(chatId, "¿Qué tarea querés cancelar?", cancelOptions);
-    await this.whatsappClient.sendPoll(chatId, "¿Qué tarea querés reprogramar?", modifyOptions);
   }
 
   private async handleCancelTask(chatId: string, taskNumber?: number): Promise<void> {
@@ -963,13 +939,9 @@ ${privacyLine}`
         `*Preview de tu respuesta:*\n\n` +
           `*Para:* ${fullEmail.from}\n` +
           `*Asunto:* ${reply.subject}\n\n` +
-          `${reply.body}`
+          `${reply.body}\n\n` +
+          `_Respondé "enviar" para enviar o "cancelar" para descartar._`
       );
-
-      await this.whatsappClient.sendPoll(chatId, "¿Qué hacemos con esta respuesta?", [
-        { id: "enviar", text: "✅ Enviar" },
-        { id: "cancelar", text: "❌ Descartar" }
-      ]);
 
       // Store pending reply
       this.pendingReplies.set(chatId, {
@@ -1184,12 +1156,8 @@ ${privacyLine}`
         message += `\n${contentPreview}`;
       }
 
+      message += `\n\n_¿Querés responder? Decime "si" o "no"._`;
       await this.whatsappClient.sendMessage(chatId, message);
-
-      await this.whatsappClient.sendPoll(chatId, "¿Querés responder a este email?", [
-        { id: "si", text: "✅ Sí, responder" },
-        { id: "no", text: "❌ No gracias" }
-      ]);
 
       // Save state
       this.lastViewedEmail.set(chatId, {
@@ -1293,13 +1261,9 @@ ${privacyLine}`
         `*Preview de tu respuesta:*\n\n` +
           `*Para:* ${fullEmail.from}\n` +
           `*Asunto:* ${reply.subject}\n\n` +
-          `${reply.body}`
+          `${reply.body}\n\n` +
+          `_Respondé "enviar" para enviar o "cancelar" para descartar._`
       );
-
-      await this.whatsappClient.sendPoll(chatId, "¿Qué hacemos con esta respuesta?", [
-        { id: "enviar", text: "✅ Enviar" },
-        { id: "cancelar", text: "❌ Descartar" }
-      ]);
 
       // Store pending reply (reuses existing send/cancel flow)
       this.pendingReplies.set(chatId, {
