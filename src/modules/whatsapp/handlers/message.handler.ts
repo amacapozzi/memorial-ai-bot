@@ -591,32 +591,8 @@ export class MessageHandler {
       response += `*${index + 1}.* ${reminder.reminderText}${recurrenceIcon}\n   📅 ${dateStr}\n\n`;
     });
 
+    response += "_Podes decir 'cancela la tarea X' o 'cambia la tarea X a las Y'_";
     await this.whatsappClient.sendMessage(chatId, response);
-
-    await this.whatsappClient.sendList(
-      chatId,
-      "¿Qué querés hacer?",
-      "Seleccioná una acción para una tarea",
-      "Ver opciones",
-      [
-        {
-          title: "Cancelar tarea",
-          rows: reminders.map((r, i) => ({
-            id: `cancel_${i}`,
-            title: r.reminderText.substring(0, 24),
-            description: formatReminderDate(r.scheduledAt)
-          }))
-        },
-        {
-          title: "Cambiar horario",
-          rows: reminders.map((r, i) => ({
-            id: `modify_${i}`,
-            title: r.reminderText.substring(0, 24),
-            description: formatReminderDate(r.scheduledAt)
-          }))
-        }
-      ]
-    );
   }
 
   private async handleCancelTask(chatId: string, taskNumber?: number): Promise<void> {
@@ -963,13 +939,9 @@ ${privacyLine}`
         `*Preview de tu respuesta:*\n\n` +
           `*Para:* ${fullEmail.from}\n` +
           `*Asunto:* ${reply.subject}\n\n` +
-          `${reply.body}`
+          `${reply.body}\n\n` +
+          `_Responde "enviar" para enviar o "cancelar" para descartar._`
       );
-
-      await this.whatsappClient.sendButtons(chatId, "¿Qué hacemos con esta respuesta?", [
-        { id: "enviar", text: "✅ Enviar" },
-        { id: "cancelar", text: "❌ Descartar" }
-      ]);
 
       // Store pending reply
       this.pendingReplies.set(chatId, {
@@ -1184,12 +1156,8 @@ ${privacyLine}`
         message += `\n${contentPreview}`;
       }
 
+      message += `\n_¿Querés responder? Decime "si" o "no"_`;
       await this.whatsappClient.sendMessage(chatId, message);
-
-      await this.whatsappClient.sendButtons(chatId, "¿Querés responder a este email?", [
-        { id: "si", text: "✅ Responder" },
-        { id: "no", text: "❌ No gracias" }
-      ]);
 
       // Save state
       this.lastViewedEmail.set(chatId, {
@@ -1293,13 +1261,9 @@ ${privacyLine}`
         `*Preview de tu respuesta:*\n\n` +
           `*Para:* ${fullEmail.from}\n` +
           `*Asunto:* ${reply.subject}\n\n` +
-          `${reply.body}`
+          `${reply.body}\n\n` +
+          `_Responde "enviar" para enviar o "cancelar" para descartar._`
       );
-
-      await this.whatsappClient.sendButtons(chatId, "¿Qué hacemos con esta respuesta?", [
-        { id: "enviar", text: "✅ Enviar" },
-        { id: "cancelar", text: "❌ Descartar" }
-      ]);
 
       // Store pending reply (reuses existing send/cancel flow)
       this.pendingReplies.set(chatId, {
