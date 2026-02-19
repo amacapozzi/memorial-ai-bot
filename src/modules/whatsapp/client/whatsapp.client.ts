@@ -10,7 +10,7 @@ import makeWASocket, {
 import { env } from "@shared/env/env";
 import { createLogger } from "@shared/logger/logger";
 
-import type { MessageContent } from "./whatsapp.types";
+import type { ButtonOption, ListSection, MessageContent } from "./whatsapp.types";
 import type { QRHandler } from "../handlers/qr.handler";
 import type { SessionService } from "../session/session.service";
 
@@ -91,6 +91,59 @@ export class WhatsAppClient {
 
     await this.socket.sendMessage(chatId, { text });
     this.logger.debug(`Message sent to ${chatId}`);
+  }
+
+  async sendButtons(
+    chatId: string,
+    text: string,
+    buttons: ButtonOption[],
+    footer?: string
+  ): Promise<void> {
+    if (!this.socket) {
+      throw new Error("WhatsApp not connected");
+    }
+
+    await this.socket.sendMessage(chatId, {
+      buttonsMessage: {
+        contentText: text,
+        footerText: footer,
+        headerType: 1, // EMPTY
+        buttons: buttons.map((b) => ({
+          buttonId: b.id,
+          buttonText: { displayText: b.text },
+          type: 1 // RESPONSE
+        }))
+      }
+    } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
+    this.logger.debug(`Buttons message sent to ${chatId}`);
+  }
+
+  async sendList(
+    chatId: string,
+    title: string,
+    body: string,
+    buttonText: string,
+    sections: ListSection[],
+    footer?: string
+  ): Promise<void> {
+    if (!this.socket) {
+      throw new Error("WhatsApp not connected");
+    }
+
+    await this.socket.sendMessage(chatId, {
+      listMessage: {
+        title,
+        description: body,
+        buttonText,
+        listType: 1, // SINGLE_SELECT
+        sections: sections.map((s) => ({
+          title: s.title,
+          rows: s.rows.map((r) => ({ rowId: r.id, title: r.title, description: r.description }))
+        })),
+        footerText: footer
+      }
+    } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
+    this.logger.debug(`List message sent to ${chatId}`);
   }
 
   private handleConnectionUpdate(update: BaileysEventMap["connection.update"]): void {
@@ -223,6 +276,30 @@ export class WhatsAppClient {
         this.logger.error("Failed to download audio", error);
         return null;
       }
+    }
+
+    // Button response
+    if (message.buttonsResponseMessage) {
+      return {
+        type: "buttonResponse",
+        selectedButtonId: message.buttonsResponseMessage.selectedButtonId ?? undefined,
+        chatId,
+        messageId,
+        fromMe,
+        timestamp
+      };
+    }
+
+    // List response
+    if (message.listResponseMessage) {
+      return {
+        type: "listResponse",
+        selectedRowId: message.listResponseMessage.singleSelectReply?.selectedRowId ?? undefined,
+        chatId,
+        messageId,
+        fromMe,
+        timestamp
+      };
     }
 
     // Other message types we don't handle yet

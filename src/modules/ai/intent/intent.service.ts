@@ -41,6 +41,7 @@ export interface ParsedIntent {
   missingDateTime?: boolean;
   emailReplyInstruction?: string;
   emailSearchQuery?: string;
+  emailExtractionQuery?: string;
   productSearchQuery?: string;
   digestHour?: number;
   confidence: number;
@@ -61,6 +62,7 @@ interface IntentResponse {
   missingDateTime: boolean;
   emailReplyInstruction: string | null;
   emailSearchQuery: string | null;
+  emailExtractionQuery: string | null;
   productSearchQuery: string | null;
   digestHour: number | null;
   confidence: number;
@@ -109,6 +111,11 @@ export class IntentService {
       // Handle email search query
       if (response.emailSearchQuery) {
         result.emailSearchQuery = response.emailSearchQuery;
+      }
+
+      // Handle email extraction query
+      if (response.emailExtractionQuery) {
+        result.emailExtractionQuery = response.emailExtractionQuery;
       }
 
       // Handle product search query

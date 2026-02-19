@@ -15,10 +15,42 @@ interface ComposedReply {
   body: string;
 }
 
+const EMAIL_EXTRACT_SYSTEM_PROMPT = `Eres un asistente que extrae información específica de emails.
+El usuario quiere que encuentres y extraigas un dato puntual del email proporcionado.
+Si encontras la información pedida, respondela de forma directa y concisa (solo el dato, sin rodeos).
+Si no encontras la información, decí claramente que no está en el email.
+Responde en español rioplatense.`;
+
 export class EmailReplyService {
   private readonly logger = createLogger("email-reply");
 
   constructor(private readonly groqClient: GroqClient) {}
+
+  async extractInfo(params: {
+    emailBody: string;
+    from: string;
+    subject: string;
+    date: Date;
+    extractionQuery: string;
+  }): Promise<string> {
+    this.logger.info(
+      `Extracting "${params.extractionQuery}" from "${params.subject?.substring(0, 50)}"`
+    );
+
+    const userMessage = [
+      `De: ${params.from}`,
+      `Asunto: ${params.subject}`,
+      `Fecha: ${params.date.toLocaleString("es-AR", { timeZone: "America/Argentina/Buenos_Aires" })}`,
+      ``,
+      `Contenido del email:`,
+      params.emailBody.substring(0, 5000),
+      ``,
+      `---`,
+      `Dato que necesito encontrar: ${params.extractionQuery}`
+    ].join("\n");
+
+    return this.groqClient.chat(EMAIL_EXTRACT_SYSTEM_PROMPT, userMessage);
+  }
 
   async composeReply(params: {
     originalEmail: OriginalEmail;

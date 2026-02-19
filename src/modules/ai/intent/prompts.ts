@@ -67,7 +67,7 @@ Tipos de intenciones:
 6. "unlink_email" - Desvincular/desconectar email (ej: "desconecta mi email", "quita gmail", "elimina acceso al correo")
 7. "email_status" - Consultar estado del email (ej: "mi email esta conectado?", "tengo email vinculado?", "estado de gmail")
 8. "reply_email" - Responder a un email (ej: "respondele a ese mail diciendo que acepto", "contesta el email que me llego diciendo que no puedo", "reply to that email saying I'll be there")
-9. "search_email" - Buscar un email especifico (ej: "busca el mail donde me mandaron la foto del presupuesto", "encontra el email de Juan sobre la reunion", "busca el correo de MercadoLibre")
+9. "search_email" - Buscar un email especifico (ej: "busca el mail donde me mandaron la foto del presupuesto", "encontra el email de Juan sobre la reunion", "busca el correo de MercadoLibre"). Si el usuario tambien pide extraer o mostrar un dato especifico del email encontrado (ej: "dame la IP", "damela", "encontrala", "cual es el numero"), poner ese dato en emailExtractionQuery
 10. "search_product" - Buscar un producto para comprar/comparar precios (ej: "buscame auriculares bluetooth", "quiero comprar una silla gamer", "cuanto sale un iphone 15", "busca precios de zapatillas nike", "donde consigo un teclado mecanico barato")
 11. "link_mercadolibre" - Vincular MercadoLibre (ej: "conecta mi mercado libre", "vincula ML", "conectar mercadolibre")
 12. "unlink_mercadolibre" - Desvincular MercadoLibre (ej: "desconecta mercado libre", "desvincular ML")
@@ -133,6 +133,7 @@ Responde UNICAMENTE con JSON valido (sin markdown, sin explicaciones):
   "missingDateTime": boolean,
   "emailReplyInstruction": "string | null - what the user wants to say in the reply",
   "emailSearchQuery": "string | null - keywords/query to search for an email (convert natural language to search terms, e.g. from:Juan reunion, presupuesto foto, from:MercadoLibre)",
+  "emailExtractionQuery": "string | null - if the user wants to extract/get a specific piece of data from the found email (e.g. 'IP address de la VPS', 'numero de tracking', 'fecha de vuelo', 'monto de la factura'). Only set when user explicitly asks to show/get/give them specific info from the email.",
   "productSearchQuery": "string | null - product search query extracted from the message (e.g. auriculares bluetooth, silla gamer, iphone 15)",
   "digestHour": number | null,
   "confidence": number (0-1)
@@ -177,13 +178,22 @@ Ejemplos:
   -> {"intentType": "reply_email", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": "que no voy a poder ir", "productSearchQuery": null, "confidence": 0.95}
 
 - "busca el mail donde me mandaron la foto del presupuesto"
-  -> {"intentType": "search_email", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": "presupuesto foto", "productSearchQuery": null, "confidence": 0.95}
+  -> {"intentType": "search_email", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": "presupuesto foto", "emailExtractionQuery": null, "productSearchQuery": null, "confidence": 0.95}
 
 - "encontra el email de Juan sobre la reunion"
-  -> {"intentType": "search_email", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": "from:Juan reunion", "productSearchQuery": null, "confidence": 0.95}
+  -> {"intentType": "search_email", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": "from:Juan reunion", "emailExtractionQuery": null, "productSearchQuery": null, "confidence": 0.95}
 
 - "busca el correo de MercadoLibre"
-  -> {"intentType": "search_email", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": "from:MercadoLibre", "productSearchQuery": null, "confidence": 0.95}
+  -> {"intentType": "search_email", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": "from:MercadoLibre", "emailExtractionQuery": null, "productSearchQuery": null, "confidence": 0.95}
+
+- "busca la IP de la VPS que me envio contabo y damela"
+  -> {"intentType": "search_email", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": "from:contabo VPS", "emailExtractionQuery": "IP address de la VPS", "productSearchQuery": null, "confidence": 0.95}
+
+- "encontra el numero de tracking del paquete que me mando Amazon"
+  -> {"intentType": "search_email", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": "from:Amazon tracking envio", "emailExtractionQuery": "numero de tracking", "productSearchQuery": null, "confidence": 0.95}
+
+- "busca el mail de Naranja X con el monto de mi deuda"
+  -> {"intentType": "search_email", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": "from:Naranja deuda resumen", "emailExtractionQuery": "monto de la deuda", "productSearchQuery": null, "confidence": 0.95}
 
 - "buscame auriculares bluetooth"
   -> {"intentType": "search_product", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": null, "productSearchQuery": "auriculares bluetooth", "confidence": 0.95}

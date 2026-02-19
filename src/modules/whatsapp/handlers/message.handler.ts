@@ -23,6 +23,17 @@ const CONNECT_COMMANDS = ["/connect", "/link", "/conectar"];
 const CONFIRM_SEND = ["enviar", "si", "send", "yes"];
 const CANCEL_SEND = ["cancelar", "cancel", "no"];
 
+function formatReminderDate(date: Date): string {
+  return date.toLocaleString("es-AR", {
+    timeZone: "America/Argentina/Buenos_Aires",
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
+
 function extractRateLimitWait(error: unknown): string | null {
   if (typeof error !== "object" || error === null) return null;
 
@@ -94,6 +105,7 @@ export class MessageHandler {
   private readonly lastViewedEmail = new Map<string, ViewedEmail>();
   private readonly pendingSearchReply = new Set<string>();
   private readonly pendingReplyInstruction = new Set<string>();
+  private readonly pendingModifyTask = new Map<string, number>();
 
   constructor(
     private readonly whatsappClient: WhatsAppClient,
@@ -126,6 +138,12 @@ export class MessageHandler {
 
     this.logger.info(`Received ${message.type} message from ${message.chatId}`);
 
+    // Handle interactive button/list responses before text extraction
+    if (message.type === "buttonResponse" || message.type === "listResponse") {
+      await this.handleInteractiveResponse(message);
+      return;
+    }
+
     let text: string;
 
     // Process audio messages
@@ -156,6 +174,12 @@ export class MessageHandler {
     } else if (message.type === "text" && message.text) {
       text = message.text;
     } else {
+      return;
+    }
+
+    // Check for pending modify task (from list interaction)
+    if (this.pendingModifyTask.has(message.chatId)) {
+      await this.handlePendingModifyTaskResponse(message.chatId, text);
       return;
     }
 
@@ -231,7 +255,11 @@ export class MessageHandler {
           break;
 
         case "search_email":
-          await this.handleSearchEmail(message.chatId, intent.emailSearchQuery);
+          await this.handleSearchEmail(
+            message.chatId,
+            intent.emailSearchQuery,
+            intent.emailExtractionQuery
+          );
           break;
 
         case "search_product":
@@ -563,9 +591,32 @@ export class MessageHandler {
       response += `*${index + 1}.* ${reminder.reminderText}${recurrenceIcon}\n   📅 ${dateStr}\n\n`;
     });
 
-    response += "_Podes decir 'cancela la tarea X' o 'cambia la tarea X a las Y'_";
-
     await this.whatsappClient.sendMessage(chatId, response);
+
+    await this.whatsappClient.sendList(
+      chatId,
+      "¿Qué querés hacer?",
+      "Seleccioná una acción para una tarea",
+      "Ver opciones",
+      [
+        {
+          title: "Cancelar tarea",
+          rows: reminders.map((r, i) => ({
+            id: `cancel_${i}`,
+            title: r.reminderText.substring(0, 24),
+            description: formatReminderDate(r.scheduledAt)
+          }))
+        },
+        {
+          title: "Cambiar horario",
+          rows: reminders.map((r, i) => ({
+            id: `modify_${i}`,
+            title: r.reminderText.substring(0, 24),
+            description: formatReminderDate(r.scheduledAt)
+          }))
+        }
+      ]
+    );
   }
 
   private async handleCancelTask(chatId: string, taskNumber?: number): Promise<void> {
@@ -912,9 +963,13 @@ ${privacyLine}`
         `*Preview de tu respuesta:*\n\n` +
           `*Para:* ${fullEmail.from}\n` +
           `*Asunto:* ${reply.subject}\n\n` +
-          `${reply.body}\n\n` +
-          `_Responde "enviar" para enviar o "cancelar" para descartar._`
+          `${reply.body}`
       );
+
+      await this.whatsappClient.sendButtons(chatId, "¿Qué hacemos con esta respuesta?", [
+        { id: "enviar", text: "✅ Enviar" },
+        { id: "cancelar", text: "❌ Descartar" }
+      ]);
 
       // Store pending reply
       this.pendingReplies.set(chatId, {
@@ -977,7 +1032,11 @@ ${privacyLine}`
     }
   }
 
-  private async handleSearchEmail(chatId: string, searchQuery?: string): Promise<void> {
+  private async handleSearchEmail(
+    chatId: string,
+    searchQuery?: string,
+    extractionQuery?: string
+  ): Promise<void> {
     if (
       !this.gmailService ||
       !this.processedEmailRepository ||
@@ -1082,6 +1141,26 @@ ${privacyLine}`
         return;
       }
 
+      // If extraction requested, fetch full body and extract specific info
+      if (extractionQuery && this.emailReplyService && this.gmailService) {
+        try {
+          const fullEmail = await this.gmailService.getMessage(user.id, foundEmail.gmailMessageId);
+
+          const extracted = await this.emailReplyService.extractInfo({
+            emailBody: fullEmail.body,
+            from: foundEmail.from,
+            subject: foundEmail.subject,
+            date: foundEmail.date,
+            extractionQuery
+          });
+
+          await this.whatsappClient.sendMessage(chatId, `🔍 *${extractionQuery}:*\n\n${extracted}`);
+        } catch (extractError) {
+          this.logger.error("Failed to extract info from email", extractError);
+          // Fall through to show normal email preview
+        }
+      }
+
       // Format result
       const dateStr = foundEmail.date.toLocaleString("es-AR", {
         timeZone: "America/Argentina/Buenos_Aires",
@@ -1102,11 +1181,15 @@ ${privacyLine}`
       message += `*Asunto:* ${foundEmail.subject}\n`;
       message += `*Fecha:* ${dateStr}\n`;
       if (contentPreview) {
-        message += `\n${contentPreview}\n`;
+        message += `\n${contentPreview}`;
       }
-      message += `\n_Queres responder a este email? Decime "si" o "no"_`;
 
       await this.whatsappClient.sendMessage(chatId, message);
+
+      await this.whatsappClient.sendButtons(chatId, "¿Querés responder a este email?", [
+        { id: "si", text: "✅ Responder" },
+        { id: "no", text: "❌ No gracias" }
+      ]);
 
       // Save state
       this.lastViewedEmail.set(chatId, {
@@ -1210,9 +1293,13 @@ ${privacyLine}`
         `*Preview de tu respuesta:*\n\n` +
           `*Para:* ${fullEmail.from}\n` +
           `*Asunto:* ${reply.subject}\n\n` +
-          `${reply.body}\n\n` +
-          `_Responde "enviar" para enviar o "cancelar" para descartar._`
+          `${reply.body}`
       );
+
+      await this.whatsappClient.sendButtons(chatId, "¿Qué hacemos con esta respuesta?", [
+        { id: "enviar", text: "✅ Enviar" },
+        { id: "cancelar", text: "❌ Descartar" }
+      ]);
 
       // Store pending reply (reuses existing send/cancel flow)
       this.pendingReplies.set(chatId, {
@@ -1553,6 +1640,65 @@ ${privacyLine}`
       await this.whatsappClient.sendMessage(
         chatId,
         "Hubo un error desactivando el resumen diario. Intenta de nuevo mas tarde."
+      );
+    }
+  }
+
+  private async handleInteractiveResponse(message: MessageContent): Promise<void> {
+    const chatId = message.chatId;
+
+    if (message.type === "buttonResponse") {
+      const selectedId = message.selectedButtonId ?? "";
+
+      if (this.pendingReplies.has(chatId)) {
+        await this.handlePendingReplyResponse(chatId, selectedId);
+        return;
+      }
+
+      if (this.pendingSearchReply.has(chatId)) {
+        await this.handlePendingSearchReplyResponse(chatId, selectedId);
+        return;
+      }
+    }
+
+    if (message.type === "listResponse") {
+      const rowId = message.selectedRowId ?? "";
+
+      if (rowId.startsWith("cancel_")) {
+        const idx = parseInt(rowId.replace("cancel_", ""), 10);
+        await this.handleCancelTask(chatId, idx + 1);
+      } else if (rowId.startsWith("modify_")) {
+        const idx = parseInt(rowId.replace("modify_", ""), 10);
+        this.pendingModifyTask.set(chatId, idx + 1);
+        await this.whatsappClient.sendMessage(
+          chatId,
+          "¿A qué hora querés cambiar la tarea? Ej: 'mañana a las 5pm'"
+        );
+      }
+    }
+  }
+
+  private async handlePendingModifyTaskResponse(chatId: string, text: string): Promise<void> {
+    const taskNumber = this.pendingModifyTask.get(chatId)!;
+    this.pendingModifyTask.delete(chatId);
+
+    try {
+      const syntheticText = `cambia la tarea ${taskNumber} a ${text}`;
+      const intent = await this.intentService.parseIntent(syntheticText);
+
+      if (intent.type === "modify_task" && intent.newDateTime) {
+        await this.handleModifyTask(chatId, taskNumber, intent.newDateTime);
+      } else {
+        await this.whatsappClient.sendMessage(
+          chatId,
+          "No pude entender el horario. Intentá de nuevo con 'cambia la tarea N a las Xpm'."
+        );
+      }
+    } catch (error) {
+      this.logger.error("Failed to parse modify time from pending task", error);
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "Hubo un error procesando el horario. Intentá de nuevo."
       );
     }
   }
