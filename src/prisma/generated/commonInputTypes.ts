@@ -490,6 +490,130 @@ export type EnumProcessedEmailStatusWithAggregatesFilter<$PrismaModel = never> =
   _max?: Prisma.NestedEnumProcessedEmailStatusFilter<$PrismaModel>;
 };
 
+export type DecimalFilter<$PrismaModel = never> = {
+  equals?:
+    | runtime.Decimal
+    | runtime.DecimalJsLike
+    | number
+    | string
+    | Prisma.DecimalFieldRefInput<$PrismaModel>;
+  in?:
+    | runtime.Decimal[]
+    | runtime.DecimalJsLike[]
+    | number[]
+    | string[]
+    | Prisma.ListDecimalFieldRefInput<$PrismaModel>;
+  notIn?:
+    | runtime.Decimal[]
+    | runtime.DecimalJsLike[]
+    | number[]
+    | string[]
+    | Prisma.ListDecimalFieldRefInput<$PrismaModel>;
+  lt?:
+    | runtime.Decimal
+    | runtime.DecimalJsLike
+    | number
+    | string
+    | Prisma.DecimalFieldRefInput<$PrismaModel>;
+  lte?:
+    | runtime.Decimal
+    | runtime.DecimalJsLike
+    | number
+    | string
+    | Prisma.DecimalFieldRefInput<$PrismaModel>;
+  gt?:
+    | runtime.Decimal
+    | runtime.DecimalJsLike
+    | number
+    | string
+    | Prisma.DecimalFieldRefInput<$PrismaModel>;
+  gte?:
+    | runtime.Decimal
+    | runtime.DecimalJsLike
+    | number
+    | string
+    | Prisma.DecimalFieldRefInput<$PrismaModel>;
+  not?:
+    | Prisma.NestedDecimalFilter<$PrismaModel>
+    | runtime.Decimal
+    | runtime.DecimalJsLike
+    | number
+    | string;
+};
+
+export type EnumExpenseCategoryFilter<$PrismaModel = never> = {
+  equals?: $Enums.ExpenseCategory | Prisma.EnumExpenseCategoryFieldRefInput<$PrismaModel>;
+  in?: $Enums.ExpenseCategory[] | Prisma.ListEnumExpenseCategoryFieldRefInput<$PrismaModel>;
+  notIn?: $Enums.ExpenseCategory[] | Prisma.ListEnumExpenseCategoryFieldRefInput<$PrismaModel>;
+  not?: Prisma.NestedEnumExpenseCategoryFilter<$PrismaModel> | $Enums.ExpenseCategory;
+};
+
+export type DecimalWithAggregatesFilter<$PrismaModel = never> = {
+  equals?:
+    | runtime.Decimal
+    | runtime.DecimalJsLike
+    | number
+    | string
+    | Prisma.DecimalFieldRefInput<$PrismaModel>;
+  in?:
+    | runtime.Decimal[]
+    | runtime.DecimalJsLike[]
+    | number[]
+    | string[]
+    | Prisma.ListDecimalFieldRefInput<$PrismaModel>;
+  notIn?:
+    | runtime.Decimal[]
+    | runtime.DecimalJsLike[]
+    | number[]
+    | string[]
+    | Prisma.ListDecimalFieldRefInput<$PrismaModel>;
+  lt?:
+    | runtime.Decimal
+    | runtime.DecimalJsLike
+    | number
+    | string
+    | Prisma.DecimalFieldRefInput<$PrismaModel>;
+  lte?:
+    | runtime.Decimal
+    | runtime.DecimalJsLike
+    | number
+    | string
+    | Prisma.DecimalFieldRefInput<$PrismaModel>;
+  gt?:
+    | runtime.Decimal
+    | runtime.DecimalJsLike
+    | number
+    | string
+    | Prisma.DecimalFieldRefInput<$PrismaModel>;
+  gte?:
+    | runtime.Decimal
+    | runtime.DecimalJsLike
+    | number
+    | string
+    | Prisma.DecimalFieldRefInput<$PrismaModel>;
+  not?:
+    | Prisma.NestedDecimalWithAggregatesFilter<$PrismaModel>
+    | runtime.Decimal
+    | runtime.DecimalJsLike
+    | number
+    | string;
+  _count?: Prisma.NestedIntFilter<$PrismaModel>;
+  _avg?: Prisma.NestedDecimalFilter<$PrismaModel>;
+  _sum?: Prisma.NestedDecimalFilter<$PrismaModel>;
+  _min?: Prisma.NestedDecimalFilter<$PrismaModel>;
+  _max?: Prisma.NestedDecimalFilter<$PrismaModel>;
+};
+
+export type EnumExpenseCategoryWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.ExpenseCategory | Prisma.EnumExpenseCategoryFieldRefInput<$PrismaModel>;
+  in?: $Enums.ExpenseCategory[] | Prisma.ListEnumExpenseCategoryFieldRefInput<$PrismaModel>;
+  notIn?: $Enums.ExpenseCategory[] | Prisma.ListEnumExpenseCategoryFieldRefInput<$PrismaModel>;
+  not?: Prisma.NestedEnumExpenseCategoryWithAggregatesFilter<$PrismaModel> | $Enums.ExpenseCategory;
+  _count?: Prisma.NestedIntFilter<$PrismaModel>;
+  _min?: Prisma.NestedEnumExpenseCategoryFilter<$PrismaModel>;
+  _max?: Prisma.NestedEnumExpenseCategoryFilter<$PrismaModel>;
+};
+
 export type NestedStringFilter<$PrismaModel = never> = {
   equals?: string | Prisma.StringFieldRefInput<$PrismaModel>;
   in?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel>;
@@ -907,4 +1031,128 @@ export type NestedEnumProcessedEmailStatusWithAggregatesFilter<$PrismaModel = ne
   _count?: Prisma.NestedIntFilter<$PrismaModel>;
   _min?: Prisma.NestedEnumProcessedEmailStatusFilter<$PrismaModel>;
   _max?: Prisma.NestedEnumProcessedEmailStatusFilter<$PrismaModel>;
+};
+
+export type NestedDecimalFilter<$PrismaModel = never> = {
+  equals?:
+    | runtime.Decimal
+    | runtime.DecimalJsLike
+    | number
+    | string
+    | Prisma.DecimalFieldRefInput<$PrismaModel>;
+  in?:
+    | runtime.Decimal[]
+    | runtime.DecimalJsLike[]
+    | number[]
+    | string[]
+    | Prisma.ListDecimalFieldRefInput<$PrismaModel>;
+  notIn?:
+    | runtime.Decimal[]
+    | runtime.DecimalJsLike[]
+    | number[]
+    | string[]
+    | Prisma.ListDecimalFieldRefInput<$PrismaModel>;
+  lt?:
+    | runtime.Decimal
+    | runtime.DecimalJsLike
+    | number
+    | string
+    | Prisma.DecimalFieldRefInput<$PrismaModel>;
+  lte?:
+    | runtime.Decimal
+    | runtime.DecimalJsLike
+    | number
+    | string
+    | Prisma.DecimalFieldRefInput<$PrismaModel>;
+  gt?:
+    | runtime.Decimal
+    | runtime.DecimalJsLike
+    | number
+    | string
+    | Prisma.DecimalFieldRefInput<$PrismaModel>;
+  gte?:
+    | runtime.Decimal
+    | runtime.DecimalJsLike
+    | number
+    | string
+    | Prisma.DecimalFieldRefInput<$PrismaModel>;
+  not?:
+    | Prisma.NestedDecimalFilter<$PrismaModel>
+    | runtime.Decimal
+    | runtime.DecimalJsLike
+    | number
+    | string;
+};
+
+export type NestedEnumExpenseCategoryFilter<$PrismaModel = never> = {
+  equals?: $Enums.ExpenseCategory | Prisma.EnumExpenseCategoryFieldRefInput<$PrismaModel>;
+  in?: $Enums.ExpenseCategory[] | Prisma.ListEnumExpenseCategoryFieldRefInput<$PrismaModel>;
+  notIn?: $Enums.ExpenseCategory[] | Prisma.ListEnumExpenseCategoryFieldRefInput<$PrismaModel>;
+  not?: Prisma.NestedEnumExpenseCategoryFilter<$PrismaModel> | $Enums.ExpenseCategory;
+};
+
+export type NestedDecimalWithAggregatesFilter<$PrismaModel = never> = {
+  equals?:
+    | runtime.Decimal
+    | runtime.DecimalJsLike
+    | number
+    | string
+    | Prisma.DecimalFieldRefInput<$PrismaModel>;
+  in?:
+    | runtime.Decimal[]
+    | runtime.DecimalJsLike[]
+    | number[]
+    | string[]
+    | Prisma.ListDecimalFieldRefInput<$PrismaModel>;
+  notIn?:
+    | runtime.Decimal[]
+    | runtime.DecimalJsLike[]
+    | number[]
+    | string[]
+    | Prisma.ListDecimalFieldRefInput<$PrismaModel>;
+  lt?:
+    | runtime.Decimal
+    | runtime.DecimalJsLike
+    | number
+    | string
+    | Prisma.DecimalFieldRefInput<$PrismaModel>;
+  lte?:
+    | runtime.Decimal
+    | runtime.DecimalJsLike
+    | number
+    | string
+    | Prisma.DecimalFieldRefInput<$PrismaModel>;
+  gt?:
+    | runtime.Decimal
+    | runtime.DecimalJsLike
+    | number
+    | string
+    | Prisma.DecimalFieldRefInput<$PrismaModel>;
+  gte?:
+    | runtime.Decimal
+    | runtime.DecimalJsLike
+    | number
+    | string
+    | Prisma.DecimalFieldRefInput<$PrismaModel>;
+  not?:
+    | Prisma.NestedDecimalWithAggregatesFilter<$PrismaModel>
+    | runtime.Decimal
+    | runtime.DecimalJsLike
+    | number
+    | string;
+  _count?: Prisma.NestedIntFilter<$PrismaModel>;
+  _avg?: Prisma.NestedDecimalFilter<$PrismaModel>;
+  _sum?: Prisma.NestedDecimalFilter<$PrismaModel>;
+  _min?: Prisma.NestedDecimalFilter<$PrismaModel>;
+  _max?: Prisma.NestedDecimalFilter<$PrismaModel>;
+};
+
+export type NestedEnumExpenseCategoryWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.ExpenseCategory | Prisma.EnumExpenseCategoryFieldRefInput<$PrismaModel>;
+  in?: $Enums.ExpenseCategory[] | Prisma.ListEnumExpenseCategoryFieldRefInput<$PrismaModel>;
+  notIn?: $Enums.ExpenseCategory[] | Prisma.ListEnumExpenseCategoryFieldRefInput<$PrismaModel>;
+  not?: Prisma.NestedEnumExpenseCategoryWithAggregatesFilter<$PrismaModel> | $Enums.ExpenseCategory;
+  _count?: Prisma.NestedIntFilter<$PrismaModel>;
+  _min?: Prisma.NestedEnumExpenseCategoryFilter<$PrismaModel>;
+  _max?: Prisma.NestedEnumExpenseCategoryFilter<$PrismaModel>;
 };

@@ -7,6 +7,8 @@ export {
   type MeetingInfo,
   type PurchaseInfo,
   type FlightInfo,
-  type SecurityInfo
+  type SecurityInfo,
+  type ExpenseExtraction,
+  type ExpenseCategoryType
 } from "./email-analyzer.service";
 export { buildEmailAnalysisPrompt } from "./email-analyzer.prompts";

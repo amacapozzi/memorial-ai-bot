@@ -5,6 +5,9 @@ import type { GmailService } from "@modules/email/gmail/gmail.service";
 import type { ProcessedEmailRepository } from "@modules/email/processor/processed-email.repository";
 import type { EmailReplyService } from "@modules/email/reply/email-reply.service";
 import type { UserService } from "@modules/email/user/user.service";
+import type { FinancialAdviceService } from "@modules/expenses/advice/financial-advice.service";
+import type { ExpenseService } from "@modules/expenses/expense.service";
+import type { ExpenseSummaryService } from "@modules/expenses/summary/expense-summary.service";
 import type { LinkingCodeService } from "@modules/linking/linking.service";
 import type { MeliApiService } from "@modules/mercadolibre/api/meli-api.service";
 import type { MeliAuthService } from "@modules/mercadolibre/auth/meli-auth.service";
@@ -121,7 +124,10 @@ export class MessageHandler {
     private readonly processedEmailRepository?: ProcessedEmailRepository,
     private readonly productSearchService?: ProductSearchService,
     private readonly meliAuthService?: MeliAuthService,
-    private readonly meliApiService?: MeliApiService
+    private readonly meliApiService?: MeliApiService,
+    private readonly expenseService?: ExpenseService,
+    private readonly financialAdviceService?: FinancialAdviceService,
+    private readonly expenseSummaryService?: ExpenseSummaryService
   ) {}
 
   async handle(message: MessageContent): Promise<void> {
@@ -286,6 +292,14 @@ export class MessageHandler {
           await this.handleDisableDigest(message.chatId);
           break;
 
+        case "check_expenses":
+          await this.handleCheckExpenses(message.chatId, intent.expensePeriod ?? "month");
+          break;
+
+        case "financial_advice":
+          await this.handleFinancialAdvice(message.chatId);
+          break;
+
         default:
           await this.whatsappClient.sendMessage(
             message.chatId,
@@ -302,6 +316,8 @@ export class MessageHandler {
               "- Conectar MercadoLibre: 'conecta mi mercado libre'\n" +
               "- Rastrear pedido: 'donde esta mi paquete'\n" +
               "- Resumen diario: 'activar resumen diario' / 'desactivar resumen diario'\n" +
+              "- Ver gastos: 'cuanto gaste este mes'\n" +
+              "- Consejos financieros: 'dame consejos de ahorro'\n" +
               "- Vincular con la web: /connect"
           );
       }
@@ -1663,6 +1679,178 @@ ${privacyLine}`
       await this.whatsappClient.sendMessage(
         chatId,
         "Hubo un error procesando el horario. Intentá de nuevo."
+      );
+    }
+  }
+
+  private async handleCheckExpenses(
+    chatId: string,
+    period: "day" | "week" | "month"
+  ): Promise<void> {
+    if (!this.expenseService || !this.userService) {
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "La funcion de gastos no esta disponible en este momento."
+      );
+      return;
+    }
+
+    try {
+      const user = await this.userService.getUserByChatId(chatId);
+      if (!user) {
+        await this.whatsappClient.sendMessage(
+          chatId,
+          "No tenes cuenta vinculada. Usa /connect para vincularla."
+        );
+        return;
+      }
+
+      let summary;
+      let periodLabel: string;
+
+      const now = new Date();
+      if (period === "day") {
+        const from = new Date(now);
+        from.setHours(0, 0, 0, 0);
+        const to = new Date(now);
+        to.setHours(23, 59, 59, 999);
+        summary = await this.expenseService.getSummaryForDateRange(user.id, from, to);
+        periodLabel = now.toLocaleDateString("es-AR", {
+          timeZone: "America/Argentina/Buenos_Aires",
+          weekday: "long",
+          day: "numeric",
+          month: "long"
+        });
+      } else if (period === "week") {
+        // Start of this week (Monday)
+        const weekStart = new Date(now);
+        const dayOfWeek = weekStart.getDay();
+        const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+        weekStart.setDate(weekStart.getDate() - daysToMonday);
+        weekStart.setHours(0, 0, 0, 0);
+        summary = await this.expenseService.getWeeklySummary(user.id, weekStart);
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekEnd.getDate() + 6);
+        const startStr = weekStart.toLocaleDateString("es-AR", {
+          day: "numeric",
+          month: "short"
+        });
+        const endStr = weekEnd.toLocaleDateString("es-AR", { day: "numeric", month: "short" });
+        periodLabel = `semana del ${startStr} al ${endStr}`;
+      } else {
+        summary = await this.expenseService.getCurrentMonthSummary(user.id);
+        periodLabel = now.toLocaleString("es-AR", {
+          timeZone: "America/Argentina/Buenos_Aires",
+          month: "long",
+          year: "numeric"
+        });
+      }
+
+      if (summary.transactionCount === 0) {
+        await this.whatsappClient.sendMessage(
+          chatId,
+          "No encontre gastos registrados para este periodo.\n\n" +
+            "Conecto tu Gmail para que pueda analizar tus compras: decime 'conecta mi email'."
+        );
+        return;
+      }
+
+      if (!this.expenseSummaryService) {
+        await this.whatsappClient.sendMessage(
+          chatId,
+          "La funcion de resumen de gastos no esta disponible."
+        );
+        return;
+      }
+
+      const message = await this.expenseSummaryService.formatSummaryMessage(
+        summary,
+        periodLabel,
+        false
+      );
+
+      await this.whatsappClient.sendMessage(chatId, message);
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "Queres consejos personalizados basados en tus gastos? Decime *dame consejos de ahorro*."
+      );
+    } catch (error) {
+      this.logger.error(`Failed to check expenses for ${chatId}`, error);
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "Hubo un error consultando tus gastos. Intenta de nuevo mas tarde."
+      );
+    }
+  }
+
+  private async handleFinancialAdvice(chatId: string): Promise<void> {
+    if (!this.financialAdviceService || !this.expenseService || !this.userService) {
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "La funcion de consejos financieros no esta disponible en este momento."
+      );
+      return;
+    }
+
+    try {
+      const user = await this.userService.getUserByChatId(chatId);
+      if (!user) {
+        await this.whatsappClient.sendMessage(
+          chatId,
+          "No tenes cuenta vinculada. Usa /connect para vincularla."
+        );
+        return;
+      }
+
+      // Use last month for advice (more complete data)
+      const summary = await this.expenseService.getLastMonthSummary(user.id);
+
+      if (summary.transactionCount === 0) {
+        // Try current month as fallback
+        const currentSummary = await this.expenseService.getCurrentMonthSummary(user.id);
+        if (currentSummary.transactionCount === 0) {
+          await this.whatsappClient.sendMessage(
+            chatId,
+            "No tengo suficientes datos de gastos para generar consejos personalizados.\n\n" +
+              "Conecta tu Gmail para que pueda analizar tus compras: decime 'conecta mi email'."
+          );
+          return;
+        }
+
+        const now = new Date();
+        const periodLabel = now.toLocaleString("es-AR", {
+          timeZone: "America/Argentina/Buenos_Aires",
+          month: "long",
+          year: "numeric"
+        });
+        const advice = await this.financialAdviceService.generateAdvice(
+          currentSummary,
+          periodLabel
+        );
+        await this.whatsappClient.sendMessage(chatId, `💡 *Consejos financieros:*\n\n${advice}`);
+        return;
+      }
+
+      const now = new Date();
+      let year = now.getFullYear();
+      let month = now.getMonth();
+      if (month === 0) {
+        month = 12;
+        year--;
+      }
+      const periodLabel = new Date(year, month - 1, 1).toLocaleString("es-AR", {
+        month: "long",
+        year: "numeric"
+      });
+
+      await this.whatsappClient.sendMessage(chatId, "Analizando tus gastos... 📊");
+      const advice = await this.financialAdviceService.generateAdvice(summary, periodLabel);
+      await this.whatsappClient.sendMessage(chatId, `💡 *Consejos financieros:*\n\n${advice}`);
+    } catch (error) {
+      this.logger.error(`Failed to generate financial advice for ${chatId}`, error);
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "Hubo un error generando los consejos. Intenta de nuevo mas tarde."
       );
     }
   }

@@ -59,6 +59,21 @@ export const RecurrenceType = {
 
 export type RecurrenceType = (typeof RecurrenceType)[keyof typeof RecurrenceType];
 
+export const ExpenseCategory = {
+  FOOD: "FOOD",
+  TRANSPORT: "TRANSPORT",
+  SHOPPING: "SHOPPING",
+  UTILITIES: "UTILITIES",
+  ENTERTAINMENT: "ENTERTAINMENT",
+  HEALTH: "HEALTH",
+  EDUCATION: "EDUCATION",
+  TRAVEL: "TRAVEL",
+  SERVICES: "SERVICES",
+  OTHER: "OTHER"
+} as const;
+
+export type ExpenseCategory = (typeof ExpenseCategory)[keyof typeof ExpenseCategory];
+
 export const EmailType = {
   PURCHASE: "PURCHASE",
   DELIVERY: "DELIVERY",

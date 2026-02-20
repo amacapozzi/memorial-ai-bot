@@ -236,6 +236,7 @@ export type ProcessedEmailWhereInput = {
   reminderId?: Prisma.StringNullableFilter<"ProcessedEmail"> | string | null;
   status?: Prisma.EnumProcessedEmailStatusFilter<"ProcessedEmail"> | $Enums.ProcessedEmailStatus;
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>;
+  expense?: Prisma.XOR<Prisma.ExpenseNullableScalarRelationFilter, Prisma.ExpenseWhereInput> | null;
 };
 
 export type ProcessedEmailOrderByWithRelationInput = {
@@ -252,6 +253,7 @@ export type ProcessedEmailOrderByWithRelationInput = {
   reminderId?: Prisma.SortOrderInput | Prisma.SortOrder;
   status?: Prisma.SortOrder;
   user?: Prisma.UserOrderByWithRelationInput;
+  expense?: Prisma.ExpenseOrderByWithRelationInput;
 };
 
 export type ProcessedEmailWhereUniqueInput = Prisma.AtLeast<
@@ -273,6 +275,10 @@ export type ProcessedEmailWhereUniqueInput = Prisma.AtLeast<
     extractedData?: Prisma.JsonNullableFilter<"ProcessedEmail">;
     status?: Prisma.EnumProcessedEmailStatusFilter<"ProcessedEmail"> | $Enums.ProcessedEmailStatus;
     user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>;
+    expense?: Prisma.XOR<
+      Prisma.ExpenseNullableScalarRelationFilter,
+      Prisma.ExpenseWhereInput
+    > | null;
   },
   "id" | "reminderId" | "userId_gmailMessageId"
 >;
@@ -332,6 +338,7 @@ export type ProcessedEmailCreateInput = {
   reminderId?: string | null;
   status?: $Enums.ProcessedEmailStatus;
   user: Prisma.UserCreateNestedOneWithoutProcessedEmailsInput;
+  expense?: Prisma.ExpenseCreateNestedOneWithoutProcessedEmailInput;
 };
 
 export type ProcessedEmailUncheckedCreateInput = {
@@ -347,6 +354,7 @@ export type ProcessedEmailUncheckedCreateInput = {
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   reminderId?: string | null;
   status?: $Enums.ProcessedEmailStatus;
+  expense?: Prisma.ExpenseUncheckedCreateNestedOneWithoutProcessedEmailInput;
 };
 
 export type ProcessedEmailUpdateInput = {
@@ -362,6 +370,7 @@ export type ProcessedEmailUpdateInput = {
   reminderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   status?: Prisma.EnumProcessedEmailStatusFieldUpdateOperationsInput | $Enums.ProcessedEmailStatus;
   user?: Prisma.UserUpdateOneRequiredWithoutProcessedEmailsNestedInput;
+  expense?: Prisma.ExpenseUpdateOneWithoutProcessedEmailNestedInput;
 };
 
 export type ProcessedEmailUncheckedUpdateInput = {
@@ -377,6 +386,7 @@ export type ProcessedEmailUncheckedUpdateInput = {
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   reminderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   status?: Prisma.EnumProcessedEmailStatusFieldUpdateOperationsInput | $Enums.ProcessedEmailStatus;
+  expense?: Prisma.ExpenseUncheckedUpdateOneWithoutProcessedEmailNestedInput;
 };
 
 export type ProcessedEmailCreateManyInput = {
@@ -481,6 +491,11 @@ export type ProcessedEmailMinOrderByAggregateInput = {
   status?: Prisma.SortOrder;
 };
 
+export type ProcessedEmailNullableScalarRelationFilter = {
+  is?: Prisma.ProcessedEmailWhereInput | null;
+  isNot?: Prisma.ProcessedEmailWhereInput | null;
+};
+
 export type ProcessedEmailCreateNestedManyWithoutUserInput = {
   create?:
     | Prisma.XOR<
@@ -575,6 +590,34 @@ export type EnumProcessedEmailStatusFieldUpdateOperationsInput = {
   set?: $Enums.ProcessedEmailStatus;
 };
 
+export type ProcessedEmailCreateNestedOneWithoutExpenseInput = {
+  create?: Prisma.XOR<
+    Prisma.ProcessedEmailCreateWithoutExpenseInput,
+    Prisma.ProcessedEmailUncheckedCreateWithoutExpenseInput
+  >;
+  connectOrCreate?: Prisma.ProcessedEmailCreateOrConnectWithoutExpenseInput;
+  connect?: Prisma.ProcessedEmailWhereUniqueInput;
+};
+
+export type ProcessedEmailUpdateOneWithoutExpenseNestedInput = {
+  create?: Prisma.XOR<
+    Prisma.ProcessedEmailCreateWithoutExpenseInput,
+    Prisma.ProcessedEmailUncheckedCreateWithoutExpenseInput
+  >;
+  connectOrCreate?: Prisma.ProcessedEmailCreateOrConnectWithoutExpenseInput;
+  upsert?: Prisma.ProcessedEmailUpsertWithoutExpenseInput;
+  disconnect?: Prisma.ProcessedEmailWhereInput | boolean;
+  delete?: Prisma.ProcessedEmailWhereInput | boolean;
+  connect?: Prisma.ProcessedEmailWhereUniqueInput;
+  update?: Prisma.XOR<
+    Prisma.XOR<
+      Prisma.ProcessedEmailUpdateToOneWithWhereWithoutExpenseInput,
+      Prisma.ProcessedEmailUpdateWithoutExpenseInput
+    >,
+    Prisma.ProcessedEmailUncheckedUpdateWithoutExpenseInput
+  >;
+};
+
 export type ProcessedEmailCreateWithoutUserInput = {
   id?: string;
   gmailMessageId: string;
@@ -587,6 +630,7 @@ export type ProcessedEmailCreateWithoutUserInput = {
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   reminderId?: string | null;
   status?: $Enums.ProcessedEmailStatus;
+  expense?: Prisma.ExpenseCreateNestedOneWithoutProcessedEmailInput;
 };
 
 export type ProcessedEmailUncheckedCreateWithoutUserInput = {
@@ -601,6 +645,7 @@ export type ProcessedEmailUncheckedCreateWithoutUserInput = {
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   reminderId?: string | null;
   status?: $Enums.ProcessedEmailStatus;
+  expense?: Prisma.ExpenseUncheckedCreateNestedOneWithoutProcessedEmailInput;
 };
 
 export type ProcessedEmailCreateOrConnectWithoutUserInput = {
@@ -662,6 +707,94 @@ export type ProcessedEmailScalarWhereInput = {
   status?: Prisma.EnumProcessedEmailStatusFilter<"ProcessedEmail"> | $Enums.ProcessedEmailStatus;
 };
 
+export type ProcessedEmailCreateWithoutExpenseInput = {
+  id?: string;
+  gmailMessageId: string;
+  threadId?: string | null;
+  subject?: string | null;
+  sender?: string | null;
+  receivedAt: Date | string;
+  processedAt?: Date | string;
+  emailType: $Enums.EmailType;
+  extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+  reminderId?: string | null;
+  status?: $Enums.ProcessedEmailStatus;
+  user: Prisma.UserCreateNestedOneWithoutProcessedEmailsInput;
+};
+
+export type ProcessedEmailUncheckedCreateWithoutExpenseInput = {
+  id?: string;
+  userId: string;
+  gmailMessageId: string;
+  threadId?: string | null;
+  subject?: string | null;
+  sender?: string | null;
+  receivedAt: Date | string;
+  processedAt?: Date | string;
+  emailType: $Enums.EmailType;
+  extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+  reminderId?: string | null;
+  status?: $Enums.ProcessedEmailStatus;
+};
+
+export type ProcessedEmailCreateOrConnectWithoutExpenseInput = {
+  where: Prisma.ProcessedEmailWhereUniqueInput;
+  create: Prisma.XOR<
+    Prisma.ProcessedEmailCreateWithoutExpenseInput,
+    Prisma.ProcessedEmailUncheckedCreateWithoutExpenseInput
+  >;
+};
+
+export type ProcessedEmailUpsertWithoutExpenseInput = {
+  update: Prisma.XOR<
+    Prisma.ProcessedEmailUpdateWithoutExpenseInput,
+    Prisma.ProcessedEmailUncheckedUpdateWithoutExpenseInput
+  >;
+  create: Prisma.XOR<
+    Prisma.ProcessedEmailCreateWithoutExpenseInput,
+    Prisma.ProcessedEmailUncheckedCreateWithoutExpenseInput
+  >;
+  where?: Prisma.ProcessedEmailWhereInput;
+};
+
+export type ProcessedEmailUpdateToOneWithWhereWithoutExpenseInput = {
+  where?: Prisma.ProcessedEmailWhereInput;
+  data: Prisma.XOR<
+    Prisma.ProcessedEmailUpdateWithoutExpenseInput,
+    Prisma.ProcessedEmailUncheckedUpdateWithoutExpenseInput
+  >;
+};
+
+export type ProcessedEmailUpdateWithoutExpenseInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  gmailMessageId?: Prisma.StringFieldUpdateOperationsInput | string;
+  threadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  subject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  sender?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  receivedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  processedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  emailType?: Prisma.EnumEmailTypeFieldUpdateOperationsInput | $Enums.EmailType;
+  extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+  reminderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  status?: Prisma.EnumProcessedEmailStatusFieldUpdateOperationsInput | $Enums.ProcessedEmailStatus;
+  user?: Prisma.UserUpdateOneRequiredWithoutProcessedEmailsNestedInput;
+};
+
+export type ProcessedEmailUncheckedUpdateWithoutExpenseInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  userId?: Prisma.StringFieldUpdateOperationsInput | string;
+  gmailMessageId?: Prisma.StringFieldUpdateOperationsInput | string;
+  threadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  subject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  sender?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  receivedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  processedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  emailType?: Prisma.EnumEmailTypeFieldUpdateOperationsInput | $Enums.EmailType;
+  extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+  reminderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  status?: Prisma.EnumProcessedEmailStatusFieldUpdateOperationsInput | $Enums.ProcessedEmailStatus;
+};
+
 export type ProcessedEmailCreateManyUserInput = {
   id?: string;
   gmailMessageId: string;
@@ -688,6 +821,7 @@ export type ProcessedEmailUpdateWithoutUserInput = {
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   reminderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   status?: Prisma.EnumProcessedEmailStatusFieldUpdateOperationsInput | $Enums.ProcessedEmailStatus;
+  expense?: Prisma.ExpenseUpdateOneWithoutProcessedEmailNestedInput;
 };
 
 export type ProcessedEmailUncheckedUpdateWithoutUserInput = {
@@ -702,6 +836,7 @@ export type ProcessedEmailUncheckedUpdateWithoutUserInput = {
   extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   reminderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   status?: Prisma.EnumProcessedEmailStatusFieldUpdateOperationsInput | $Enums.ProcessedEmailStatus;
+  expense?: Prisma.ExpenseUncheckedUpdateOneWithoutProcessedEmailNestedInput;
 };
 
 export type ProcessedEmailUncheckedUpdateManyWithoutUserInput = {
@@ -735,6 +870,7 @@ export type ProcessedEmailSelect<
     reminderId?: boolean;
     status?: boolean;
     user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
+    expense?: boolean | Prisma.ProcessedEmail$expenseArgs<ExtArgs>;
   },
   ExtArgs["result"]["processedEmail"]
 >;
@@ -817,6 +953,7 @@ export type ProcessedEmailInclude<
   ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs
 > = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
+  expense?: boolean | Prisma.ProcessedEmail$expenseArgs<ExtArgs>;
 };
 export type ProcessedEmailIncludeCreateManyAndReturn<
   ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs
@@ -835,6 +972,7 @@ export type $ProcessedEmailPayload<
   name: "ProcessedEmail";
   objects: {
     user: Prisma.$UserPayload<ExtArgs>;
+    expense: Prisma.$ExpensePayload<ExtArgs> | null;
   };
   scalars: runtime.Types.Extensions.GetPayloadResult<
     {
@@ -1405,6 +1543,19 @@ export interface Prisma__ProcessedEmailClient<
     ExtArgs,
     GlobalOmitOptions
   >;
+  expense<T extends Prisma.ProcessedEmail$expenseArgs<ExtArgs> = {}>(
+    args?: Prisma.Subset<T, Prisma.ProcessedEmail$expenseArgs<ExtArgs>>
+  ): Prisma.Prisma__ExpenseClient<
+    runtime.Types.Result.GetResult<
+      Prisma.$ExpensePayload<ExtArgs>,
+      T,
+      "findUniqueOrThrow",
+      GlobalOmitOptions
+    > | null,
+    null,
+    ExtArgs,
+    GlobalOmitOptions
+  >;
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1880,6 +2031,27 @@ export type ProcessedEmailDeleteManyArgs<
    * Limit how many ProcessedEmails to delete.
    */
   limit?: number;
+};
+
+/**
+ * ProcessedEmail.expense
+ */
+export type ProcessedEmail$expenseArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs
+> = {
+  /**
+   * Select specific fields to fetch from the Expense
+   */
+  select?: Prisma.ExpenseSelect<ExtArgs> | null;
+  /**
+   * Omit specific fields from the Expense
+   */
+  omit?: Prisma.ExpenseOmit<ExtArgs> | null;
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ExpenseInclude<ExtArgs> | null;
+  where?: Prisma.ExpenseWhereInput;
 };
 
 /**

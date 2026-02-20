@@ -48,6 +48,25 @@ export interface PurchaseInfo {
   items: string[] | null;
 }
 
+export type ExpenseCategoryType =
+  | "FOOD"
+  | "TRANSPORT"
+  | "SHOPPING"
+  | "UTILITIES"
+  | "ENTERTAINMENT"
+  | "HEALTH"
+  | "EDUCATION"
+  | "TRAVEL"
+  | "SERVICES"
+  | "OTHER";
+
+export interface ExpenseExtraction {
+  merchant: string | null;
+  amount: number | null;
+  currency: string | null;
+  category: ExpenseCategoryType;
+}
+
 export interface FlightInfo {
   airline: string;
   flightNumber: string;
@@ -268,6 +287,44 @@ export class EmailAnalyzerService {
   private readonly logger = createLogger("email-analyzer");
 
   constructor(private readonly groqClient: GroqClient) {}
+
+  async extractExpenseData(emailContent: string): Promise<ExpenseExtraction | null> {
+    const systemPrompt = `Eres un extractor de datos de compras. Dado el contenido de un email de compra/factura, extrae los datos del gasto.
+
+Responde UNICAMENTE con JSON valido (sin markdown, sin explicaciones):
+{
+  "merchant": "nombre del comercio o tienda, o null si no se puede determinar",
+  "amount": 1234.56 o null (numero decimal, sin simbolos de moneda),
+  "currency": "ARS" | "USD" | "EUR" | "BRL" | null,
+  "category": "FOOD" | "TRANSPORT" | "SHOPPING" | "UTILITIES" | "ENTERTAINMENT" | "HEALTH" | "EDUCATION" | "TRAVEL" | "SERVICES" | "OTHER"
+}
+
+Categorias:
+- FOOD: restaurantes, delivery, supermercados, cafeterias
+- TRANSPORT: uber, taxi, combustible, peajes, transporte publico
+- SHOPPING: ropa, electronica, mercadolibre, amazon, tiendas online
+- UTILITIES: luz, gas, agua, internet, telefono, servicios del hogar
+- ENTERTAINMENT: streaming, juegos, cine, musica, netflix, spotify
+- HEALTH: farmacia, medico, clinica, laboratorio
+- EDUCATION: cursos, libros, plataformas educativas
+- TRAVEL: hoteles, vuelos, airbnb, agencias de viaje
+- SERVICES: suscripciones, software, servicios profesionales
+- OTHER: cualquier otra cosa
+
+Si el monto tiene separador de miles (ej: 1.234,56 o 1,234.56), interpretalo correctamente como numero decimal.
+Si no es un email de compra/pago, responde con: {"merchant": null, "amount": null, "currency": null, "category": "OTHER"}`;
+
+    try {
+      const result = await this.groqClient.chatJSON<ExpenseExtraction>(systemPrompt, emailContent);
+      if (result.amount === null && result.merchant === null) {
+        return null;
+      }
+      return result;
+    } catch (error) {
+      this.logger.error(`Failed to extract expense data: ${error}`);
+      return null;
+    }
+  }
 
   async analyzeEmail(email: EmailMessage): Promise<AnalyzedEmail> {
     this.logger.info(`Analyzing email: "${email.subject?.substring(0, 50)}..."`);

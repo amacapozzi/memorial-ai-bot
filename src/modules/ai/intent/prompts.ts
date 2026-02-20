@@ -74,7 +74,9 @@ Tipos de intenciones:
 13. "track_order" - Rastrear pedido/paquete (ej: "donde esta mi paquete", "estado de mi compra", "rastrear envio", "mis pedidos de mercado libre")
 14. "enable_digest" - Activar resumen diario matutino (ej: "activar resumen diario", "activar digest", "quiero recibir el resumen de manana", "activa el digest a las 7", "activa el resumen a las 9")
 15. "disable_digest" - Desactivar resumen diario (ej: "desactivar resumen diario", "no quiero el digest", "apagar resumen matutino", "desactivar digest")
-16. "unknown" - No es ninguna de las anteriores
+16. "check_expenses" - Consultar gastos/compras registrados (ej: "cuanto gaste este mes", "mis gastos de la semana", "gastos del mes", "cuanto llevo gastado", "resumen de gastos", "en que gaste plata")
+17. "financial_advice" - Pedir consejos financieros personalizados (ej: "dame consejos de ahorro", "como puedo ahorrar", "consejos financieros", "en que estoy gastando mucho", "como mejorar mis finanzas", "dame tips de inversion")
+18. "unknown" - No es ninguna de las anteriores
 
 IMPORTANTE para CREATE_REMINDER:
 - Si el usuario menciona MULTIPLES recordatorios en un mensaje, extrae TODOS
@@ -117,7 +119,7 @@ Para cada recordatorio, genera tambien un "funMessage": un mensaje corto (maximo
 
 Responde UNICAMENTE con JSON valido (sin markdown, sin explicaciones):
 {
-  "intentType": "create_reminder" | "list_tasks" | "cancel_task" | "modify_task" | "link_email" | "unlink_email" | "email_status" | "reply_email" | "search_email" | "search_product" | "link_mercadolibre" | "unlink_mercadolibre" | "track_order" | "enable_digest" | "disable_digest" | "unknown",
+  "intentType": "create_reminder" | "list_tasks" | "cancel_task" | "modify_task" | "link_email" | "unlink_email" | "email_status" | "reply_email" | "search_email" | "search_product" | "link_mercadolibre" | "unlink_mercadolibre" | "track_order" | "enable_digest" | "disable_digest" | "check_expenses" | "financial_advice" | "unknown",
   "taskNumber": number | null,
   "reminderDetails": [
     {
@@ -136,6 +138,7 @@ Responde UNICAMENTE con JSON valido (sin markdown, sin explicaciones):
   "emailExtractionQuery": "string | null - if the user wants to extract/get a specific piece of data from the found email (e.g. 'IP address de la VPS', 'numero de tracking', 'fecha de vuelo', 'monto de la factura'). Only set when user explicitly asks to show/get/give them specific info from the email.",
   "productSearchQuery": "string | null - product search query extracted from the message (e.g. auriculares bluetooth, silla gamer, iphone 15)",
   "digestHour": number | null,
+  "expensePeriod": "day" | "week" | "month" | null,
   "confidence": number (0-1)
 }
 
@@ -226,7 +229,22 @@ Ejemplos:
   -> {"intentType": "enable_digest", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": null, "productSearchQuery": null, "digestHour": 7, "confidence": 0.95}
 
 - "desactivar resumen diario"
-  -> {"intentType": "disable_digest", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": null, "productSearchQuery": null, "digestHour": null, "confidence": 0.95}`;
+  -> {"intentType": "disable_digest", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": null, "productSearchQuery": null, "digestHour": null, "expensePeriod": null, "confidence": 0.95}
+
+- "cuanto gaste este mes"
+  -> {"intentType": "check_expenses", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": null, "productSearchQuery": null, "digestHour": null, "expensePeriod": "month", "confidence": 0.95}
+
+- "mis gastos de esta semana"
+  -> {"intentType": "check_expenses", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": null, "productSearchQuery": null, "digestHour": null, "expensePeriod": "week", "confidence": 0.95}
+
+- "cuanto llevo gastado hoy"
+  -> {"intentType": "check_expenses", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": null, "productSearchQuery": null, "digestHour": null, "expensePeriod": "day", "confidence": 0.95}
+
+- "dame consejos de ahorro"
+  -> {"intentType": "financial_advice", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": null, "productSearchQuery": null, "digestHour": null, "expensePeriod": null, "confidence": 0.95}
+
+- "como puedo mejorar mis finanzas"
+  -> {"intentType": "financial_advice", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": null, "productSearchQuery": null, "digestHour": null, "expensePeriod": null, "confidence": 0.95}`;
 
 export function buildReminderIntentPrompt(): string {
   const now = new Date();

@@ -108,6 +108,11 @@ export type MercadoLibreToken = Prisma.MercadoLibreTokenModel;
  */
 export type ProcessedEmail = Prisma.ProcessedEmailModel;
 /**
+ * Model Expense
+ *
+ */
+export type Expense = Prisma.ExpenseModel;
+/**
  * Model Commit
  *
  */

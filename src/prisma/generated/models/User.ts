@@ -292,6 +292,7 @@ export type UserWhereInput = {
     Prisma.MercadoLibreTokenWhereInput
   > | null;
   processedEmails?: Prisma.ProcessedEmailListRelationFilter;
+  expenses?: Prisma.ExpenseListRelationFilter;
 };
 
 export type UserOrderByWithRelationInput = {
@@ -315,6 +316,7 @@ export type UserOrderByWithRelationInput = {
   emailToken?: Prisma.EmailTokenOrderByWithRelationInput;
   mercadoLibreToken?: Prisma.MercadoLibreTokenOrderByWithRelationInput;
   processedEmails?: Prisma.ProcessedEmailOrderByRelationAggregateInput;
+  expenses?: Prisma.ExpenseOrderByRelationAggregateInput;
 };
 
 export type UserWhereUniqueInput = Prisma.AtLeast<
@@ -351,6 +353,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<
       Prisma.MercadoLibreTokenWhereInput
     > | null;
     processedEmails?: Prisma.ProcessedEmailListRelationFilter;
+    expenses?: Prisma.ExpenseListRelationFilter;
   },
   "id" | "email" | "chatId"
 >;
@@ -416,6 +419,7 @@ export type UserCreateInput = {
   emailToken?: Prisma.EmailTokenCreateNestedOneWithoutUserInput;
   mercadoLibreToken?: Prisma.MercadoLibreTokenCreateNestedOneWithoutUserInput;
   processedEmails?: Prisma.ProcessedEmailCreateNestedManyWithoutUserInput;
+  expenses?: Prisma.ExpenseCreateNestedManyWithoutUserInput;
 };
 
 export type UserUncheckedCreateInput = {
@@ -439,6 +443,7 @@ export type UserUncheckedCreateInput = {
   emailToken?: Prisma.EmailTokenUncheckedCreateNestedOneWithoutUserInput;
   mercadoLibreToken?: Prisma.MercadoLibreTokenUncheckedCreateNestedOneWithoutUserInput;
   processedEmails?: Prisma.ProcessedEmailUncheckedCreateNestedManyWithoutUserInput;
+  expenses?: Prisma.ExpenseUncheckedCreateNestedManyWithoutUserInput;
 };
 
 export type UserUpdateInput = {
@@ -462,6 +467,7 @@ export type UserUpdateInput = {
   emailToken?: Prisma.EmailTokenUpdateOneWithoutUserNestedInput;
   mercadoLibreToken?: Prisma.MercadoLibreTokenUpdateOneWithoutUserNestedInput;
   processedEmails?: Prisma.ProcessedEmailUpdateManyWithoutUserNestedInput;
+  expenses?: Prisma.ExpenseUpdateManyWithoutUserNestedInput;
 };
 
 export type UserUncheckedUpdateInput = {
@@ -485,6 +491,7 @@ export type UserUncheckedUpdateInput = {
   emailToken?: Prisma.EmailTokenUncheckedUpdateOneWithoutUserNestedInput;
   mercadoLibreToken?: Prisma.MercadoLibreTokenUncheckedUpdateOneWithoutUserNestedInput;
   processedEmails?: Prisma.ProcessedEmailUncheckedUpdateManyWithoutUserNestedInput;
+  expenses?: Prisma.ExpenseUncheckedUpdateManyWithoutUserNestedInput;
 };
 
 export type UserCreateManyInput = {
@@ -817,6 +824,32 @@ export type UserUpdateOneRequiredWithoutProcessedEmailsNestedInput = {
   >;
 };
 
+export type UserCreateNestedOneWithoutExpensesInput = {
+  create?: Prisma.XOR<
+    Prisma.UserCreateWithoutExpensesInput,
+    Prisma.UserUncheckedCreateWithoutExpensesInput
+  >;
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutExpensesInput;
+  connect?: Prisma.UserWhereUniqueInput;
+};
+
+export type UserUpdateOneRequiredWithoutExpensesNestedInput = {
+  create?: Prisma.XOR<
+    Prisma.UserCreateWithoutExpensesInput,
+    Prisma.UserUncheckedCreateWithoutExpensesInput
+  >;
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutExpensesInput;
+  upsert?: Prisma.UserUpsertWithoutExpensesInput;
+  connect?: Prisma.UserWhereUniqueInput;
+  update?: Prisma.XOR<
+    Prisma.XOR<
+      Prisma.UserUpdateToOneWithWhereWithoutExpensesInput,
+      Prisma.UserUpdateWithoutExpensesInput
+    >,
+    Prisma.UserUncheckedUpdateWithoutExpensesInput
+  >;
+};
+
 export type UserCreateWithoutAccountsInput = {
   id?: string;
   email?: string | null;
@@ -837,6 +870,7 @@ export type UserCreateWithoutAccountsInput = {
   emailToken?: Prisma.EmailTokenCreateNestedOneWithoutUserInput;
   mercadoLibreToken?: Prisma.MercadoLibreTokenCreateNestedOneWithoutUserInput;
   processedEmails?: Prisma.ProcessedEmailCreateNestedManyWithoutUserInput;
+  expenses?: Prisma.ExpenseCreateNestedManyWithoutUserInput;
 };
 
 export type UserUncheckedCreateWithoutAccountsInput = {
@@ -859,6 +893,7 @@ export type UserUncheckedCreateWithoutAccountsInput = {
   emailToken?: Prisma.EmailTokenUncheckedCreateNestedOneWithoutUserInput;
   mercadoLibreToken?: Prisma.MercadoLibreTokenUncheckedCreateNestedOneWithoutUserInput;
   processedEmails?: Prisma.ProcessedEmailUncheckedCreateNestedManyWithoutUserInput;
+  expenses?: Prisma.ExpenseUncheckedCreateNestedManyWithoutUserInput;
 };
 
 export type UserCreateOrConnectWithoutAccountsInput = {
@@ -909,6 +944,7 @@ export type UserUpdateWithoutAccountsInput = {
   emailToken?: Prisma.EmailTokenUpdateOneWithoutUserNestedInput;
   mercadoLibreToken?: Prisma.MercadoLibreTokenUpdateOneWithoutUserNestedInput;
   processedEmails?: Prisma.ProcessedEmailUpdateManyWithoutUserNestedInput;
+  expenses?: Prisma.ExpenseUpdateManyWithoutUserNestedInput;
 };
 
 export type UserUncheckedUpdateWithoutAccountsInput = {
@@ -931,6 +967,7 @@ export type UserUncheckedUpdateWithoutAccountsInput = {
   emailToken?: Prisma.EmailTokenUncheckedUpdateOneWithoutUserNestedInput;
   mercadoLibreToken?: Prisma.MercadoLibreTokenUncheckedUpdateOneWithoutUserNestedInput;
   processedEmails?: Prisma.ProcessedEmailUncheckedUpdateManyWithoutUserNestedInput;
+  expenses?: Prisma.ExpenseUncheckedUpdateManyWithoutUserNestedInput;
 };
 
 export type UserCreateWithoutSessionsInput = {
@@ -953,6 +990,7 @@ export type UserCreateWithoutSessionsInput = {
   emailToken?: Prisma.EmailTokenCreateNestedOneWithoutUserInput;
   mercadoLibreToken?: Prisma.MercadoLibreTokenCreateNestedOneWithoutUserInput;
   processedEmails?: Prisma.ProcessedEmailCreateNestedManyWithoutUserInput;
+  expenses?: Prisma.ExpenseCreateNestedManyWithoutUserInput;
 };
 
 export type UserUncheckedCreateWithoutSessionsInput = {
@@ -975,6 +1013,7 @@ export type UserUncheckedCreateWithoutSessionsInput = {
   emailToken?: Prisma.EmailTokenUncheckedCreateNestedOneWithoutUserInput;
   mercadoLibreToken?: Prisma.MercadoLibreTokenUncheckedCreateNestedOneWithoutUserInput;
   processedEmails?: Prisma.ProcessedEmailUncheckedCreateNestedManyWithoutUserInput;
+  expenses?: Prisma.ExpenseUncheckedCreateNestedManyWithoutUserInput;
 };
 
 export type UserCreateOrConnectWithoutSessionsInput = {
@@ -1025,6 +1064,7 @@ export type UserUpdateWithoutSessionsInput = {
   emailToken?: Prisma.EmailTokenUpdateOneWithoutUserNestedInput;
   mercadoLibreToken?: Prisma.MercadoLibreTokenUpdateOneWithoutUserNestedInput;
   processedEmails?: Prisma.ProcessedEmailUpdateManyWithoutUserNestedInput;
+  expenses?: Prisma.ExpenseUpdateManyWithoutUserNestedInput;
 };
 
 export type UserUncheckedUpdateWithoutSessionsInput = {
@@ -1047,6 +1087,7 @@ export type UserUncheckedUpdateWithoutSessionsInput = {
   emailToken?: Prisma.EmailTokenUncheckedUpdateOneWithoutUserNestedInput;
   mercadoLibreToken?: Prisma.MercadoLibreTokenUncheckedUpdateOneWithoutUserNestedInput;
   processedEmails?: Prisma.ProcessedEmailUncheckedUpdateManyWithoutUserNestedInput;
+  expenses?: Prisma.ExpenseUncheckedUpdateManyWithoutUserNestedInput;
 };
 
 export type UserCreateWithoutSubscriptionInput = {
@@ -1069,6 +1110,7 @@ export type UserCreateWithoutSubscriptionInput = {
   emailToken?: Prisma.EmailTokenCreateNestedOneWithoutUserInput;
   mercadoLibreToken?: Prisma.MercadoLibreTokenCreateNestedOneWithoutUserInput;
   processedEmails?: Prisma.ProcessedEmailCreateNestedManyWithoutUserInput;
+  expenses?: Prisma.ExpenseCreateNestedManyWithoutUserInput;
 };
 
 export type UserUncheckedCreateWithoutSubscriptionInput = {
@@ -1091,6 +1133,7 @@ export type UserUncheckedCreateWithoutSubscriptionInput = {
   emailToken?: Prisma.EmailTokenUncheckedCreateNestedOneWithoutUserInput;
   mercadoLibreToken?: Prisma.MercadoLibreTokenUncheckedCreateNestedOneWithoutUserInput;
   processedEmails?: Prisma.ProcessedEmailUncheckedCreateNestedManyWithoutUserInput;
+  expenses?: Prisma.ExpenseUncheckedCreateNestedManyWithoutUserInput;
 };
 
 export type UserCreateOrConnectWithoutSubscriptionInput = {
@@ -1141,6 +1184,7 @@ export type UserUpdateWithoutSubscriptionInput = {
   emailToken?: Prisma.EmailTokenUpdateOneWithoutUserNestedInput;
   mercadoLibreToken?: Prisma.MercadoLibreTokenUpdateOneWithoutUserNestedInput;
   processedEmails?: Prisma.ProcessedEmailUpdateManyWithoutUserNestedInput;
+  expenses?: Prisma.ExpenseUpdateManyWithoutUserNestedInput;
 };
 
 export type UserUncheckedUpdateWithoutSubscriptionInput = {
@@ -1163,6 +1207,7 @@ export type UserUncheckedUpdateWithoutSubscriptionInput = {
   emailToken?: Prisma.EmailTokenUncheckedUpdateOneWithoutUserNestedInput;
   mercadoLibreToken?: Prisma.MercadoLibreTokenUncheckedUpdateOneWithoutUserNestedInput;
   processedEmails?: Prisma.ProcessedEmailUncheckedUpdateManyWithoutUserNestedInput;
+  expenses?: Prisma.ExpenseUncheckedUpdateManyWithoutUserNestedInput;
 };
 
 export type UserCreateWithoutRemindersInput = {
@@ -1185,6 +1230,7 @@ export type UserCreateWithoutRemindersInput = {
   emailToken?: Prisma.EmailTokenCreateNestedOneWithoutUserInput;
   mercadoLibreToken?: Prisma.MercadoLibreTokenCreateNestedOneWithoutUserInput;
   processedEmails?: Prisma.ProcessedEmailCreateNestedManyWithoutUserInput;
+  expenses?: Prisma.ExpenseCreateNestedManyWithoutUserInput;
 };
 
 export type UserUncheckedCreateWithoutRemindersInput = {
@@ -1207,6 +1253,7 @@ export type UserUncheckedCreateWithoutRemindersInput = {
   emailToken?: Prisma.EmailTokenUncheckedCreateNestedOneWithoutUserInput;
   mercadoLibreToken?: Prisma.MercadoLibreTokenUncheckedCreateNestedOneWithoutUserInput;
   processedEmails?: Prisma.ProcessedEmailUncheckedCreateNestedManyWithoutUserInput;
+  expenses?: Prisma.ExpenseUncheckedCreateNestedManyWithoutUserInput;
 };
 
 export type UserCreateOrConnectWithoutRemindersInput = {
@@ -1257,6 +1304,7 @@ export type UserUpdateWithoutRemindersInput = {
   emailToken?: Prisma.EmailTokenUpdateOneWithoutUserNestedInput;
   mercadoLibreToken?: Prisma.MercadoLibreTokenUpdateOneWithoutUserNestedInput;
   processedEmails?: Prisma.ProcessedEmailUpdateManyWithoutUserNestedInput;
+  expenses?: Prisma.ExpenseUpdateManyWithoutUserNestedInput;
 };
 
 export type UserUncheckedUpdateWithoutRemindersInput = {
@@ -1279,6 +1327,7 @@ export type UserUncheckedUpdateWithoutRemindersInput = {
   emailToken?: Prisma.EmailTokenUncheckedUpdateOneWithoutUserNestedInput;
   mercadoLibreToken?: Prisma.MercadoLibreTokenUncheckedUpdateOneWithoutUserNestedInput;
   processedEmails?: Prisma.ProcessedEmailUncheckedUpdateManyWithoutUserNestedInput;
+  expenses?: Prisma.ExpenseUncheckedUpdateManyWithoutUserNestedInput;
 };
 
 export type UserCreateWithoutEmailTokenInput = {
@@ -1301,6 +1350,7 @@ export type UserCreateWithoutEmailTokenInput = {
   subscription?: Prisma.SubscriptionCreateNestedOneWithoutUserInput;
   mercadoLibreToken?: Prisma.MercadoLibreTokenCreateNestedOneWithoutUserInput;
   processedEmails?: Prisma.ProcessedEmailCreateNestedManyWithoutUserInput;
+  expenses?: Prisma.ExpenseCreateNestedManyWithoutUserInput;
 };
 
 export type UserUncheckedCreateWithoutEmailTokenInput = {
@@ -1323,6 +1373,7 @@ export type UserUncheckedCreateWithoutEmailTokenInput = {
   subscription?: Prisma.SubscriptionUncheckedCreateNestedOneWithoutUserInput;
   mercadoLibreToken?: Prisma.MercadoLibreTokenUncheckedCreateNestedOneWithoutUserInput;
   processedEmails?: Prisma.ProcessedEmailUncheckedCreateNestedManyWithoutUserInput;
+  expenses?: Prisma.ExpenseUncheckedCreateNestedManyWithoutUserInput;
 };
 
 export type UserCreateOrConnectWithoutEmailTokenInput = {
@@ -1373,6 +1424,7 @@ export type UserUpdateWithoutEmailTokenInput = {
   subscription?: Prisma.SubscriptionUpdateOneWithoutUserNestedInput;
   mercadoLibreToken?: Prisma.MercadoLibreTokenUpdateOneWithoutUserNestedInput;
   processedEmails?: Prisma.ProcessedEmailUpdateManyWithoutUserNestedInput;
+  expenses?: Prisma.ExpenseUpdateManyWithoutUserNestedInput;
 };
 
 export type UserUncheckedUpdateWithoutEmailTokenInput = {
@@ -1395,6 +1447,7 @@ export type UserUncheckedUpdateWithoutEmailTokenInput = {
   subscription?: Prisma.SubscriptionUncheckedUpdateOneWithoutUserNestedInput;
   mercadoLibreToken?: Prisma.MercadoLibreTokenUncheckedUpdateOneWithoutUserNestedInput;
   processedEmails?: Prisma.ProcessedEmailUncheckedUpdateManyWithoutUserNestedInput;
+  expenses?: Prisma.ExpenseUncheckedUpdateManyWithoutUserNestedInput;
 };
 
 export type UserCreateWithoutMercadoLibreTokenInput = {
@@ -1417,6 +1470,7 @@ export type UserCreateWithoutMercadoLibreTokenInput = {
   subscription?: Prisma.SubscriptionCreateNestedOneWithoutUserInput;
   emailToken?: Prisma.EmailTokenCreateNestedOneWithoutUserInput;
   processedEmails?: Prisma.ProcessedEmailCreateNestedManyWithoutUserInput;
+  expenses?: Prisma.ExpenseCreateNestedManyWithoutUserInput;
 };
 
 export type UserUncheckedCreateWithoutMercadoLibreTokenInput = {
@@ -1439,6 +1493,7 @@ export type UserUncheckedCreateWithoutMercadoLibreTokenInput = {
   subscription?: Prisma.SubscriptionUncheckedCreateNestedOneWithoutUserInput;
   emailToken?: Prisma.EmailTokenUncheckedCreateNestedOneWithoutUserInput;
   processedEmails?: Prisma.ProcessedEmailUncheckedCreateNestedManyWithoutUserInput;
+  expenses?: Prisma.ExpenseUncheckedCreateNestedManyWithoutUserInput;
 };
 
 export type UserCreateOrConnectWithoutMercadoLibreTokenInput = {
@@ -1489,6 +1544,7 @@ export type UserUpdateWithoutMercadoLibreTokenInput = {
   subscription?: Prisma.SubscriptionUpdateOneWithoutUserNestedInput;
   emailToken?: Prisma.EmailTokenUpdateOneWithoutUserNestedInput;
   processedEmails?: Prisma.ProcessedEmailUpdateManyWithoutUserNestedInput;
+  expenses?: Prisma.ExpenseUpdateManyWithoutUserNestedInput;
 };
 
 export type UserUncheckedUpdateWithoutMercadoLibreTokenInput = {
@@ -1511,6 +1567,7 @@ export type UserUncheckedUpdateWithoutMercadoLibreTokenInput = {
   subscription?: Prisma.SubscriptionUncheckedUpdateOneWithoutUserNestedInput;
   emailToken?: Prisma.EmailTokenUncheckedUpdateOneWithoutUserNestedInput;
   processedEmails?: Prisma.ProcessedEmailUncheckedUpdateManyWithoutUserNestedInput;
+  expenses?: Prisma.ExpenseUncheckedUpdateManyWithoutUserNestedInput;
 };
 
 export type UserCreateWithoutProcessedEmailsInput = {
@@ -1533,6 +1590,7 @@ export type UserCreateWithoutProcessedEmailsInput = {
   subscription?: Prisma.SubscriptionCreateNestedOneWithoutUserInput;
   emailToken?: Prisma.EmailTokenCreateNestedOneWithoutUserInput;
   mercadoLibreToken?: Prisma.MercadoLibreTokenCreateNestedOneWithoutUserInput;
+  expenses?: Prisma.ExpenseCreateNestedManyWithoutUserInput;
 };
 
 export type UserUncheckedCreateWithoutProcessedEmailsInput = {
@@ -1555,6 +1613,7 @@ export type UserUncheckedCreateWithoutProcessedEmailsInput = {
   subscription?: Prisma.SubscriptionUncheckedCreateNestedOneWithoutUserInput;
   emailToken?: Prisma.EmailTokenUncheckedCreateNestedOneWithoutUserInput;
   mercadoLibreToken?: Prisma.MercadoLibreTokenUncheckedCreateNestedOneWithoutUserInput;
+  expenses?: Prisma.ExpenseUncheckedCreateNestedManyWithoutUserInput;
 };
 
 export type UserCreateOrConnectWithoutProcessedEmailsInput = {
@@ -1605,6 +1664,7 @@ export type UserUpdateWithoutProcessedEmailsInput = {
   subscription?: Prisma.SubscriptionUpdateOneWithoutUserNestedInput;
   emailToken?: Prisma.EmailTokenUpdateOneWithoutUserNestedInput;
   mercadoLibreToken?: Prisma.MercadoLibreTokenUpdateOneWithoutUserNestedInput;
+  expenses?: Prisma.ExpenseUpdateManyWithoutUserNestedInput;
 };
 
 export type UserUncheckedUpdateWithoutProcessedEmailsInput = {
@@ -1627,6 +1687,127 @@ export type UserUncheckedUpdateWithoutProcessedEmailsInput = {
   subscription?: Prisma.SubscriptionUncheckedUpdateOneWithoutUserNestedInput;
   emailToken?: Prisma.EmailTokenUncheckedUpdateOneWithoutUserNestedInput;
   mercadoLibreToken?: Prisma.MercadoLibreTokenUncheckedUpdateOneWithoutUserNestedInput;
+  expenses?: Prisma.ExpenseUncheckedUpdateManyWithoutUserNestedInput;
+};
+
+export type UserCreateWithoutExpensesInput = {
+  id?: string;
+  email?: string | null;
+  emailVerified?: Date | string | null;
+  passwordHash?: string | null;
+  name?: string | null;
+  image?: string | null;
+  role?: $Enums.UserRole;
+  chatId?: string | null;
+  locale?: string;
+  digestEnabled?: boolean;
+  digestHour?: number;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  accounts?: Prisma.AccountCreateNestedManyWithoutUserInput;
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput;
+  reminders?: Prisma.ReminderCreateNestedManyWithoutUserInput;
+  subscription?: Prisma.SubscriptionCreateNestedOneWithoutUserInput;
+  emailToken?: Prisma.EmailTokenCreateNestedOneWithoutUserInput;
+  mercadoLibreToken?: Prisma.MercadoLibreTokenCreateNestedOneWithoutUserInput;
+  processedEmails?: Prisma.ProcessedEmailCreateNestedManyWithoutUserInput;
+};
+
+export type UserUncheckedCreateWithoutExpensesInput = {
+  id?: string;
+  email?: string | null;
+  emailVerified?: Date | string | null;
+  passwordHash?: string | null;
+  name?: string | null;
+  image?: string | null;
+  role?: $Enums.UserRole;
+  chatId?: string | null;
+  locale?: string;
+  digestEnabled?: boolean;
+  digestHour?: number;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput;
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput;
+  reminders?: Prisma.ReminderUncheckedCreateNestedManyWithoutUserInput;
+  subscription?: Prisma.SubscriptionUncheckedCreateNestedOneWithoutUserInput;
+  emailToken?: Prisma.EmailTokenUncheckedCreateNestedOneWithoutUserInput;
+  mercadoLibreToken?: Prisma.MercadoLibreTokenUncheckedCreateNestedOneWithoutUserInput;
+  processedEmails?: Prisma.ProcessedEmailUncheckedCreateNestedManyWithoutUserInput;
+};
+
+export type UserCreateOrConnectWithoutExpensesInput = {
+  where: Prisma.UserWhereUniqueInput;
+  create: Prisma.XOR<
+    Prisma.UserCreateWithoutExpensesInput,
+    Prisma.UserUncheckedCreateWithoutExpensesInput
+  >;
+};
+
+export type UserUpsertWithoutExpensesInput = {
+  update: Prisma.XOR<
+    Prisma.UserUpdateWithoutExpensesInput,
+    Prisma.UserUncheckedUpdateWithoutExpensesInput
+  >;
+  create: Prisma.XOR<
+    Prisma.UserCreateWithoutExpensesInput,
+    Prisma.UserUncheckedCreateWithoutExpensesInput
+  >;
+  where?: Prisma.UserWhereInput;
+};
+
+export type UserUpdateToOneWithWhereWithoutExpensesInput = {
+  where?: Prisma.UserWhereInput;
+  data: Prisma.XOR<
+    Prisma.UserUpdateWithoutExpensesInput,
+    Prisma.UserUncheckedUpdateWithoutExpensesInput
+  >;
+};
+
+export type UserUpdateWithoutExpensesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole;
+  chatId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  locale?: Prisma.StringFieldUpdateOperationsInput | string;
+  digestEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  digestHour?: Prisma.IntFieldUpdateOperationsInput | number;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput;
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput;
+  reminders?: Prisma.ReminderUpdateManyWithoutUserNestedInput;
+  subscription?: Prisma.SubscriptionUpdateOneWithoutUserNestedInput;
+  emailToken?: Prisma.EmailTokenUpdateOneWithoutUserNestedInput;
+  mercadoLibreToken?: Prisma.MercadoLibreTokenUpdateOneWithoutUserNestedInput;
+  processedEmails?: Prisma.ProcessedEmailUpdateManyWithoutUserNestedInput;
+};
+
+export type UserUncheckedUpdateWithoutExpensesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole;
+  chatId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  locale?: Prisma.StringFieldUpdateOperationsInput | string;
+  digestEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  digestHour?: Prisma.IntFieldUpdateOperationsInput | number;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput;
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput;
+  reminders?: Prisma.ReminderUncheckedUpdateManyWithoutUserNestedInput;
+  subscription?: Prisma.SubscriptionUncheckedUpdateOneWithoutUserNestedInput;
+  emailToken?: Prisma.EmailTokenUncheckedUpdateOneWithoutUserNestedInput;
+  mercadoLibreToken?: Prisma.MercadoLibreTokenUncheckedUpdateOneWithoutUserNestedInput;
+  processedEmails?: Prisma.ProcessedEmailUncheckedUpdateManyWithoutUserNestedInput;
 };
 
 /**
@@ -1638,6 +1819,7 @@ export type UserCountOutputType = {
   sessions: number;
   reminders: number;
   processedEmails: number;
+  expenses: number;
 };
 
 export type UserCountOutputTypeSelect<
@@ -1647,6 +1829,7 @@ export type UserCountOutputTypeSelect<
   sessions?: boolean | UserCountOutputTypeCountSessionsArgs;
   reminders?: boolean | UserCountOutputTypeCountRemindersArgs;
   processedEmails?: boolean | UserCountOutputTypeCountProcessedEmailsArgs;
+  expenses?: boolean | UserCountOutputTypeCountExpensesArgs;
 };
 
 /**
@@ -1697,6 +1880,15 @@ export type UserCountOutputTypeCountProcessedEmailsArgs<
   where?: Prisma.ProcessedEmailWhereInput;
 };
 
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountExpensesArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs
+> = {
+  where?: Prisma.ExpenseWhereInput;
+};
+
 export type UserSelect<
   ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs
 > = runtime.Types.Extensions.GetSelect<
@@ -1721,6 +1913,7 @@ export type UserSelect<
     emailToken?: boolean | Prisma.User$emailTokenArgs<ExtArgs>;
     mercadoLibreToken?: boolean | Prisma.User$mercadoLibreTokenArgs<ExtArgs>;
     processedEmails?: boolean | Prisma.User$processedEmailsArgs<ExtArgs>;
+    expenses?: boolean | Prisma.User$expensesArgs<ExtArgs>;
     _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>;
   },
   ExtArgs["result"]["user"]
@@ -1812,6 +2005,7 @@ export type UserInclude<
   emailToken?: boolean | Prisma.User$emailTokenArgs<ExtArgs>;
   mercadoLibreToken?: boolean | Prisma.User$mercadoLibreTokenArgs<ExtArgs>;
   processedEmails?: boolean | Prisma.User$processedEmailsArgs<ExtArgs>;
+  expenses?: boolean | Prisma.User$expensesArgs<ExtArgs>;
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>;
 };
 export type UserIncludeCreateManyAndReturn<
@@ -1833,6 +2027,7 @@ export type $UserPayload<
     emailToken: Prisma.$EmailTokenPayload<ExtArgs> | null;
     mercadoLibreToken: Prisma.$MercadoLibreTokenPayload<ExtArgs> | null;
     processedEmails: Prisma.$ProcessedEmailPayload<ExtArgs>[];
+    expenses: Prisma.$ExpensePayload<ExtArgs>[];
   };
   scalars: runtime.Types.Extensions.GetPayloadResult<
     {
@@ -2436,6 +2631,17 @@ export interface Prisma__UserClient<
   ): Prisma.PrismaPromise<
     | runtime.Types.Result.GetResult<
         Prisma.$ProcessedEmailPayload<ExtArgs>,
+        T,
+        "findMany",
+        GlobalOmitOptions
+      >
+    | Null
+  >;
+  expenses<T extends Prisma.User$expensesArgs<ExtArgs> = {}>(
+    args?: Prisma.Subset<T, Prisma.User$expensesArgs<ExtArgs>>
+  ): Prisma.PrismaPromise<
+    | runtime.Types.Result.GetResult<
+        Prisma.$ExpensePayload<ExtArgs>,
         T,
         "findMany",
         GlobalOmitOptions
@@ -3067,6 +3273,32 @@ export type User$processedEmailsArgs<
   take?: number;
   skip?: number;
   distinct?: Prisma.ProcessedEmailScalarFieldEnum | Prisma.ProcessedEmailScalarFieldEnum[];
+};
+
+/**
+ * User.expenses
+ */
+export type User$expensesArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs
+> = {
+  /**
+   * Select specific fields to fetch from the Expense
+   */
+  select?: Prisma.ExpenseSelect<ExtArgs> | null;
+  /**
+   * Omit specific fields from the Expense
+   */
+  omit?: Prisma.ExpenseOmit<ExtArgs> | null;
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ExpenseInclude<ExtArgs> | null;
+  where?: Prisma.ExpenseWhereInput;
+  orderBy?: Prisma.ExpenseOrderByWithRelationInput | Prisma.ExpenseOrderByWithRelationInput[];
+  cursor?: Prisma.ExpenseWhereUniqueInput;
+  take?: number;
+  skip?: number;
+  distinct?: Prisma.ExpenseScalarFieldEnum | Prisma.ExpenseScalarFieldEnum[];
 };
 
 /**

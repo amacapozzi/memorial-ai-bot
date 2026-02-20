@@ -19,6 +19,12 @@ import {
   EmailReplyService,
   createEmailModule
 } from "@modules/email";
+import {
+  ExpenseRepository,
+  ExpenseService,
+  ExpenseSummaryService,
+  FinancialAdviceService
+} from "@modules/expenses";
 import { LinkingCodeRepository, LinkingCodeService, createLinkingModule } from "@modules/linking";
 import {
   MeliAuthRepository,
@@ -61,6 +67,7 @@ export function buildApp() {
   const subscriptionRepository = new SubscriptionRepository(prisma);
   const commitRepository = new CommitRepository(prisma);
   const meliAuthRepository = new MeliAuthRepository(prisma);
+  const expenseRepository = new ExpenseRepository(prisma);
 
   // AI Services
   const groqClient = new GroqClient();
@@ -92,6 +99,10 @@ export function buildApp() {
   // Product Search
   const productSearchService = new ProductSearchService();
 
+  // Expense Services
+  const expenseService = new ExpenseService(expenseRepository);
+  const financialAdviceService = new FinancialAdviceService(groqClient);
+
   // MercadoLibre Services (optional — only if MELI_APP_ID configured)
   const meliAuthService = env().MELI_APP_ID ? new MeliAuthService(meliAuthRepository) : undefined;
   const meliApiService = meliAuthService ? new MeliApiService(meliAuthService) : undefined;
@@ -108,7 +119,8 @@ export function buildApp() {
     processedEmailRepository,
     reminderService,
     whatsappClient,
-    userService
+    userService,
+    expenseService
   );
 
   // Email Sync Service
@@ -117,6 +129,17 @@ export function buildApp() {
     emailProcessorService,
     gmailAuthService,
     subscriptionRepository
+  );
+
+  // Digest Service
+  const digestService = new DigestService(reminderRepository, userRepository, whatsappClient);
+
+  // Expense Summary Service (depends on whatsappClient, created before messageHandler)
+  const expenseSummaryService = new ExpenseSummaryService(
+    expenseService,
+    expenseRepository,
+    financialAdviceService,
+    whatsappClient
   );
 
   // Message Handler (connects all services)
@@ -134,14 +157,19 @@ export function buildApp() {
     processedEmailRepository,
     productSearchService,
     meliAuthService,
-    meliApiService
+    meliApiService,
+    expenseService,
+    financialAdviceService,
+    expenseSummaryService
   );
 
-  // Digest Service
-  const digestService = new DigestService(reminderRepository, userRepository, whatsappClient);
-
   // Scheduler
-  const schedulerService = new SchedulerService(reminderService, whatsappClient, digestService);
+  const schedulerService = new SchedulerService(
+    reminderService,
+    whatsappClient,
+    digestService,
+    expenseSummaryService
+  );
 
   // Commit Service
   const commitService = new CommitService(commitRepository);

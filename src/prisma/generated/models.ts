@@ -20,6 +20,7 @@ export type * from "./models/GoogleAuthToken";
 export type * from "./models/EmailToken";
 export type * from "./models/MercadoLibreToken";
 export type * from "./models/ProcessedEmail";
+export type * from "./models/Expense";
 export type * from "./models/Commit";
 export type * from "./models/LinkingCode";
 export type * from "./commonInputTypes";

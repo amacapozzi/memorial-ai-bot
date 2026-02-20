@@ -61,6 +61,7 @@ export const ModelName = {
   EmailToken: "EmailToken",
   MercadoLibreToken: "MercadoLibreToken",
   ProcessedEmail: "ProcessedEmail",
+  Expense: "Expense",
   Commit: "Commit",
   LinkingCode: "LinkingCode"
 } as const;
@@ -288,6 +289,23 @@ export const ProcessedEmailScalarFieldEnum = {
 
 export type ProcessedEmailScalarFieldEnum =
   (typeof ProcessedEmailScalarFieldEnum)[keyof typeof ProcessedEmailScalarFieldEnum];
+
+export const ExpenseScalarFieldEnum = {
+  id: "id",
+  userId: "userId",
+  processedEmailId: "processedEmailId",
+  merchant: "merchant",
+  amount: "amount",
+  currency: "currency",
+  category: "category",
+  description: "description",
+  date: "date",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt"
+} as const;
+
+export type ExpenseScalarFieldEnum =
+  (typeof ExpenseScalarFieldEnum)[keyof typeof ExpenseScalarFieldEnum];
 
 export const CommitScalarFieldEnum = {
   id: "id",

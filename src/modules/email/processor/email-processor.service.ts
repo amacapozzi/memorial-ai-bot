@@ -1,3 +1,4 @@
+import type { ExpenseService } from "@modules/expenses/expense.service";
 import type { ReminderService } from "@modules/reminders/reminder.service";
 import type { WhatsAppClient } from "@modules/whatsapp/client/whatsapp.client";
 import type { ProcessedEmail, EmailType } from "@prisma-module/generated/client";
@@ -26,7 +27,8 @@ export class EmailProcessorService {
     private readonly processedEmailRepository: ProcessedEmailRepository,
     private readonly reminderService: ReminderService,
     private readonly whatsappClient: WhatsAppClient,
-    private readonly userService: UserService
+    private readonly userService: UserService,
+    private readonly expenseService?: ExpenseService
   ) {}
 
   async processEmail(
@@ -122,6 +124,20 @@ export class EmailProcessorService {
       await this.notifyUser(chatId, analysis);
     }
 
+    // For PURCHASE emails, extract structured expense data
+    let extractedData = this.buildExtractedData(analysis);
+    if (analysis.type === "PURCHASE" && this.expenseService) {
+      try {
+        const emailContent = this.buildEmailContentString(email);
+        const expenseData = await this.emailAnalyzerService.extractExpenseData(emailContent);
+        if (expenseData) {
+          extractedData = { ...extractedData, expenseData };
+        }
+      } catch (error) {
+        this.logger.error(`Failed to extract expense data for email ${email.id}`, error);
+      }
+    }
+
     // Save processed email
     const processedEmail = await this.processedEmailRepository.create({
       userId,
@@ -131,10 +147,17 @@ export class EmailProcessorService {
       sender: email.from,
       receivedAt: email.date,
       emailType: analysis.type as EmailType,
-      extractedData: this.buildExtractedData(analysis),
+      extractedData,
       reminderId,
       status: reminderId ? "REMINDER_CREATED" : "PROCESSED"
     });
+
+    // Create expense record for PURCHASE emails
+    if (analysis.type === "PURCHASE" && this.expenseService) {
+      await this.expenseService.createFromEmail(processedEmail).catch((error) => {
+        this.logger.error(`Failed to create expense from email ${email.id}`, error);
+      });
+    }
 
     return processedEmail;
   }
@@ -498,6 +521,17 @@ export class EmailProcessorService {
     ];
 
     return skipSubjectPatterns.some((p) => subjectLower.includes(p));
+  }
+
+  private buildEmailContentString(email: EmailMessage): string {
+    return [
+      `De: ${email.from}`,
+      `Asunto: ${email.subject}`,
+      `Fecha: ${email.date.toISOString()}`,
+      "",
+      "Contenido:",
+      email.body.substring(0, 3000)
+    ].join("\n");
   }
 
   private buildExtractedData(analysis: AnalyzedEmail): Record<string, unknown> {

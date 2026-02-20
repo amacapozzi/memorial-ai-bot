@@ -1,3 +1,4 @@
+import type { ExpenseSummaryService } from "@modules/expenses/summary/expense-summary.service";
 import type { WhatsAppClient } from "@modules/whatsapp";
 import type { Reminder } from "@prisma-module/generated/client";
 import { createLogger } from "@shared/logger/logger";
@@ -14,7 +15,8 @@ export class SchedulerService {
   constructor(
     private readonly reminderService: ReminderService,
     private readonly whatsappClient: WhatsAppClient,
-    private readonly digestService?: DigestService
+    private readonly digestService?: DigestService,
+    private readonly expenseSummaryService?: ExpenseSummaryService
   ) {}
 
   start(): void {
@@ -60,13 +62,30 @@ export class SchedulerService {
         await this.sendReminder(reminder);
       }
 
+      const nowBsAs = new Date(
+        now.toLocaleString("en-US", { timeZone: "America/Argentina/Buenos_Aires" })
+      );
+      const hourBsAs = nowBsAs.getHours();
+      const dayOfWeek = nowBsAs.getDay(); // 0=Sun, 1=Mon
+      const dayOfMonth = nowBsAs.getDate();
+
       // Send daily digests
       if (this.digestService) {
-        const nowBsAs = new Date(
-          now.toLocaleString("en-US", { timeZone: "America/Argentina/Buenos_Aires" })
-        );
-        const hourBsAs = nowBsAs.getHours();
         await this.digestService.sendDailyDigests(hourBsAs);
+      }
+
+      // Weekly expense summary (Monday at digest hour 8)
+      if (this.expenseSummaryService && dayOfWeek === 1 && hourBsAs === 8) {
+        await this.expenseSummaryService.sendWeeklySummaries().catch((error) => {
+          this.logger.error("Error sending weekly expense summaries", error);
+        });
+      }
+
+      // Monthly expense summary (1st of month at digest hour 8)
+      if (this.expenseSummaryService && dayOfMonth === 1 && hourBsAs === 8) {
+        await this.expenseSummaryService.sendMonthlySummaries().catch((error) => {
+          this.logger.error("Error sending monthly expense summaries", error);
+        });
       }
     } catch (error) {
       this.logger.error("Error in scheduler tick", error);

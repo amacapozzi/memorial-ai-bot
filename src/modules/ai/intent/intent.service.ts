@@ -30,6 +30,8 @@ export type IntentType =
   | "track_order"
   | "enable_digest"
   | "disable_digest"
+  | "check_expenses"
+  | "financial_advice"
   | "unknown";
 
 export interface ParsedIntent {
@@ -44,6 +46,7 @@ export interface ParsedIntent {
   emailExtractionQuery?: string;
   productSearchQuery?: string;
   digestHour?: number;
+  expensePeriod?: "day" | "week" | "month";
   confidence: number;
 }
 
@@ -65,6 +68,7 @@ interface IntentResponse {
   emailExtractionQuery: string | null;
   productSearchQuery: string | null;
   digestHour: number | null;
+  expensePeriod: "day" | "week" | "month" | null;
   confidence: number;
 }
 
@@ -126,6 +130,11 @@ export class IntentService {
       // Handle digest hour
       if (response.digestHour !== null && response.digestHour !== undefined) {
         result.digestHour = response.digestHour;
+      }
+
+      // Handle expense period
+      if (response.expensePeriod) {
+        result.expensePeriod = response.expensePeriod;
       }
 
       // Handle reminder details for create (supports multiple reminders)

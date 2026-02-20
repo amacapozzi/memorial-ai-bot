@@ -43,6 +43,7 @@ model User {
   emailToken    EmailToken?
   mercadoLibreToken MercadoLibreToken?
   processedEmails ProcessedEmail[]
+  expenses      Expense[]
 
   @@map("users")
 }
@@ -329,9 +330,51 @@ model ProcessedEmail {
   reminderId      String?              @unique @map("reminder_id")
   status          ProcessedEmailStatus @default(PROCESSED)
 
+  expense         Expense?
+
   @@unique([userId, gmailMessageId])
   @@index([userId, processedAt])
   @@map("processed_emails")
+}
+
+// =============================================
+// EXPENSES (from Gmail purchase emails)
+// =============================================
+
+model Expense {
+  id               String          @id @default(cuid())
+  userId           String          @map("user_id")
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  processedEmailId String?         @unique @map("processed_email_id")
+  processedEmail   ProcessedEmail? @relation(fields: [processedEmailId], references: [id])
+
+  merchant         String?
+  amount           Decimal         @db.Decimal(12, 2)
+  currency         String          @default("ARS")
+  category         ExpenseCategory @default(OTHER)
+  description      String?
+  date             DateTime
+
+  createdAt        DateTime        @default(now()) @map("created_at")
+  updatedAt        DateTime        @updatedAt @map("updated_at")
+
+  @@index([userId, date])
+  @@index([userId, currency, date])
+  @@map("expenses")
+}
+
+enum ExpenseCategory {
+  FOOD
+  TRANSPORT
+  SHOPPING
+  UTILITIES
+  ENTERTAINMENT
+  HEALTH
+  EDUCATION
+  TRAVEL
+  SERVICES
+  OTHER
 }
 
 enum EmailType {
