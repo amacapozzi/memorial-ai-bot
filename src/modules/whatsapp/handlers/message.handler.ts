@@ -427,8 +427,6 @@ export class MessageHandler {
     }> = [];
 
     for (const detail of intent.reminderDetails) {
-      const funMessage = detail.funMessage ?? detail.description;
-
       // Calculate scheduledAt based on recurrence or specific date
       let scheduledAt: Date;
 
@@ -450,7 +448,7 @@ export class MessageHandler {
 
       const reminder = await this.reminderService.createReminder({
         originalText,
-        reminderText: funMessage,
+        reminderText: detail.description,
         scheduledAt,
         chatId,
         recurrence: (detail.recurrence as RecurrenceType) || "NONE",

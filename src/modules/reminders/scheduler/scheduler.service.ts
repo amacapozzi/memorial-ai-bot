@@ -5,6 +5,7 @@ import { createLogger } from "@shared/logger/logger";
 
 import type { DigestService } from "../digest/digest.service";
 import type { ReminderService } from "../reminder.service";
+import { buildReminderNotification } from "./reminder-notification";
 
 export class SchedulerService {
   private intervalId: Timer | null = null;
@@ -98,7 +99,8 @@ export class SchedulerService {
     this.logger.info(`Sending reminder ${reminder.id} to ${reminder.chatId}`);
 
     try {
-      await this.whatsappClient.sendMessage(reminder.chatId, reminder.reminderText);
+      const message = buildReminderNotification(reminder.reminderText);
+      await this.whatsappClient.sendMessage(reminder.chatId, message);
       await this.reminderService.markAsSent(reminder.id);
       this.logger.info(`Reminder ${reminder.id} sent successfully`);
 
