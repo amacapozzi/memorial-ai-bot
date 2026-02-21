@@ -76,7 +76,11 @@ Tipos de intenciones:
 15. "disable_digest" - Desactivar resumen diario (ej: "desactivar resumen diario", "no quiero el digest", "apagar resumen matutino", "desactivar digest")
 16. "check_expenses" - Consultar gastos/compras registrados (ej: "cuanto gaste este mes", "mis gastos de la semana", "gastos del mes", "cuanto llevo gastado", "resumen de gastos", "en que gaste plata")
 17. "financial_advice" - Pedir consejos financieros personalizados (ej: "dame consejos de ahorro", "como puedo ahorrar", "consejos financieros", "en que estoy gastando mucho", "como mejorar mis finanzas", "dame tips de inversion")
-18. "unknown" - No es ninguna de las anteriores
+18. "check_dollar" - Consultar cotizacion del dolar o divisas (ej: "a cuanto esta el dolar", "cotizacion del blue", "precio del dolar hoy", "cuanto sale el euro", "tipo de cambio")
+19. "get_news" - Pedir noticias o titulares (ej: "que noticias hay hoy", "dame las noticias", "noticias de tecnologia", "ultimas noticias de futbol", "que paso hoy")
+20. "check_crypto" - Consultar precio de criptomonedas (ej: "a cuanto esta el bitcoin", "precio del ethereum", "como esta el crypto", "cuanto vale el BTC", "precio de las criptos")
+21. "get_directions" - Pedir indicaciones para llegar a un lugar (ej: "como llego de Palermo a Recoleta", "como voy de Belgrano a Constitucion en subte", "como llego al aeropuerto desde el centro", "ruta para ir a Bariloche", "cuanto tarda de Retiro a San Telmo")
+22. "unknown" - No es ninguna de las anteriores
 
 IMPORTANTE para CREATE_REMINDER:
 - Si el usuario menciona MULTIPLES recordatorios en un mensaje, extrae TODOS
@@ -119,7 +123,7 @@ Para cada recordatorio, genera tambien un "funMessage": un mensaje corto (maximo
 
 Responde UNICAMENTE con JSON valido (sin markdown, sin explicaciones):
 {
-  "intentType": "create_reminder" | "list_tasks" | "cancel_task" | "modify_task" | "link_email" | "unlink_email" | "email_status" | "reply_email" | "search_email" | "search_product" | "link_mercadolibre" | "unlink_mercadolibre" | "track_order" | "enable_digest" | "disable_digest" | "check_expenses" | "financial_advice" | "unknown",
+  "intentType": "create_reminder" | "list_tasks" | "cancel_task" | "modify_task" | "link_email" | "unlink_email" | "email_status" | "reply_email" | "search_email" | "search_product" | "link_mercadolibre" | "unlink_mercadolibre" | "track_order" | "enable_digest" | "disable_digest" | "check_expenses" | "financial_advice" | "check_dollar" | "get_news" | "check_crypto" | "get_directions" | "unknown",
   "taskNumber": number | null,
   "reminderDetails": [
     {
@@ -139,6 +143,12 @@ Responde UNICAMENTE con JSON valido (sin markdown, sin explicaciones):
   "productSearchQuery": "string | null - product search query extracted from the message (e.g. auriculares bluetooth, silla gamer, iphone 15)",
   "digestHour": number | null,
   "expensePeriod": "day" | "week" | "month" | null,
+  "newsQuery": "string | null - keyword query for news search (e.g. 'futbol', 'tecnologia', 'economia')",
+  "newsCategory": "general" | "business" | "technology" | "sports" | "entertainment" | "health" | "science" | null,
+  "coins": ["string"] | null - list of CoinGecko coin IDs (e.g. ['bitcoin', 'ethereum', 'tether', 'solana', 'dogecoin'])",
+  "directionsOrigin": "string | null - origin location for directions",
+  "directionsDestination": "string | null - destination location for directions",
+  "travelMode": "driving" | "transit" | "walking" | "bicycling" | null,
   "confidence": number (0-1)
 }
 
@@ -244,7 +254,40 @@ Ejemplos:
   -> {"intentType": "financial_advice", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": null, "productSearchQuery": null, "digestHour": null, "expensePeriod": null, "confidence": 0.95}
 
 - "como puedo mejorar mis finanzas"
-  -> {"intentType": "financial_advice", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": null, "productSearchQuery": null, "digestHour": null, "expensePeriod": null, "confidence": 0.95}`;
+  -> {"intentType": "financial_advice", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": null, "productSearchQuery": null, "digestHour": null, "expensePeriod": null, "newsQuery": null, "newsCategory": null, "coins": null, "directionsOrigin": null, "directionsDestination": null, "travelMode": null, "confidence": 0.95}
+
+- "a cuanto esta el dolar"
+  -> {"intentType": "check_dollar", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": null, "productSearchQuery": null, "digestHour": null, "expensePeriod": null, "newsQuery": null, "newsCategory": null, "coins": null, "directionsOrigin": null, "directionsDestination": null, "travelMode": null, "confidence": 0.97}
+
+- "cotizacion del blue hoy"
+  -> {"intentType": "check_dollar", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": null, "productSearchQuery": null, "digestHour": null, "expensePeriod": null, "newsQuery": null, "newsCategory": null, "coins": null, "directionsOrigin": null, "directionsDestination": null, "travelMode": null, "confidence": 0.97}
+
+- "que noticias hay hoy"
+  -> {"intentType": "get_news", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": null, "productSearchQuery": null, "digestHour": null, "expensePeriod": null, "newsQuery": null, "newsCategory": "general", "coins": null, "directionsOrigin": null, "directionsDestination": null, "travelMode": null, "confidence": 0.95}
+
+- "dame noticias de tecnologia"
+  -> {"intentType": "get_news", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": null, "productSearchQuery": null, "digestHour": null, "expensePeriod": null, "newsQuery": "tecnologia", "newsCategory": "technology", "coins": null, "directionsOrigin": null, "directionsDestination": null, "travelMode": null, "confidence": 0.95}
+
+- "ultimas noticias de futbol"
+  -> {"intentType": "get_news", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": null, "productSearchQuery": null, "digestHour": null, "expensePeriod": null, "newsQuery": "futbol", "newsCategory": "sports", "coins": null, "directionsOrigin": null, "directionsDestination": null, "travelMode": null, "confidence": 0.95}
+
+- "a cuanto esta el bitcoin"
+  -> {"intentType": "check_crypto", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": null, "productSearchQuery": null, "digestHour": null, "expensePeriod": null, "newsQuery": null, "newsCategory": null, "coins": ["bitcoin"], "directionsOrigin": null, "directionsDestination": null, "travelMode": null, "confidence": 0.97}
+
+- "precio del ethereum y bitcoin"
+  -> {"intentType": "check_crypto", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": null, "productSearchQuery": null, "digestHour": null, "expensePeriod": null, "newsQuery": null, "newsCategory": null, "coins": ["ethereum", "bitcoin"], "directionsOrigin": null, "directionsDestination": null, "travelMode": null, "confidence": 0.97}
+
+- "como esta el crypto hoy"
+  -> {"intentType": "check_crypto", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": null, "productSearchQuery": null, "digestHour": null, "expensePeriod": null, "newsQuery": null, "newsCategory": null, "coins": null, "directionsOrigin": null, "directionsDestination": null, "travelMode": null, "confidence": 0.95}
+
+- "como llego de Palermo a Recoleta"
+  -> {"intentType": "get_directions", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": null, "productSearchQuery": null, "digestHour": null, "expensePeriod": null, "newsQuery": null, "newsCategory": null, "coins": null, "directionsOrigin": "Palermo, Buenos Aires", "directionsDestination": "Recoleta, Buenos Aires", "travelMode": "transit", "confidence": 0.95}
+
+- "como voy de Belgrano a Constitucion en subte"
+  -> {"intentType": "get_directions", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": null, "productSearchQuery": null, "digestHour": null, "expensePeriod": null, "newsQuery": null, "newsCategory": null, "coins": null, "directionsOrigin": "Belgrano, Buenos Aires", "directionsDestination": "Constitución, Buenos Aires", "travelMode": "transit", "confidence": 0.95}
+
+- "cuanto tarda de Retiro a San Telmo caminando"
+  -> {"intentType": "get_directions", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": null, "productSearchQuery": null, "digestHour": null, "expensePeriod": null, "newsQuery": null, "newsCategory": null, "coins": null, "directionsOrigin": "Retiro, Buenos Aires", "directionsDestination": "San Telmo, Buenos Aires", "travelMode": "walking", "confidence": 0.95}`;
 
 export function buildReminderIntentPrompt(): string {
   const now = new Date();

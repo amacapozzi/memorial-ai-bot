@@ -32,6 +32,10 @@ export type IntentType =
   | "disable_digest"
   | "check_expenses"
   | "financial_advice"
+  | "check_dollar"
+  | "get_news"
+  | "check_crypto"
+  | "get_directions"
   | "unknown";
 
 export interface ParsedIntent {
@@ -47,6 +51,12 @@ export interface ParsedIntent {
   productSearchQuery?: string;
   digestHour?: number;
   expensePeriod?: "day" | "week" | "month";
+  newsQuery?: string;
+  newsCategory?: string;
+  coins?: string[];
+  directionsOrigin?: string;
+  directionsDestination?: string;
+  travelMode?: string;
   confidence: number;
 }
 
@@ -69,6 +79,12 @@ interface IntentResponse {
   productSearchQuery: string | null;
   digestHour: number | null;
   expensePeriod: "day" | "week" | "month" | null;
+  newsQuery: string | null;
+  newsCategory: string | null;
+  coins: string[] | null;
+  directionsOrigin: string | null;
+  directionsDestination: string | null;
+  travelMode: string | null;
   confidence: number;
 }
 
@@ -136,6 +152,19 @@ export class IntentService {
       if (response.expensePeriod) {
         result.expensePeriod = response.expensePeriod;
       }
+
+      // Handle news fields
+      if (response.newsQuery) result.newsQuery = response.newsQuery;
+      if (response.newsCategory) result.newsCategory = response.newsCategory;
+
+      // Handle crypto coins
+      if (response.coins && response.coins.length > 0) result.coins = response.coins;
+
+      // Handle directions fields
+      if (response.directionsOrigin) result.directionsOrigin = response.directionsOrigin;
+      if (response.directionsDestination)
+        result.directionsDestination = response.directionsDestination;
+      if (response.travelMode) result.travelMode = response.travelMode;
 
       // Handle reminder details for create (supports multiple reminders)
       if (

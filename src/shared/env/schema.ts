@@ -46,7 +46,13 @@ export const envSchema = z.object({
   // MercadoLibre OAuth (optional)
   MELI_APP_ID: z.string().min(1).optional(),
   MELI_CLIENT_SECRET: z.string().min(1).optional(),
-  MELI_REDIRECT_URI: z.string().url().default("http://localhost:3000/auth/mercadolibre/callback")
+  MELI_REDIRECT_URI: z.string().url().default("http://localhost:3000/auth/mercadolibre/callback"),
+
+  // NewsAPI.org (optional)
+  NEWS_API_KEY: z.string().min(1).optional(),
+
+  // OpenRouteService Directions API (optional) — free at openrouteservice.org
+  ORS_API_KEY: z.string().min(1).optional()
 });
 
 export type Env = z.infer<typeof envSchema>;

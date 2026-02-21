@@ -1,5 +1,7 @@
 import type { IntentService, ReminderDetail } from "@modules/ai/intent/intent.service";
 import type { TranscriptionService } from "@modules/ai/transcription/transcription.service";
+import type { CryptoService } from "@modules/crypto/services/crypto.service";
+import type { DollarService } from "@modules/dollar/services/dollar.service";
 import type { GmailAuthService } from "@modules/email/gmail/gmail-auth.service";
 import type { GmailService } from "@modules/email/gmail/gmail.service";
 import type { ProcessedEmailRepository } from "@modules/email/processor/processed-email.repository";
@@ -9,8 +11,10 @@ import type { FinancialAdviceService } from "@modules/expenses/advice/financial-
 import type { ExpenseService } from "@modules/expenses/expense.service";
 import type { ExpenseSummaryService } from "@modules/expenses/summary/expense-summary.service";
 import type { LinkingCodeService } from "@modules/linking/linking.service";
+import type { MapsService, TravelMode } from "@modules/maps/services/maps.service";
 import type { MeliApiService } from "@modules/mercadolibre/api/meli-api.service";
 import type { MeliAuthService } from "@modules/mercadolibre/auth/meli-auth.service";
+import type { NewsCategory, NewsService } from "@modules/news/services/news.service";
 import type { ProductSearchService } from "@modules/product-search/product-search.service";
 import type { ReminderService } from "@modules/reminders/reminder.service";
 import type { SubscriptionService } from "@modules/subscription/subscription.service";
@@ -127,7 +131,11 @@ export class MessageHandler {
     private readonly meliApiService?: MeliApiService,
     private readonly expenseService?: ExpenseService,
     private readonly financialAdviceService?: FinancialAdviceService,
-    private readonly expenseSummaryService?: ExpenseSummaryService
+    private readonly expenseSummaryService?: ExpenseSummaryService,
+    private readonly dollarService?: DollarService,
+    private readonly cryptoService?: CryptoService,
+    private readonly newsService?: NewsService,
+    private readonly mapsService?: MapsService
   ) {}
 
   async handle(message: MessageContent): Promise<void> {
@@ -300,25 +308,50 @@ export class MessageHandler {
           await this.handleFinancialAdvice(message.chatId);
           break;
 
+        case "check_dollar":
+          await this.handleCheckDollar(message.chatId);
+          break;
+
+        case "get_news":
+          await this.handleGetNews(message.chatId, intent.newsQuery, intent.newsCategory);
+          break;
+
+        case "check_crypto":
+          await this.handleCheckCrypto(message.chatId, intent.coins);
+          break;
+
+        case "get_directions":
+          await this.handleGetDirections(
+            message.chatId,
+            intent.directionsOrigin,
+            intent.directionsDestination,
+            intent.travelMode as TravelMode | undefined
+          );
+          break;
+
         default:
           await this.whatsappClient.sendMessage(
             message.chatId,
-            "No entendi bien. Puedo ayudarte con:\n" +
-              "- Crear recordatorios: 'recuerdame manana a las 3 llamar a mama'\n" +
-              "- Recordatorios recurrentes: 'recuerdame todos los dias a las 8 tomar la pastilla'\n" +
-              "- Ver tareas: 'que tareas tengo'\n" +
-              "- Cancelar: 'cancela la tarea 2'\n" +
-              "- Cambiar hora: 'cambia la tarea 1 a las 5pm'\n" +
-              "- Conectar email: 'conecta mi email'\n" +
-              "- Responder email: 'respondele al mail diciendo que acepto'\n" +
-              "- Buscar email: 'busca el mail de Juan sobre el presupuesto'\n" +
-              "- Buscar productos: 'buscame auriculares bluetooth'\n" +
-              "- Conectar MercadoLibre: 'conecta mi mercado libre'\n" +
-              "- Rastrear pedido: 'donde esta mi paquete'\n" +
-              "- Resumen diario: 'activar resumen diario' / 'desactivar resumen diario'\n" +
-              "- Ver gastos: 'cuanto gaste este mes'\n" +
-              "- Consejos financieros: 'dame consejos de ahorro'\n" +
-              "- Vincular con la web: /connect"
+            "No entendí bien 😅 Puedo ayudarte con:\n" +
+              "• Recordatorios: 'recuerdame mañana a las 3 llamar a mamá'\n" +
+              "• Recordatorios recurrentes: 'recuerdame todos los días a las 8 tomar la pastilla'\n" +
+              "• Ver tareas: 'qué tareas tengo'\n" +
+              "• Cancelar: 'cancela la tarea 2'\n" +
+              "• Cambiar hora: 'cambia la tarea 1 a las 5pm'\n" +
+              "• Conectar email: 'conecta mi email'\n" +
+              "• Responder email: 'respondele al mail diciendo que acepto'\n" +
+              "• Buscar email: 'buscá el mail de Juan sobre el presupuesto'\n" +
+              "• Buscar productos: 'buscame auriculares bluetooth'\n" +
+              "• Conectar MercadoLibre: 'conecta mi mercado libre'\n" +
+              "• Rastrear pedido: 'dónde está mi paquete'\n" +
+              "• Resumen diario: 'activar resumen diario' / 'desactivar resumen diario'\n" +
+              "• Ver gastos: 'cuánto gasté este mes'\n" +
+              "• Consejos financieros: 'dame consejos de ahorro'\n" +
+              "• Dólar: '¿a cuánto está el dólar?'\n" +
+              "• Noticias: '¿qué noticias hay hoy?'\n" +
+              "• Cripto: '¿a cuánto está el bitcoin?'\n" +
+              "• Cómo llegar: 'cómo llego de Palermo a Recoleta'\n" +
+              "• Vincular con la web: /connect"
           );
       }
     } catch (error) {
@@ -1852,6 +1885,124 @@ ${privacyLine}`
         chatId,
         "Hubo un error generando los consejos. Intenta de nuevo mas tarde."
       );
+    }
+  }
+
+  private async handleCheckDollar(chatId: string): Promise<void> {
+    if (!this.dollarService) {
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "La funcion de cotizacion no esta disponible en este momento."
+      );
+      return;
+    }
+
+    try {
+      await this.whatsappClient.sendMessage(chatId, "Consultando cotizacion... 💵");
+      const rates = await this.dollarService.getRates();
+      await this.whatsappClient.sendMessage(chatId, this.dollarService.formatMessage(rates));
+    } catch (error) {
+      this.logger.error(`Failed to fetch dollar rates for ${chatId}`, error);
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "No pude obtener la cotizacion en este momento. Intenta de nuevo mas tarde."
+      );
+    }
+  }
+
+  private async handleGetNews(chatId: string, query?: string, category?: string): Promise<void> {
+    if (!this.newsService) {
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "La funcion de noticias no esta configurada. Se necesita una NEWS_API_KEY."
+      );
+      return;
+    }
+
+    try {
+      await this.whatsappClient.sendMessage(chatId, "Buscando noticias... 📰");
+      const articles = await this.newsService.getTopHeadlines({
+        query: query || undefined,
+        category: (category as NewsCategory) || undefined
+      });
+      await this.whatsappClient.sendMessage(
+        chatId,
+        this.newsService.formatMessage(articles, query || undefined)
+      );
+    } catch (error) {
+      this.logger.error(`Failed to fetch news for ${chatId}`, error);
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "No pude obtener las noticias en este momento. Intenta de nuevo mas tarde."
+      );
+    }
+  }
+
+  private async handleCheckCrypto(chatId: string, coins?: string[]): Promise<void> {
+    if (!this.cryptoService) {
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "La funcion de cripto no esta disponible en este momento."
+      );
+      return;
+    }
+
+    try {
+      await this.whatsappClient.sendMessage(chatId, "Consultando precios cripto... 🪙");
+      const prices = await this.cryptoService.getPrices(coins);
+      await this.whatsappClient.sendMessage(chatId, this.cryptoService.formatMessage(prices));
+    } catch (error) {
+      this.logger.error(`Failed to fetch crypto prices for ${chatId}`, error);
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "No pude obtener los precios en este momento. Intenta de nuevo mas tarde."
+      );
+    }
+  }
+
+  private async handleGetDirections(
+    chatId: string,
+    origin?: string,
+    destination?: string,
+    mode?: TravelMode
+  ): Promise<void> {
+    if (!this.mapsService) {
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "La funcion de mapas no esta configurada. Se necesita una ORS_API_KEY (openrouteservice.org)."
+      );
+      return;
+    }
+
+    if (!origin || !destination) {
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "Decime de donde y adonde queres ir. Ej: 'como llego de Palermo a Recoleta'"
+      );
+      return;
+    }
+
+    try {
+      await this.whatsappClient.sendMessage(chatId, "Buscando la ruta... 🗺️");
+      const route = await this.mapsService.getDirections(origin, destination, mode ?? "transit");
+      await this.whatsappClient.sendMessage(chatId, this.mapsService.formatMessage(route));
+    } catch (error) {
+      this.logger.error(`Failed to get directions for ${chatId}`, error);
+      const msg =
+        typeof error === "object" && error !== null && "message" in error
+          ? String((error as { message: string }).message)
+          : "";
+      if (msg.includes("No se encontró ruta")) {
+        await this.whatsappClient.sendMessage(
+          chatId,
+          "No encontre una ruta entre esos puntos. Verifica las ubicaciones e intentalo de nuevo."
+        );
+      } else {
+        await this.whatsappClient.sendMessage(
+          chatId,
+          "No pude obtener las indicaciones en este momento. Intenta de nuevo mas tarde."
+        );
+      }
     }
   }
 

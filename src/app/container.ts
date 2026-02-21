@@ -6,6 +6,8 @@ import {
   createCalendarModule
 } from "@modules/calendar";
 import { CommitRepository, CommitService, createCommitModule } from "@modules/commits";
+import { CryptoService } from "@modules/crypto";
+import { DollarService } from "@modules/dollar";
 import {
   UserRepository,
   UserService,
@@ -26,12 +28,14 @@ import {
   FinancialAdviceService
 } from "@modules/expenses";
 import { LinkingCodeRepository, LinkingCodeService, createLinkingModule } from "@modules/linking";
+import { MapsService } from "@modules/maps";
 import {
   MeliAuthRepository,
   MeliAuthService,
   MeliApiService,
   createMercadoLibreModule
 } from "@modules/mercadolibre";
+import { NewsService } from "@modules/news";
 import { createNotificationModule } from "@modules/notification";
 import { ProductSearchService } from "@modules/product-search";
 import {
@@ -99,6 +103,16 @@ export function buildApp() {
   // Product Search
   const productSearchService = new ProductSearchService();
 
+  // Dollar / Crypto (no API key required)
+  const dollarService = new DollarService();
+  const cryptoService = new CryptoService();
+
+  // News (optional — requires NEWS_API_KEY)
+  const newsService = env().NEWS_API_KEY ? new NewsService(env().NEWS_API_KEY!) : undefined;
+
+  // Maps (optional — requires ORS_API_KEY from openrouteservice.org)
+  const mapsService = env().ORS_API_KEY ? new MapsService(env().ORS_API_KEY!) : undefined;
+
   // Expense Services
   const expenseService = new ExpenseService(expenseRepository);
   const financialAdviceService = new FinancialAdviceService(groqClient);
@@ -160,7 +174,11 @@ export function buildApp() {
     meliApiService,
     expenseService,
     financialAdviceService,
-    expenseSummaryService
+    expenseSummaryService,
+    dollarService,
+    cryptoService,
+    newsService,
+    mapsService
   );
 
   // Scheduler
