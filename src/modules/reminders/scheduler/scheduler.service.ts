@@ -8,6 +8,47 @@ import type { DigestService } from "../digest/digest.service";
 import type { ReminderService } from "../reminder.service";
 import { buildReminderNotification } from "./reminder-notification";
 
+const DB_RETRY_DELAY_MS = 3_000;
+const DB_MAX_RETRIES = 2;
+
+function isConnectionError(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const code = (error as Record<string, unknown>).code;
+  const message = String((error as Record<string, unknown>).message ?? "");
+  return (
+    code === "ETIMEDOUT" ||
+    code === "ECONNRESET" ||
+    code === "ECONNREFUSED" ||
+    message.includes("ETIMEDOUT") ||
+    message.includes("connection") ||
+    message.includes("Can't reach database server")
+  );
+}
+
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  logger: ReturnType<typeof createLogger>,
+  label: string
+): Promise<T> {
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= DB_MAX_RETRIES; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+      if (isConnectionError(error) && attempt < DB_MAX_RETRIES) {
+        logger.warn(
+          `${label}: connection error on attempt ${attempt}, retrying in ${DB_RETRY_DELAY_MS}ms...`
+        );
+        await new Promise((r) => setTimeout(r, DB_RETRY_DELAY_MS));
+      } else {
+        break;
+      }
+    }
+  }
+  throw lastError;
+}
+
 export class SchedulerService {
   private intervalId: Timer | null = null;
   private readonly checkIntervalMs = 60_000; // Check every minute
@@ -55,7 +96,11 @@ export class SchedulerService {
 
     try {
       const now = new Date();
-      const pendingReminders = await this.reminderService.getPendingReminders(now);
+      const pendingReminders = await withRetry(
+        () => this.reminderService.getPendingReminders(now),
+        this.logger,
+        "getPendingReminders"
+      );
 
       if (pendingReminders.length > 0) {
         this.logger.info(`Found ${pendingReminders.length} pending reminder(s)`);
@@ -93,7 +138,11 @@ export class SchedulerService {
 
       // Process scheduled payments
       if (this.scheduledPaymentService) {
-        const pendingPayments = await this.scheduledPaymentService.getPendingPayments(now);
+        const pendingPayments = await withRetry(
+          () => this.scheduledPaymentService!.getPendingPayments(now),
+          this.logger,
+          "getPendingPayments"
+        );
         if (pendingPayments.length > 0) {
           this.logger.info(`Found ${pendingPayments.length} pending scheduled payment(s)`);
         }
