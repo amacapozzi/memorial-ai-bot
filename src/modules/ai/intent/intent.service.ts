@@ -36,6 +36,7 @@ export type IntentType =
   | "get_news"
   | "check_crypto"
   | "get_directions"
+  | "send_money"
   | "unknown";
 
 export interface ParsedIntent {
@@ -57,6 +58,10 @@ export interface ParsedIntent {
   directionsOrigin?: string;
   directionsDestination?: string;
   travelMode?: string;
+  transferRecipient?: string;
+  transferAmount?: number;
+  transferDescription?: string;
+  transferScheduledAt?: string;
   confidence: number;
 }
 
@@ -85,6 +90,10 @@ interface IntentResponse {
   directionsOrigin: string | null;
   directionsDestination: string | null;
   travelMode: string | null;
+  transferRecipient: string | null;
+  transferAmount: number | null;
+  transferDescription: string | null;
+  transferScheduledAt: string | null;
   confidence: number;
 }
 
@@ -165,6 +174,12 @@ export class IntentService {
       if (response.directionsDestination)
         result.directionsDestination = response.directionsDestination;
       if (response.travelMode) result.travelMode = response.travelMode;
+
+      // Handle transfer fields
+      if (response.transferRecipient) result.transferRecipient = response.transferRecipient;
+      if (response.transferAmount) result.transferAmount = response.transferAmount;
+      if (response.transferDescription) result.transferDescription = response.transferDescription;
+      if (response.transferScheduledAt) result.transferScheduledAt = response.transferScheduledAt;
 
       // Handle reminder details for create (supports multiple reminders)
       if (

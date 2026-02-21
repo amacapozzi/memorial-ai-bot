@@ -33,6 +33,7 @@ import {
   MeliAuthRepository,
   MeliAuthService,
   MeliApiService,
+  MeliTransferService,
   createMercadoLibreModule
 } from "@modules/mercadolibre";
 import { NewsService } from "@modules/news";
@@ -120,6 +121,9 @@ export function buildApp() {
   // MercadoLibre Services (optional — only if MELI_APP_ID configured)
   const meliAuthService = env().MELI_APP_ID ? new MeliAuthService(meliAuthRepository) : undefined;
   const meliApiService = meliAuthService ? new MeliApiService(meliAuthService) : undefined;
+  const meliTransferService = meliAuthService
+    ? new MeliTransferService(meliAuthService)
+    : undefined;
 
   // WhatsApp Services
   const sessionService = new SessionService(sessionRepository);
@@ -178,7 +182,8 @@ export function buildApp() {
     dollarService,
     cryptoService,
     newsService,
-    mapsService
+    mapsService,
+    meliTransferService
   );
 
   // Scheduler

@@ -14,6 +14,7 @@ import type { LinkingCodeService } from "@modules/linking/linking.service";
 import type { Coordinates, MapsService, TravelMode } from "@modules/maps/services/maps.service";
 import type { MeliApiService } from "@modules/mercadolibre/api/meli-api.service";
 import type { MeliAuthService } from "@modules/mercadolibre/auth/meli-auth.service";
+import type { MeliTransferService } from "@modules/mercadolibre/transfers/transfer.service";
 import type { NewsCategory, NewsService } from "@modules/news/services/news.service";
 import type { ProductSearchService } from "@modules/product-search/product-search.service";
 import type { ReminderService } from "@modules/reminders/reminder.service";
@@ -106,6 +107,14 @@ interface ViewedEmail {
   subject: string;
 }
 
+interface PendingTransfer {
+  userId: string;
+  recipient: string;
+  amount: number;
+  description?: string;
+  scheduledAt?: Date;
+}
+
 export class MessageHandler {
   private readonly logger = createLogger("message-handler");
   private readonly pendingReplies = new Map<string, PendingReply>();
@@ -113,6 +122,8 @@ export class MessageHandler {
   private readonly pendingSearchReply = new Set<string>();
   private readonly pendingReplyInstruction = new Set<string>();
   private readonly pendingModifyTask = new Map<string, number>();
+  private readonly pendingTransfers = new Map<string, PendingTransfer>();
+  private readonly scheduledTransfers = new Map<string, ReturnType<typeof setTimeout>>();
   // Stores the last location shared by the user (expires after 30 minutes)
   private readonly userLocations = new Map<string, { coords: Coordinates; savedAt: Date }>();
 
@@ -137,7 +148,8 @@ export class MessageHandler {
     private readonly dollarService?: DollarService,
     private readonly cryptoService?: CryptoService,
     private readonly newsService?: NewsService,
-    private readonly mapsService?: MapsService
+    private readonly mapsService?: MapsService,
+    private readonly meliTransferService?: MeliTransferService
   ) {}
 
   async handle(message: MessageContent): Promise<void> {
@@ -220,6 +232,12 @@ export class MessageHandler {
     // Check for pending reply instruction (user said "si", now we need the instruction)
     if (this.pendingReplyInstruction.has(message.chatId)) {
       await this.handleReplyToViewedEmail(message.chatId, text);
+      return;
+    }
+
+    // Check for pending transfer confirmation
+    if (this.pendingTransfers.has(message.chatId)) {
+      await this.handlePendingTransferResponse(message.chatId, text);
       return;
     }
 
@@ -334,6 +352,16 @@ export class MessageHandler {
             intent.directionsOrigin,
             intent.directionsDestination,
             intent.travelMode as TravelMode | undefined
+          );
+          break;
+
+        case "send_money":
+          await this.handleSendMoney(
+            message.chatId,
+            intent.transferRecipient,
+            intent.transferAmount,
+            intent.transferDescription,
+            intent.transferScheduledAt
           );
           break;
 
@@ -2027,6 +2055,187 @@ ${privacyLine}`
           "No pude obtener las indicaciones en este momento. Intentá de nuevo más tarde."
         );
       }
+    }
+  }
+
+  private async handleSendMoney(
+    chatId: string,
+    recipient?: string | null,
+    amount?: number | null,
+    description?: string | null,
+    scheduledAt?: string | null
+  ): Promise<void> {
+    if (!this.meliTransferService || !this.userService || !this.meliAuthService) {
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "La función de transferencias no está disponible. Necesitás conectar tu cuenta de Mercado Pago."
+      );
+      return;
+    }
+
+    if (!amount || amount <= 0) {
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "Decime el monto a transferir. Ej: _'pagale 5000 pesos al alias gonzalez.mp'_"
+      );
+      return;
+    }
+
+    if (!recipient) {
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "Decime el alias, CVU o CBU del destinatario. Ej: _'pagale 5000 a gonzalez.mp'_"
+      );
+      return;
+    }
+
+    try {
+      const user = await this.userService.getUserByChatId(chatId);
+      if (!user) {
+        await this.whatsappClient.sendMessage(
+          chatId,
+          "No tenés cuenta vinculada. Usá /connect para vincularla."
+        );
+        return;
+      }
+
+      const isLinked = await this.meliAuthService.isAuthenticated(user.id);
+      if (!isLinked) {
+        await this.whatsappClient.sendMessage(
+          chatId,
+          "No tenés Mercado Pago conectado. Decime _'conecta mi mercado libre'_ para vincularlo."
+        );
+        return;
+      }
+
+      // Parse scheduled date if provided
+      let scheduledDate: Date | undefined;
+      if (scheduledAt) {
+        scheduledDate = new Date(scheduledAt);
+        if (isNaN(scheduledDate.getTime()) || scheduledDate <= new Date()) {
+          scheduledDate = undefined;
+        }
+      }
+
+      const amountStr = amount.toLocaleString("es-AR", { minimumFractionDigits: 2 });
+      const descLine = description ? `\n📝 *Descripción:* ${description}` : "";
+
+      let confirmMsg =
+        `💸 *Confirmación de transferencia*\n\n` +
+        `💰 *Monto:* $${amountStr}\n` +
+        `👤 *Destinatario:* ${recipient}${descLine}`;
+
+      if (scheduledDate) {
+        const dateStr = scheduledDate.toLocaleString("es-AR", {
+          timeZone: "America/Argentina/Buenos_Aires",
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          hour: "2-digit",
+          minute: "2-digit"
+        });
+        confirmMsg += `\n🕐 *Programada para:* ${dateStr}`;
+      }
+
+      confirmMsg += `\n\n_Respondé *confirmar* para ejecutar o *cancelar* para descartar._`;
+
+      await this.whatsappClient.sendMessage(chatId, confirmMsg);
+
+      this.pendingTransfers.set(chatId, {
+        userId: user.id,
+        recipient,
+        amount,
+        description: description ?? undefined,
+        scheduledAt: scheduledDate
+      });
+    } catch (error) {
+      this.logger.error(`Failed to prepare transfer for ${chatId}`, error);
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "Hubo un error preparando la transferencia. Intentá de nuevo más tarde."
+      );
+    }
+  }
+
+  private async handlePendingTransferResponse(chatId: string, text: string): Promise<void> {
+    const pending = this.pendingTransfers.get(chatId);
+    if (!pending) return;
+
+    const normalized = text.trim().toLowerCase();
+
+    if (!["confirmar", "confirm", "si", "sí", "yes"].includes(normalized)) {
+      this.pendingTransfers.delete(chatId);
+      await this.whatsappClient.sendMessage(chatId, "Transferencia cancelada. ❌");
+      return;
+    }
+
+    this.pendingTransfers.delete(chatId);
+
+    // Scheduled transfer
+    if (pending.scheduledAt && pending.scheduledAt > new Date()) {
+      const delay = pending.scheduledAt.getTime() - Date.now();
+      const dateStr = pending.scheduledAt.toLocaleString("es-AR", {
+        timeZone: "America/Argentina/Buenos_Aires",
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+
+      const timer = setTimeout(async () => {
+        this.scheduledTransfers.delete(chatId);
+        await this.executeTransfer(chatId, pending);
+      }, delay);
+
+      this.scheduledTransfers.set(chatId, timer);
+
+      await this.whatsappClient.sendMessage(
+        chatId,
+        `✅ *Transferencia programada*\n\n` +
+          `Se va a ejecutar el ${dateStr}.\n` +
+          `Monto: $${pending.amount.toLocaleString("es-AR")} → ${pending.recipient}`
+      );
+      return;
+    }
+
+    // Immediate transfer
+    await this.executeTransfer(chatId, pending);
+  }
+
+  private async executeTransfer(chatId: string, pending: PendingTransfer): Promise<void> {
+    if (!this.meliTransferService) return;
+
+    await this.whatsappClient.sendMessage(chatId, "Procesando transferencia... ⏳");
+
+    try {
+      const result = await this.meliTransferService.sendTransfer(pending.userId, {
+        recipient: pending.recipient,
+        amount: pending.amount,
+        description: pending.description
+      });
+
+      if (result.success) {
+        const amountStr = pending.amount.toLocaleString("es-AR", { minimumFractionDigits: 2 });
+        await this.whatsappClient.sendMessage(
+          chatId,
+          `✅ *Transferencia exitosa!*\n\n` +
+            `💰 $${amountStr} enviados a *${pending.recipient}*\n` +
+            (result.transactionId ? `🔖 ID: ${result.transactionId}` : "")
+        );
+      } else {
+        await this.whatsappClient.sendMessage(
+          chatId,
+          `❌ *Error en la transferencia*\n\n${result.message}\n\n` +
+            `Verificá que tenés saldo suficiente y que el alias/CVU es correcto.`
+        );
+      }
+    } catch (error) {
+      this.logger.error(`Failed to execute transfer for ${chatId}`, error);
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "Hubo un error ejecutando la transferencia. Verificá tu saldo e intentá de nuevo."
+      );
     }
   }
 

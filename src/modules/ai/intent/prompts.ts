@@ -82,7 +82,8 @@ Tipos de intenciones:
 19. "get_news" - Pedir noticias o titulares (ej: "que noticias hay hoy", "dame las noticias", "noticias de tecnologia", "ultimas noticias de futbol", "que paso hoy")
 20. "check_crypto" - Consultar precio de criptomonedas (ej: "a cuanto esta el bitcoin", "precio del ethereum", "como esta el crypto", "cuanto vale el BTC", "precio de las criptos")
 21. "get_directions" - Pedir indicaciones para llegar a un lugar (ej: "como llego de Palermo a Recoleta", "como voy de Belgrano a Constitucion en subte", "como llego al aeropuerto desde el centro", "ruta para ir a Bariloche", "cuanto tarda de Retiro a San Telmo")
-22. "unknown" - No es ninguna de las anteriores
+22. "send_money" - Transferir dinero via Mercado Pago a un alias/CBU/CVU (ej: "pagale 5000 pesos al alias gonzalez.mp", "transferile 10000 a juan.banco", "manda 2000 al CVU 0000003100012345678901", "pagale al de marzo 15000 pesos", "transferi 500 a maria.garcia el viernes a las 10")
+23. "unknown" - No es ninguna de las anteriores
 
 IMPORTANTE para CREATE_REMINDER:
 - Si el usuario menciona MULTIPLES recordatorios en un mensaje, extrae TODOS
@@ -126,7 +127,7 @@ Para cada recordatorio, generá también un "funMessage": un mensaje corto (máx
 
 Responde UNICAMENTE con JSON valido (sin markdown, sin explicaciones):
 {
-  "intentType": "create_reminder" | "list_tasks" | "cancel_task" | "modify_task" | "link_email" | "unlink_email" | "email_status" | "reply_email" | "search_email" | "search_product" | "link_mercadolibre" | "unlink_mercadolibre" | "track_order" | "enable_digest" | "disable_digest" | "check_expenses" | "financial_advice" | "check_dollar" | "get_news" | "check_crypto" | "get_directions" | "unknown",
+  "intentType": "create_reminder" | "list_tasks" | "cancel_task" | "modify_task" | "link_email" | "unlink_email" | "email_status" | "reply_email" | "search_email" | "search_product" | "link_mercadolibre" | "unlink_mercadolibre" | "track_order" | "enable_digest" | "disable_digest" | "check_expenses" | "financial_advice" | "check_dollar" | "get_news" | "check_crypto" | "get_directions" | "send_money" | "unknown",
   "taskNumber": number | null,
   "reminderDetails": [
     {
@@ -152,6 +153,10 @@ Responde UNICAMENTE con JSON valido (sin markdown, sin explicaciones):
   "directionsOrigin": "string | null - origin location for directions",
   "directionsDestination": "string | null - destination location for directions",
   "travelMode": "driving" | "transit" | "walking" | "bicycling" | null,
+  "transferRecipient": "string | null - alias, CVU or CBU of the recipient (e.g. 'gonzalez.mp', '0000003100012345678901')",
+  "transferAmount": number | null,
+  "transferDescription": "string | null - optional description for the transfer",
+  "transferScheduledAt": "string ISO 8601 | null - if the user wants to schedule the transfer for a future date/time",
   "confidence": number (0-1)
 }
 
@@ -290,7 +295,19 @@ Ejemplos:
   -> {"intentType": "get_directions", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": null, "productSearchQuery": null, "digestHour": null, "expensePeriod": null, "newsQuery": null, "newsCategory": null, "coins": null, "directionsOrigin": "Belgrano, Buenos Aires", "directionsDestination": "Constitución, Buenos Aires", "travelMode": "transit", "confidence": 0.95}
 
 - "cuanto tarda de Retiro a San Telmo caminando"
-  -> {"intentType": "get_directions", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": null, "productSearchQuery": null, "digestHour": null, "expensePeriod": null, "newsQuery": null, "newsCategory": null, "coins": null, "directionsOrigin": "Retiro, Buenos Aires", "directionsDestination": "San Telmo, Buenos Aires", "travelMode": "walking", "confidence": 0.95}`;
+  -> {"intentType": "get_directions", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": null, "productSearchQuery": null, "digestHour": null, "expensePeriod": null, "newsQuery": null, "newsCategory": null, "coins": null, "directionsOrigin": "Retiro, Buenos Aires", "directionsDestination": "San Telmo, Buenos Aires", "travelMode": "walking", "transferRecipient": null, "transferAmount": null, "transferDescription": null, "transferScheduledAt": null, "confidence": 0.95}
+
+- "pagale 5000 pesos al alias gonzalez.mp"
+  -> {"intentType": "send_money", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": null, "productSearchQuery": null, "digestHour": null, "expensePeriod": null, "newsQuery": null, "newsCategory": null, "coins": null, "directionsOrigin": null, "directionsDestination": null, "travelMode": null, "transferRecipient": "gonzalez.mp", "transferAmount": 5000, "transferDescription": null, "transferScheduledAt": null, "confidence": 0.97}
+
+- "transferile 10000 a juan.banco con descripcion alquiler"
+  -> {"intentType": "send_money", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": null, "productSearchQuery": null, "digestHour": null, "expensePeriod": null, "newsQuery": null, "newsCategory": null, "coins": null, "directionsOrigin": null, "directionsDestination": null, "travelMode": null, "transferRecipient": "juan.banco", "transferAmount": 10000, "transferDescription": "alquiler", "transferScheduledAt": null, "confidence": 0.97}
+
+- "pagale al de marzo 15000 pesos el viernes a las 10"
+  -> {"intentType": "send_money", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": null, "productSearchQuery": null, "digestHour": null, "expensePeriod": null, "newsQuery": null, "newsCategory": null, "coins": null, "directionsOrigin": null, "directionsDestination": null, "travelMode": null, "transferRecipient": null, "transferAmount": 15000, "transferDescription": "al de marzo", "transferScheduledAt": "2024-01-19T10:00:00-03:00", "confidence": 0.90}
+
+- "manda 2500 al CVU 0000003100012345678901"
+  -> {"intentType": "send_money", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": null, "productSearchQuery": null, "digestHour": null, "expensePeriod": null, "newsQuery": null, "newsCategory": null, "coins": null, "directionsOrigin": null, "directionsDestination": null, "travelMode": null, "transferRecipient": "0000003100012345678901", "transferAmount": 2500, "transferDescription": null, "transferScheduledAt": null, "confidence": 0.97}`;
 
 export function buildReminderIntentPrompt(): string {
   const now = new Date();
