@@ -563,7 +563,7 @@ export class MessageHandler {
       hour: "2-digit",
       minute: "2-digit"
     });
-    return `Listo! Te recordare: "${r.description}" el ${confirmationTime}`;
+    return `✅ Listo! El ${confirmationTime} te recuerdo "${r.description}" 🗓️`;
   }
 
   private buildConfirmationMessageShort(r: {
@@ -578,7 +578,7 @@ export class MessageHandler {
         hour: "2-digit",
         minute: "2-digit"
       });
-      return `"${r.description}" - todos los dias ${timeStr} 🔁`;
+      return `"${r.description}" — todos los días a las ${timeStr} 🔁`;
     }
 
     if (r.recurrence === "WEEKLY" && r.recurrenceDay !== null) {
@@ -588,7 +588,7 @@ export class MessageHandler {
         hour: "2-digit",
         minute: "2-digit"
       });
-      return `"${r.description}" - ${dayName} ${timeStr} 🔁`;
+      return `"${r.description}" — todos los ${dayName} a las ${timeStr} 🔁`;
     }
 
     const timeStr = r.dateTime?.toLocaleString("es-AR", {
@@ -620,7 +620,7 @@ export class MessageHandler {
       if (isRecurring) {
         const timeStr = reminder.recurrenceTime || "09:00";
         if (reminder.recurrence === "DAILY") {
-          dateStr = `Todos los dias ${timeStr}`;
+          dateStr = `Todos los días ${timeStr}`;
         } else if (reminder.recurrence === "WEEKLY" && reminder.recurrenceDay !== null) {
           dateStr = `${DAYS_OF_WEEK[reminder.recurrenceDay]} ${timeStr}`;
         } else {
@@ -655,7 +655,7 @@ export class MessageHandler {
     if (!taskNumber) {
       await this.whatsappClient.sendMessage(
         chatId,
-        "Decime el numero de tarea a cancelar. Ej: 'cancela la tarea 2'"
+        "Decime el número de tarea a cancelar. Ej: 'cancela la tarea 2'"
       );
       return;
     }
@@ -665,7 +665,7 @@ export class MessageHandler {
     if (taskNumber < 1 || taskNumber > reminders.length) {
       await this.whatsappClient.sendMessage(
         chatId,
-        `No existe la tarea ${taskNumber}. Tenes ${reminders.length} tarea(s) pendiente(s).`
+        `No existe la tarea ${taskNumber} 🤔 Tenés ${reminders.length} tarea(s) pendiente(s).`
       );
       return;
     }
@@ -675,8 +675,8 @@ export class MessageHandler {
     await this.reminderService.cancelReminder(reminder.id);
 
     const cancelMsg = wasRecurring
-      ? `Tarea recurrente ${taskNumber} cancelada: "${reminder.reminderText}" ❌\n(Ya no se va a repetir)`
-      : `Tarea ${taskNumber} cancelada: "${reminder.reminderText}" ❌`;
+      ? `Listo! Cancelé la tarea ${taskNumber}: "${reminder.reminderText}" ❌\n_(Ya no se va a repetir)_`
+      : `Listo! Cancelé la tarea ${taskNumber}: "${reminder.reminderText}" ❌`;
 
     await this.whatsappClient.sendMessage(chatId, cancelMsg);
 
@@ -691,7 +691,7 @@ export class MessageHandler {
     if (!taskNumber) {
       await this.whatsappClient.sendMessage(
         chatId,
-        "Decime el numero de tarea a modificar. Ej: 'cambia la tarea 2 a las 5pm'"
+        "Decime el número de tarea a modificar. Ej: 'cambia la tarea 2 a las 5pm'"
       );
       return;
     }
@@ -709,7 +709,7 @@ export class MessageHandler {
     if (taskNumber < 1 || taskNumber > reminders.length) {
       await this.whatsappClient.sendMessage(
         chatId,
-        `No existe la tarea ${taskNumber}. Tenes ${reminders.length} tarea(s) pendiente(s).`
+        `No existe la tarea ${taskNumber} 🤔 Tenés ${reminders.length} tarea(s) pendiente(s).`
       );
       return;
     }
@@ -728,7 +728,7 @@ export class MessageHandler {
 
     await this.whatsappClient.sendMessage(
       chatId,
-      `Tarea ${taskNumber} reprogramada para el ${newTimeStr} ✅`
+      `✅ Listo! Moví la tarea ${taskNumber} para el ${newTimeStr}`
     );
 
     this.logger.info(`Reminder ${reminder.id} rescheduled to ${newDateTime.toISOString()}`);
