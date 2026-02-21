@@ -11,12 +11,17 @@ export interface MessageContent {
     | "document"
     | "buttonResponse"
     | "listResponse"
+    | "location"
     | "unknown";
   text?: string;
   audioBuffer?: Buffer;
   mimeType?: string;
   selectedButtonId?: string;
   selectedRowId?: string;
+  latitude?: number;
+  longitude?: number;
+  locationName?: string;
+  locationAddress?: string;
   chatId: string;
   messageId: string;
   fromMe: boolean;

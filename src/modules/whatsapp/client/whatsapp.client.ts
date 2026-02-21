@@ -302,6 +302,22 @@ export class WhatsAppClient {
       };
     }
 
+    // Location message (standard pin or live location)
+    const loc = message.locationMessage ?? message.liveLocationMessage;
+    if (loc) {
+      return {
+        type: "location",
+        latitude: loc.degreesLatitude ?? undefined,
+        longitude: loc.degreesLongitude ?? undefined,
+        locationName: message.locationMessage?.name ?? undefined,
+        locationAddress: message.locationMessage?.address ?? undefined,
+        chatId,
+        messageId,
+        fromMe,
+        timestamp
+      };
+    }
+
     // Other message types we don't handle yet
     return {
       type: "unknown",

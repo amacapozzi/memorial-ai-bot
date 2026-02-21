@@ -11,7 +11,7 @@ import type { FinancialAdviceService } from "@modules/expenses/advice/financial-
 import type { ExpenseService } from "@modules/expenses/expense.service";
 import type { ExpenseSummaryService } from "@modules/expenses/summary/expense-summary.service";
 import type { LinkingCodeService } from "@modules/linking/linking.service";
-import type { MapsService, TravelMode } from "@modules/maps/services/maps.service";
+import type { Coordinates, MapsService, TravelMode } from "@modules/maps/services/maps.service";
 import type { MeliApiService } from "@modules/mercadolibre/api/meli-api.service";
 import type { MeliAuthService } from "@modules/mercadolibre/auth/meli-auth.service";
 import type { NewsCategory, NewsService } from "@modules/news/services/news.service";
@@ -113,6 +113,8 @@ export class MessageHandler {
   private readonly pendingSearchReply = new Set<string>();
   private readonly pendingReplyInstruction = new Set<string>();
   private readonly pendingModifyTask = new Map<string, number>();
+  // Stores the last location shared by the user (expires after 30 minutes)
+  private readonly userLocations = new Map<string, { coords: Coordinates; savedAt: Date }>();
 
   constructor(
     private readonly whatsappClient: WhatsAppClient,
@@ -158,6 +160,12 @@ export class MessageHandler {
       return;
     }
 
+    // Handle location messages
+    if (message.type === "location") {
+      await this.handleLocationMessage(message);
+      return;
+    }
+
     let text: string;
 
     // Process audio messages
@@ -175,7 +183,7 @@ export class MessageHandler {
           const wait = extractRateLimitWait(error) || "unos minutos";
           await this.whatsappClient.sendMessage(
             message.chatId,
-            `Llegue al limite de consultas. Deberas esperar ${wait} para volver a usarme.`
+            `Llegué al límite de consultas 😬 Vas a tener que esperar ${wait} para volver a usarme.`
           );
         } else {
           await this.whatsappClient.sendMessage(
@@ -360,12 +368,12 @@ export class MessageHandler {
         const wait = extractRateLimitWait(error) || "unos minutos";
         await this.whatsappClient.sendMessage(
           message.chatId,
-          `Llegue al limite de consultas. Deberas esperar ${wait} para volver a usarme.`
+          `Llegué al límite de consultas 😬 Vas a tener que esperar ${wait} para volver a usarme.`
         );
       } else {
         await this.whatsappClient.sendMessage(
           message.chatId,
-          "Hubo un error procesando tu mensaje. Intenta de nuevo mas tarde."
+          "Hubo un error procesando tu mensaje. Intentá de nuevo más tarde."
         );
       }
     }
@@ -393,13 +401,12 @@ export class MessageHandler {
       const description = intent.reminderDetails?.[0]?.description || "lo que me pediste";
       await this.whatsappClient.sendMessage(
         chatId,
-        `Para crear el recordatorio de "${description}", necesito que me digas cuando.\n\n` +
+        `Anotado! Pero necesito saber *cuándo* querés que te recuerde "${description}" 📅\n\n` +
           "Por ejemplo:\n" +
-          "- 'manana a las 3'\n" +
-          "- 'el viernes a las 10'\n" +
-          "- 'todos los dias a las 8'\n" +
-          "- 'todos los lunes a las 9'\n\n" +
-          "Decime cuando queres que te recuerde!"
+          "• 'mañana a las 3'\n" +
+          "• 'el viernes a las 10'\n" +
+          "• 'todos los días a las 8'\n" +
+          "• 'todos los lunes a las 9'"
       );
       return;
     }
@@ -407,7 +414,7 @@ export class MessageHandler {
     if (!intent.reminderDetails || intent.reminderDetails.length === 0) {
       await this.whatsappClient.sendMessage(
         chatId,
-        "No pude entender los detalles del recordatorio. Decime que queres que te recuerde y cuando."
+        "No entendí bien qué querés recordar 😅 Contame de nuevo: ¿qué y cuándo?"
       );
       return;
     }
@@ -466,7 +473,7 @@ export class MessageHandler {
       const r = createdReminders[0];
       await this.whatsappClient.sendMessage(chatId, this.buildConfirmationMessage(r));
     } else {
-      let message = `Listo! Te cree ${createdReminders.length} recordatorios:\n\n`;
+      let message = `✅ Listo! Te creé ${createdReminders.length} recordatorios:\n\n`;
       createdReminders.forEach((r, index) => {
         message += `${index + 1}. ${this.buildConfirmationMessageShort(r)}\n`;
       });
@@ -525,7 +532,7 @@ export class MessageHandler {
         hour: "2-digit",
         minute: "2-digit"
       });
-      return `Listo! Te voy a recordar "${r.description}" todos los dias a las ${timeStr} 🔁`;
+      return `✅ Listo! Todos los días a las ${timeStr} te recuerdo "${r.description}" 🔁`;
     }
 
     if (r.recurrence === "WEEKLY" && r.recurrenceDay !== null) {
@@ -535,7 +542,7 @@ export class MessageHandler {
         hour: "2-digit",
         minute: "2-digit"
       });
-      return `Listo! Te voy a recordar "${r.description}" todos los ${dayName} a las ${timeStr} 🔁`;
+      return `✅ Listo! Todos los ${dayName} a las ${timeStr} te recuerdo "${r.description}" 🔁`;
     }
 
     if (r.recurrence === "MONTHLY" && r.recurrenceDay !== null) {
@@ -544,7 +551,7 @@ export class MessageHandler {
         hour: "2-digit",
         minute: "2-digit"
       });
-      return `Listo! Te voy a recordar "${r.description}" el dia ${r.recurrenceDay} de cada mes a las ${timeStr} 🔁`;
+      return `✅ Listo! El día ${r.recurrenceDay} de cada mes a las ${timeStr} te recuerdo "${r.description}" 🔁`;
     }
 
     // Non-recurring
@@ -803,7 +810,7 @@ ${privacyLine}`
       this.logger.error(`Failed to handle link email for ${chatId}`, error);
       await this.whatsappClient.sendMessage(
         chatId,
-        "Hubo un error generando el link. Intenta de nuevo mas tarde."
+        "Hubo un error generando el link. Intentá de nuevo más tarde."
       );
     }
   }
@@ -855,7 +862,7 @@ ${privacyLine}`
       this.logger.error(`Failed to unlink email for ${chatId}`, error);
       await this.whatsappClient.sendMessage(
         chatId,
-        "Hubo un error desconectando el email. Intenta de nuevo mas tarde."
+        "Hubo un error desconectando el email. Intentá de nuevo más tarde."
       );
     }
   }
@@ -886,7 +893,7 @@ ${privacyLine}`
       this.logger.error(`Failed to generate linking code for ${chatId}`, error);
       await this.whatsappClient.sendMessage(
         chatId,
-        "Hubo un error generando el codigo. Intenta de nuevo mas tarde."
+        "Hubo un error generando el codigo. Intentá de nuevo más tarde."
       );
     }
   }
@@ -1007,7 +1014,7 @@ ${privacyLine}`
       this.logger.error(`Failed to handle reply email for ${chatId}`, error);
       await this.whatsappClient.sendMessage(
         chatId,
-        "Hubo un error preparando la respuesta. Intenta de nuevo mas tarde."
+        "Hubo un error preparando la respuesta. Intentá de nuevo más tarde."
       );
     }
   }
@@ -1039,7 +1046,7 @@ ${privacyLine}`
         this.logger.error(`Failed to send email reply for ${chatId}`, error);
         await this.whatsappClient.sendMessage(
           chatId,
-          "Hubo un error enviando el email. Intenta de nuevo mas tarde."
+          "Hubo un error enviando el email. Intentá de nuevo más tarde."
         );
       }
       this.pendingReplies.delete(chatId);
@@ -1222,7 +1229,7 @@ ${privacyLine}`
       this.logger.error(`Failed to search emails for ${chatId}`, error);
       await this.whatsappClient.sendMessage(
         chatId,
-        "Hubo un error buscando emails. Intenta de nuevo mas tarde."
+        "Hubo un error buscando emails. Intentá de nuevo más tarde."
       );
     }
   }
@@ -1330,7 +1337,7 @@ ${privacyLine}`
       this.logger.error(`Failed to compose reply to viewed email for ${chatId}`, error);
       await this.whatsappClient.sendMessage(
         chatId,
-        "Hubo un error preparando la respuesta. Intenta de nuevo mas tarde."
+        "Hubo un error preparando la respuesta. Intentá de nuevo más tarde."
       );
       this.lastViewedEmail.delete(chatId);
     }
@@ -1401,7 +1408,7 @@ ${privacyLine}`
       this.logger.error(`Failed to search products for ${chatId}`, error);
       await this.whatsappClient.sendMessage(
         chatId,
-        "Hubo un error buscando productos. Intenta de nuevo mas tarde."
+        "Hubo un error buscando productos. Intentá de nuevo más tarde."
       );
     }
   }
@@ -1448,7 +1455,7 @@ ${privacyLine}`
       this.logger.error(`Failed to handle link MercadoLibre for ${chatId}`, error);
       await this.whatsappClient.sendMessage(
         chatId,
-        "Hubo un error generando el link. Intenta de nuevo mas tarde."
+        "Hubo un error generando el link. Intentá de nuevo más tarde."
       );
     }
   }
@@ -1491,7 +1498,7 @@ ${privacyLine}`
       this.logger.error(`Failed to unlink MercadoLibre for ${chatId}`, error);
       await this.whatsappClient.sendMessage(
         chatId,
-        "Hubo un error desconectando MercadoLibre. Intenta de nuevo mas tarde."
+        "Hubo un error desconectando MercadoLibre. Intentá de nuevo más tarde."
       );
     }
   }
@@ -1576,7 +1583,7 @@ ${privacyLine}`
       this.logger.error(`Failed to track orders for ${chatId}`, error);
       await this.whatsappClient.sendMessage(
         chatId,
-        "Hubo un error consultando tus pedidos. Intenta de nuevo mas tarde."
+        "Hubo un error consultando tus pedidos. Intentá de nuevo más tarde."
       );
     }
   }
@@ -1627,7 +1634,7 @@ ${privacyLine}`
       this.logger.error(`Failed to enable digest for ${chatId}`, error);
       await this.whatsappClient.sendMessage(
         chatId,
-        "Hubo un error activando el resumen diario. Intenta de nuevo mas tarde."
+        "Hubo un error activando el resumen diario. Intentá de nuevo más tarde."
       );
     }
   }
@@ -1652,7 +1659,7 @@ ${privacyLine}`
       this.logger.error(`Failed to disable digest for ${chatId}`, error);
       await this.whatsappClient.sendMessage(
         chatId,
-        "Hubo un error desactivando el resumen diario. Intenta de nuevo mas tarde."
+        "Hubo un error desactivando el resumen diario. Intentá de nuevo más tarde."
       );
     }
   }
@@ -1811,7 +1818,7 @@ ${privacyLine}`
       this.logger.error(`Failed to check expenses for ${chatId}`, error);
       await this.whatsappClient.sendMessage(
         chatId,
-        "Hubo un error consultando tus gastos. Intenta de nuevo mas tarde."
+        "Hubo un error consultando tus gastos. Intentá de nuevo más tarde."
       );
     }
   }
@@ -1883,7 +1890,7 @@ ${privacyLine}`
       this.logger.error(`Failed to generate financial advice for ${chatId}`, error);
       await this.whatsappClient.sendMessage(
         chatId,
-        "Hubo un error generando los consejos. Intenta de nuevo mas tarde."
+        "Hubo un error generando los consejos. Intentá de nuevo más tarde."
       );
     }
   }
@@ -1905,7 +1912,7 @@ ${privacyLine}`
       this.logger.error(`Failed to fetch dollar rates for ${chatId}`, error);
       await this.whatsappClient.sendMessage(
         chatId,
-        "No pude obtener la cotizacion en este momento. Intenta de nuevo mas tarde."
+        "No pude obtener la cotizacion en este momento. Intentá de nuevo más tarde."
       );
     }
   }
@@ -1933,7 +1940,7 @@ ${privacyLine}`
       this.logger.error(`Failed to fetch news for ${chatId}`, error);
       await this.whatsappClient.sendMessage(
         chatId,
-        "No pude obtener las noticias en este momento. Intenta de nuevo mas tarde."
+        "No pude obtener las noticias en este momento. Intentá de nuevo más tarde."
       );
     }
   }
@@ -1955,7 +1962,7 @@ ${privacyLine}`
       this.logger.error(`Failed to fetch crypto prices for ${chatId}`, error);
       await this.whatsappClient.sendMessage(
         chatId,
-        "No pude obtener los precios en este momento. Intenta de nuevo mas tarde."
+        "No pude obtener los precios en este momento. Intentá de nuevo más tarde."
       );
     }
   }
@@ -1974,17 +1981,36 @@ ${privacyLine}`
       return;
     }
 
-    if (!origin || !destination) {
+    if (!destination) {
       await this.whatsappClient.sendMessage(
         chatId,
-        "Decime de donde y adonde queres ir. Ej: 'como llego de Palermo a Recoleta'"
+        "Decime adonde querés ir. Ej: 'cómo llego a Recoleta'"
       );
       return;
     }
 
     try {
       await this.whatsappClient.sendMessage(chatId, "Buscando la ruta... 🗺️");
-      const route = await this.mapsService.getDirections(origin, destination, mode ?? "transit");
+
+      let route;
+      const savedLocation = this.getSavedLocation(chatId);
+
+      if (!origin && savedLocation) {
+        route = await this.mapsService.getDirectionsFromCoords(
+          savedLocation,
+          destination,
+          mode ?? "transit"
+        );
+      } else if (origin) {
+        route = await this.mapsService.getDirections(origin, destination, mode ?? "transit");
+      } else {
+        await this.whatsappClient.sendMessage(
+          chatId,
+          "Decime de dónde salís o compartí tu ubicación 📍 y luego pedime las indicaciones."
+        );
+        return;
+      }
+
       await this.whatsappClient.sendMessage(chatId, this.mapsService.formatMessage(route));
     } catch (error) {
       this.logger.error(`Failed to get directions for ${chatId}`, error);
@@ -1992,18 +2018,56 @@ ${privacyLine}`
         typeof error === "object" && error !== null && "message" in error
           ? String((error as { message: string }).message)
           : "";
-      if (msg.includes("No se encontró ruta")) {
+      if (msg.includes("No se encontró ruta") || msg.includes("No se encontró la dirección")) {
         await this.whatsappClient.sendMessage(
           chatId,
-          "No encontre una ruta entre esos puntos. Verifica las ubicaciones e intentalo de nuevo."
+          "No encontré una ruta entre esos puntos. Verificá las ubicaciones e intentalo de nuevo."
         );
       } else {
         await this.whatsappClient.sendMessage(
           chatId,
-          "No pude obtener las indicaciones en este momento. Intenta de nuevo mas tarde."
+          "No pude obtener las indicaciones en este momento. Intentá de nuevo más tarde."
         );
       }
     }
+  }
+
+  private async handleLocationMessage(message: MessageContent): Promise<void> {
+    const { chatId, latitude, longitude, locationName } = message;
+
+    if (latitude == null || longitude == null) return;
+
+    const coords: Coordinates = {
+      lat: latitude,
+      lon: longitude,
+      label: locationName ?? "Tu ubicación"
+    };
+    this.userLocations.set(chatId, { coords, savedAt: new Date() });
+
+    this.logger.info(`Location saved for ${chatId}: ${latitude},${longitude}`);
+
+    await this.whatsappClient.sendMessage(
+      chatId,
+      `📍 *Ubicación guardada!*\n\n` +
+        (locationName ? `*Lugar:* ${locationName}\n\n` : "") +
+        `Ahora podés pedirme indicaciones sin especificar el origen. Ej:\n` +
+        `_"¿Cómo llego a Recoleta?"_\n` +
+        `_"¿Cuánto tarda a Constitución caminando?"_\n\n` +
+        `⏳ La ubicación se recuerda por 30 minutos.`
+    );
+  }
+
+  private getSavedLocation(chatId: string): Coordinates | null {
+    const entry = this.userLocations.get(chatId);
+    if (!entry) return null;
+
+    const ageMs = Date.now() - entry.savedAt.getTime();
+    if (ageMs > 30 * 60 * 1000) {
+      this.userLocations.delete(chatId);
+      return null;
+    }
+
+    return entry.coords;
   }
 
   private async handleEmailStatus(chatId: string): Promise<void> {
@@ -2058,7 +2122,7 @@ ${privacyLine}`
       this.logger.error(`Failed to check email status for ${chatId}`, error);
       await this.whatsappClient.sendMessage(
         chatId,
-        "Hubo un error verificando el estado. Intenta de nuevo mas tarde."
+        "Hubo un error verificando el estado. Intentá de nuevo más tarde."
       );
     }
   }

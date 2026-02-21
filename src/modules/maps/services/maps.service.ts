@@ -43,6 +43,12 @@ interface ORSDirectionsResponse {
   error?: { code: number; message: string };
 }
 
+export interface Coordinates {
+  lat: number;
+  lon: number;
+  label?: string;
+}
+
 export interface RouteResult {
   duration: string;
   distance: string;
@@ -58,6 +64,11 @@ export class MapsService {
   private readonly logger = createLogger("maps");
 
   constructor(private readonly apiKey: string) {}
+
+  async geocodeAddress(address: string): Promise<Coordinates> {
+    const coords = await this.geocode(address);
+    return { lon: coords[0], lat: coords[1], label: address };
+  }
 
   private async geocode(address: string): Promise<[number, number]> {
     const params = new URLSearchParams({
@@ -82,6 +93,21 @@ export class MapsService {
     return data.features[0].geometry.coordinates; // [lon, lat]
   }
 
+  async getDirectionsFromCoords(
+    originCoords: Coordinates,
+    destination: string,
+    mode: TravelMode = "transit"
+  ): Promise<RouteResult> {
+    const destCoords = await this.geocode(destination);
+    return this.fetchRoute(
+      [originCoords.lon, originCoords.lat],
+      destCoords,
+      originCoords.label ?? `${originCoords.lat},${originCoords.lon}`,
+      destination,
+      mode
+    );
+  }
+
   async getDirections(
     origin: string,
     destination: string,
@@ -97,6 +123,25 @@ export class MapsService {
         this.geocode(destination)
       ]);
 
+      return this.fetchRoute(originCoords, destCoords, origin, destination, mode);
+    } catch (error) {
+      clearTimeout(timeout);
+      this.logger.error("Failed to get directions", error);
+      throw error;
+    }
+  }
+
+  private async fetchRoute(
+    originCoords: [number, number],
+    destCoords: [number, number],
+    originLabel: string,
+    destLabel: string,
+    mode: TravelMode
+  ): Promise<RouteResult> {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
+
+    try {
       const profile = ORS_PROFILES[mode] ?? "driving-car";
 
       const response = await fetch(`${ORS_BASE}/v2/directions/${profile}/json`, {
@@ -136,13 +181,13 @@ export class MapsService {
         duration: this.formatDuration(route.summary.duration),
         distance: this.formatDistance(route.summary.distance),
         steps,
-        origin,
-        destination,
+        origin: originLabel,
+        destination: destLabel,
         mode
       };
     } catch (error) {
       clearTimeout(timeout);
-      this.logger.error("Failed to get directions", error);
+      this.logger.error("Failed to fetch route", error);
       throw error;
     }
   }
