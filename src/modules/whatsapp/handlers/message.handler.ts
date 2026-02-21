@@ -16,6 +16,7 @@ import type { MeliApiService } from "@modules/mercadolibre/api/meli-api.service"
 import type { MeliAuthService } from "@modules/mercadolibre/auth/meli-auth.service";
 import type { MeliTransferService } from "@modules/mercadolibre/transfers/transfer.service";
 import type { NewsCategory, NewsService } from "@modules/news/services/news.service";
+import type { ScheduledPaymentService } from "@modules/payments/payment.service";
 import type { ProductSearchService } from "@modules/product-search/product-search.service";
 import type { ReminderService } from "@modules/reminders/reminder.service";
 import type { SubscriptionService } from "@modules/subscription/subscription.service";
@@ -149,7 +150,8 @@ export class MessageHandler {
     private readonly cryptoService?: CryptoService,
     private readonly newsService?: NewsService,
     private readonly mapsService?: MapsService,
-    private readonly meliTransferService?: MeliTransferService
+    private readonly meliTransferService?: MeliTransferService,
+    private readonly scheduledPaymentService?: ScheduledPaymentService
   ) {}
 
   async handle(message: MessageContent): Promise<void> {
@@ -365,6 +367,27 @@ export class MessageHandler {
           );
           break;
 
+        case "schedule_payment":
+          await this.handleSchedulePayment(
+            message.chatId,
+            intent.paymentAlias,
+            intent.paymentAmount,
+            intent.paymentDescription,
+            intent.paymentRecurrence,
+            intent.paymentDay,
+            intent.paymentTime,
+            intent.paymentTotalCount
+          );
+          break;
+
+        case "list_scheduled_payments":
+          await this.handleListScheduledPayments(message.chatId);
+          break;
+
+        case "cancel_scheduled_payment":
+          await this.handleCancelScheduledPayment(message.chatId, intent.paymentIndex);
+          break;
+
         default:
           await this.whatsappClient.sendMessage(
             message.chatId,
@@ -387,6 +410,9 @@ export class MessageHandler {
               "• Noticias: '¿qué noticias hay hoy?'\n" +
               "• Cripto: '¿a cuánto está el bitcoin?'\n" +
               "• Cómo llegar: 'cómo llego de Palermo a Recoleta'\n" +
+              "• Pagos recurrentes: 'pagale 5000 todos los lunes al alias gonzalez.mp'\n" +
+              "• Ver pagos: 'mis pagos programados'\n" +
+              "• Cancelar pago: 'cancela el pago recurrente 1'\n" +
               "• Vincular con la web: /connect"
           );
       }
@@ -2275,6 +2301,205 @@ ${privacyLine}`
     }
 
     return entry.coords;
+  }
+
+  private async handleSchedulePayment(
+    chatId: string,
+    alias?: string | null,
+    amount?: number | null,
+    description?: string | null,
+    recurrence?: string | null,
+    day?: number | null,
+    time?: string | null,
+    totalCount?: number | null
+  ): Promise<void> {
+    if (!this.scheduledPaymentService) {
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "La función de pagos programados no está disponible en este momento."
+      );
+      return;
+    }
+
+    if (!amount || amount <= 0) {
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "Decime el monto a pagar. Ej: _'pagale 5000 todos los lunes al alias gonzalez.mp'_"
+      );
+      return;
+    }
+
+    if (!alias) {
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "Decime el alias, CVU o CBU del destinatario. Ej: _'pagale 5000 mensual a gonzalez.mp'_"
+      );
+      return;
+    }
+
+    if (!recurrence || recurrence === "NONE") {
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "Decime cada cuánto: 'todos los lunes', 'mensual', 'todos los días'. Ej: _'pagale 5000 todos los lunes a gonzalez.mp'_"
+      );
+      return;
+    }
+
+    try {
+      const schedule = await this.scheduledPaymentService.createSchedule({
+        chatId,
+        recipient: alias,
+        amount,
+        description: description ?? undefined,
+        recurrence: recurrence as "DAILY" | "WEEKLY" | "MONTHLY",
+        recurrenceDay: day ?? undefined,
+        recurrenceTime: time ?? undefined,
+        totalPayments: totalCount ?? undefined
+      });
+
+      const amountStr = amount.toLocaleString("es-AR", { minimumFractionDigits: 2 });
+      const nextDate = schedule.nextPaymentAt.toLocaleString("es-AR", {
+        timeZone: "America/Argentina/Buenos_Aires",
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+
+      const recurrenceLabels: Record<string, string> = {
+        DAILY: "Todos los días",
+        WEEKLY: "Semanal",
+        MONTHLY: "Mensual"
+      };
+      const recurrenceLabel = recurrenceLabels[recurrence] ?? recurrence;
+
+      let msg = `✅ *Pago programado creado!*\n\n`;
+      msg += `💰 *Monto:* $${amountStr}\n`;
+      msg += `👤 *Destinatario:* ${alias}\n`;
+      if (description) msg += `📝 *Descripción:* ${description}\n`;
+      msg += `🔁 *Frecuencia:* ${recurrenceLabel}\n`;
+      if (totalCount) msg += `📊 *Total de pagos:* ${totalCount}\n`;
+      msg += `\n📅 *Primer recordatorio:* ${nextDate}\n\n`;
+      msg += `_Cuando llegue la fecha te mando un mensaje con el link para pagar con un tap en Mercado Pago._\n`;
+      msg += `_Para ver tus pagos: "mis pagos programados"_`;
+
+      await this.whatsappClient.sendMessage(chatId, msg);
+      this.logger.info(`Scheduled payment created: ${schedule.id} for ${chatId}`);
+    } catch (error) {
+      this.logger.error(`Failed to create scheduled payment for ${chatId}`, error);
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "Hubo un error creando el pago programado. Intentá de nuevo más tarde."
+      );
+    }
+  }
+
+  private async handleListScheduledPayments(chatId: string): Promise<void> {
+    if (!this.scheduledPaymentService) {
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "La función de pagos programados no está disponible en este momento."
+      );
+      return;
+    }
+
+    try {
+      const schedules = await this.scheduledPaymentService.getActiveSchedules(chatId);
+
+      if (schedules.length === 0) {
+        await this.whatsappClient.sendMessage(
+          chatId,
+          "No tenés pagos programados activos.\n\n_Para crear uno: 'pagale 5000 todos los lunes a gonzalez.mp'_"
+        );
+        return;
+      }
+
+      const DAYS = ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"];
+
+      let msg = `💸 *Tus pagos programados:*\n\n`;
+
+      schedules.forEach((s, idx) => {
+        const amount = Number(s.amount);
+        const amountStr = amount.toLocaleString("es-AR", { minimumFractionDigits: 2 });
+        const nextDate = s.nextPaymentAt.toLocaleString("es-AR", {
+          timeZone: "America/Argentina/Buenos_Aires",
+          day: "numeric",
+          month: "short",
+          hour: "2-digit",
+          minute: "2-digit"
+        });
+
+        let freq = "";
+        if (s.recurrence === "DAILY") freq = "Todos los días";
+        else if (s.recurrence === "WEEKLY" && s.recurrenceDay !== null)
+          freq = `Todos los ${DAYS[s.recurrenceDay]}`;
+        else if (s.recurrence === "MONTHLY") freq = "Mensual";
+
+        const progress = s.totalPayments ? ` (${s.paidCount}/${s.totalPayments})` : "";
+
+        msg += `*${idx + 1}.* $${amountStr} → ${s.recipient}\n`;
+        msg += `   🔁 ${freq}${progress}\n`;
+        if (s.description) msg += `   📝 ${s.description}\n`;
+        msg += `   📅 Próx: ${nextDate}\n\n`;
+      });
+
+      msg += `_Para cancelar: "cancela el pago recurrente 1"_`;
+
+      await this.whatsappClient.sendMessage(chatId, msg);
+    } catch (error) {
+      this.logger.error(`Failed to list scheduled payments for ${chatId}`, error);
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "Hubo un error consultando tus pagos. Intentá de nuevo más tarde."
+      );
+    }
+  }
+
+  private async handleCancelScheduledPayment(chatId: string, index?: number | null): Promise<void> {
+    if (!this.scheduledPaymentService) {
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "La función de pagos programados no está disponible en este momento."
+      );
+      return;
+    }
+
+    if (!index) {
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "Decime el número de pago a cancelar. Ej: _'cancela el pago recurrente 1'_"
+      );
+      return;
+    }
+
+    try {
+      const cancelled = await this.scheduledPaymentService.cancelByIndex(chatId, index);
+
+      if (!cancelled) {
+        const schedules = await this.scheduledPaymentService.getActiveSchedules(chatId);
+        await this.whatsappClient.sendMessage(
+          chatId,
+          `No existe el pago programado ${index} 🤔 Tenés ${schedules.length} pago(s) activo(s).`
+        );
+        return;
+      }
+
+      const amount = Number(cancelled.amount);
+      await this.whatsappClient.sendMessage(
+        chatId,
+        `✅ Pago programado cancelado!\n\n` +
+          `$${amount.toLocaleString("es-AR")} → ${cancelled.recipient} ❌\n\n` +
+          `_Ya no se van a enviar más recordatorios de este pago._`
+      );
+      this.logger.info(`Scheduled payment ${cancelled.id} cancelled for ${chatId}`);
+    } catch (error) {
+      this.logger.error(`Failed to cancel scheduled payment for ${chatId}`, error);
+      await this.whatsappClient.sendMessage(
+        chatId,
+        "Hubo un error cancelando el pago. Intentá de nuevo más tarde."
+      );
+    }
   }
 
   private async handleEmailStatus(chatId: string): Promise<void> {

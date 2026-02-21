@@ -113,6 +113,11 @@ export type ProcessedEmail = Prisma.ProcessedEmailModel;
  */
 export type Expense = Prisma.ExpenseModel;
 /**
+ * Model ScheduledPayment
+ *
+ */
+export type ScheduledPayment = Prisma.ScheduledPaymentModel;
+/**
  * Model Commit
  *
  */

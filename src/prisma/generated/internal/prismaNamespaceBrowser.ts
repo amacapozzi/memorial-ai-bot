@@ -62,6 +62,7 @@ export const ModelName = {
   MercadoLibreToken: "MercadoLibreToken",
   ProcessedEmail: "ProcessedEmail",
   Expense: "Expense",
+  ScheduledPayment: "ScheduledPayment",
   Commit: "Commit",
   LinkingCode: "LinkingCode"
 } as const;
@@ -306,6 +307,26 @@ export const ExpenseScalarFieldEnum = {
 
 export type ExpenseScalarFieldEnum =
   (typeof ExpenseScalarFieldEnum)[keyof typeof ExpenseScalarFieldEnum];
+
+export const ScheduledPaymentScalarFieldEnum = {
+  id: "id",
+  chatId: "chatId",
+  recipient: "recipient",
+  amount: "amount",
+  description: "description",
+  recurrence: "recurrence",
+  recurrenceDay: "recurrenceDay",
+  recurrenceTime: "recurrenceTime",
+  nextPaymentAt: "nextPaymentAt",
+  totalPayments: "totalPayments",
+  paidCount: "paidCount",
+  status: "status",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt"
+} as const;
+
+export type ScheduledPaymentScalarFieldEnum =
+  (typeof ScheduledPaymentScalarFieldEnum)[keyof typeof ScheduledPaymentScalarFieldEnum];
 
 export const CommitScalarFieldEnum = {
   id: "id",

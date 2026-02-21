@@ -37,6 +37,9 @@ export type IntentType =
   | "check_crypto"
   | "get_directions"
   | "send_money"
+  | "schedule_payment"
+  | "list_scheduled_payments"
+  | "cancel_scheduled_payment"
   | "unknown";
 
 export interface ParsedIntent {
@@ -62,6 +65,14 @@ export interface ParsedIntent {
   transferAmount?: number;
   transferDescription?: string;
   transferScheduledAt?: string;
+  paymentAlias?: string;
+  paymentAmount?: number;
+  paymentDescription?: string;
+  paymentRecurrence?: "NONE" | "DAILY" | "WEEKLY" | "MONTHLY";
+  paymentDay?: number;
+  paymentTime?: string;
+  paymentTotalCount?: number;
+  paymentIndex?: number;
   confidence: number;
 }
 
@@ -94,6 +105,14 @@ interface IntentResponse {
   transferAmount: number | null;
   transferDescription: string | null;
   transferScheduledAt: string | null;
+  paymentAlias: string | null;
+  paymentAmount: number | null;
+  paymentDescription: string | null;
+  paymentRecurrence: "NONE" | "DAILY" | "WEEKLY" | "MONTHLY" | null;
+  paymentDay: number | null;
+  paymentTime: string | null;
+  paymentTotalCount: number | null;
+  paymentIndex: number | null;
   confidence: number;
 }
 
@@ -180,6 +199,17 @@ export class IntentService {
       if (response.transferAmount) result.transferAmount = response.transferAmount;
       if (response.transferDescription) result.transferDescription = response.transferDescription;
       if (response.transferScheduledAt) result.transferScheduledAt = response.transferScheduledAt;
+
+      // Handle scheduled payment fields
+      if (response.paymentAlias) result.paymentAlias = response.paymentAlias;
+      if (response.paymentAmount) result.paymentAmount = response.paymentAmount;
+      if (response.paymentDescription) result.paymentDescription = response.paymentDescription;
+      if (response.paymentRecurrence) result.paymentRecurrence = response.paymentRecurrence;
+      if (response.paymentDay !== null && response.paymentDay !== undefined)
+        result.paymentDay = response.paymentDay;
+      if (response.paymentTime) result.paymentTime = response.paymentTime;
+      if (response.paymentTotalCount) result.paymentTotalCount = response.paymentTotalCount;
+      if (response.paymentIndex) result.paymentIndex = response.paymentIndex;
 
       // Handle reminder details for create (supports multiple reminders)
       if (

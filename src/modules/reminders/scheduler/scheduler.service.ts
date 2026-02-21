@@ -1,6 +1,7 @@
 import type { ExpenseSummaryService } from "@modules/expenses/summary/expense-summary.service";
+import type { ScheduledPaymentService } from "@modules/payments/payment.service";
 import type { WhatsAppClient } from "@modules/whatsapp";
-import type { Reminder } from "@prisma-module/generated/client";
+import type { Reminder, ScheduledPayment } from "@prisma-module/generated/client";
 import { createLogger } from "@shared/logger/logger";
 
 import type { DigestService } from "../digest/digest.service";
@@ -17,7 +18,8 @@ export class SchedulerService {
     private readonly reminderService: ReminderService,
     private readonly whatsappClient: WhatsAppClient,
     private readonly digestService?: DigestService,
-    private readonly expenseSummaryService?: ExpenseSummaryService
+    private readonly expenseSummaryService?: ExpenseSummaryService,
+    private readonly scheduledPaymentService?: ScheduledPaymentService
   ) {}
 
   start(): void {
@@ -88,10 +90,55 @@ export class SchedulerService {
           this.logger.error("Error sending monthly expense summaries", error);
         });
       }
+
+      // Process scheduled payments
+      if (this.scheduledPaymentService) {
+        const pendingPayments = await this.scheduledPaymentService.getPendingPayments(now);
+        if (pendingPayments.length > 0) {
+          this.logger.info(`Found ${pendingPayments.length} pending scheduled payment(s)`);
+        }
+        for (const payment of pendingPayments) {
+          await this.sendPaymentReminder(payment);
+        }
+      }
     } catch (error) {
       this.logger.error("Error in scheduler tick", error);
     } finally {
       this.isRunning = false;
+    }
+  }
+
+  private async sendPaymentReminder(payment: ScheduledPayment): Promise<void> {
+    this.logger.info(`Sending payment reminder ${payment.id} to ${payment.chatId}`);
+
+    try {
+      const amount = Number(payment.amount);
+      const amountStr = amount.toLocaleString("es-AR", { minimumFractionDigits: 2 });
+
+      // Build MP deep link
+      const isAlias = !/^\d{22}$/.test(payment.recipient);
+      const mpParam = isAlias ? `alias=${payment.recipient}` : `cbu=${payment.recipient}`;
+      const mpLink = `https://www.mercadopago.com.ar/money-transfer/send?${mpParam}&amount=${amount}`;
+
+      let message = `💸 *Recordatorio de pago programado*\n\n`;
+      message += `💰 *Monto:* $${amountStr}\n`;
+      message += `👤 *Destinatario:* ${payment.recipient}\n`;
+      if (payment.description) message += `📝 *Descripción:* ${payment.description}\n`;
+
+      if (payment.totalPayments) {
+        const paymentNum = payment.paidCount + 1;
+        message += `📊 Pago ${paymentNum} de ${payment.totalPayments}\n`;
+      }
+
+      message += `\n🔗 *Pagá con Mercado Pago:*\n${mpLink}\n\n`;
+      message += `_Para cancelar: "cancela el pago recurrente 1"_`;
+
+      await this.whatsappClient.sendMessage(payment.chatId, message);
+      await this.scheduledPaymentService!.processPayment(payment);
+
+      this.logger.info(`Payment reminder ${payment.id} sent successfully`);
+    } catch (error) {
+      this.logger.error(`Failed to send payment reminder ${payment.id}`, error);
     }
   }
 

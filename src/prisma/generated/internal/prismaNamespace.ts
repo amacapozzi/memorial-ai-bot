@@ -389,6 +389,7 @@ export const ModelName = {
   MercadoLibreToken: "MercadoLibreToken",
   ProcessedEmail: "ProcessedEmail",
   Expense: "Expense",
+  ScheduledPayment: "ScheduledPayment",
   Commit: "Commit",
   LinkingCode: "LinkingCode"
 } as const;
@@ -425,6 +426,7 @@ export type TypeMap<
       | "mercadoLibreToken"
       | "processedEmail"
       | "expense"
+      | "scheduledPayment"
       | "commit"
       | "linkingCode";
     txIsolationLevel: TransactionIsolationLevel;
@@ -1478,6 +1480,82 @@ export type TypeMap<
         };
       };
     };
+    ScheduledPayment: {
+      payload: Prisma.$ScheduledPaymentPayload<ExtArgs>;
+      fields: Prisma.ScheduledPaymentFieldRefs;
+      operations: {
+        findUnique: {
+          args: Prisma.ScheduledPaymentFindUniqueArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ScheduledPaymentPayload> | null;
+        };
+        findUniqueOrThrow: {
+          args: Prisma.ScheduledPaymentFindUniqueOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ScheduledPaymentPayload>;
+        };
+        findFirst: {
+          args: Prisma.ScheduledPaymentFindFirstArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ScheduledPaymentPayload> | null;
+        };
+        findFirstOrThrow: {
+          args: Prisma.ScheduledPaymentFindFirstOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ScheduledPaymentPayload>;
+        };
+        findMany: {
+          args: Prisma.ScheduledPaymentFindManyArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ScheduledPaymentPayload>[];
+        };
+        create: {
+          args: Prisma.ScheduledPaymentCreateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ScheduledPaymentPayload>;
+        };
+        createMany: {
+          args: Prisma.ScheduledPaymentCreateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        createManyAndReturn: {
+          args: Prisma.ScheduledPaymentCreateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ScheduledPaymentPayload>[];
+        };
+        delete: {
+          args: Prisma.ScheduledPaymentDeleteArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ScheduledPaymentPayload>;
+        };
+        update: {
+          args: Prisma.ScheduledPaymentUpdateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ScheduledPaymentPayload>;
+        };
+        deleteMany: {
+          args: Prisma.ScheduledPaymentDeleteManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateMany: {
+          args: Prisma.ScheduledPaymentUpdateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateManyAndReturn: {
+          args: Prisma.ScheduledPaymentUpdateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ScheduledPaymentPayload>[];
+        };
+        upsert: {
+          args: Prisma.ScheduledPaymentUpsertArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ScheduledPaymentPayload>;
+        };
+        aggregate: {
+          args: Prisma.ScheduledPaymentAggregateArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.AggregateScheduledPayment>;
+        };
+        groupBy: {
+          args: Prisma.ScheduledPaymentGroupByArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.ScheduledPaymentGroupByOutputType>[];
+        };
+        count: {
+          args: Prisma.ScheduledPaymentCountArgs<ExtArgs>;
+          result:
+            | runtime.Types.Utils.Optional<Prisma.ScheduledPaymentCountAggregateOutputType>
+            | number;
+        };
+      };
+    };
     Commit: {
       payload: Prisma.$CommitPayload<ExtArgs>;
       fields: Prisma.CommitFieldRefs;
@@ -1890,6 +1968,26 @@ export const ExpenseScalarFieldEnum = {
 export type ExpenseScalarFieldEnum =
   (typeof ExpenseScalarFieldEnum)[keyof typeof ExpenseScalarFieldEnum];
 
+export const ScheduledPaymentScalarFieldEnum = {
+  id: "id",
+  chatId: "chatId",
+  recipient: "recipient",
+  amount: "amount",
+  description: "description",
+  recurrence: "recurrence",
+  recurrenceDay: "recurrenceDay",
+  recurrenceTime: "recurrenceTime",
+  nextPaymentAt: "nextPaymentAt",
+  totalPayments: "totalPayments",
+  paidCount: "paidCount",
+  status: "status",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt"
+} as const;
+
+export type ScheduledPaymentScalarFieldEnum =
+  (typeof ScheduledPaymentScalarFieldEnum)[keyof typeof ScheduledPaymentScalarFieldEnum];
+
 export const CommitScalarFieldEnum = {
   id: "id",
   sha: "sha",
@@ -2159,6 +2257,22 @@ export type ListEnumExpenseCategoryFieldRefInput<$PrismaModel> = FieldRefInputTy
 >;
 
 /**
+ * Reference to a field of type 'ScheduledPaymentStatus'
+ */
+export type EnumScheduledPaymentStatusFieldRefInput<$PrismaModel> = FieldRefInputType<
+  $PrismaModel,
+  "ScheduledPaymentStatus"
+>;
+
+/**
+ * Reference to a field of type 'ScheduledPaymentStatus[]'
+ */
+export type ListEnumScheduledPaymentStatusFieldRefInput<$PrismaModel> = FieldRefInputType<
+  $PrismaModel,
+  "ScheduledPaymentStatus[]"
+>;
+
+/**
  * Reference to a field of type 'Float'
  */
 export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "Float">;
@@ -2285,6 +2399,7 @@ export type GlobalOmitConfig = {
   mercadoLibreToken?: Prisma.MercadoLibreTokenOmit;
   processedEmail?: Prisma.ProcessedEmailOmit;
   expense?: Prisma.ExpenseOmit;
+  scheduledPayment?: Prisma.ScheduledPaymentOmit;
   commit?: Prisma.CommitOmit;
   linkingCode?: Prisma.LinkingCodeOmit;
 };

@@ -83,7 +83,10 @@ Tipos de intenciones:
 20. "check_crypto" - Consultar precio de criptomonedas (ej: "a cuanto esta el bitcoin", "precio del ethereum", "como esta el crypto", "cuanto vale el BTC", "precio de las criptos")
 21. "get_directions" - Pedir indicaciones para llegar a un lugar (ej: "como llego de Palermo a Recoleta", "como voy de Belgrano a Constitucion en subte", "como llego al aeropuerto desde el centro", "ruta para ir a Bariloche", "cuanto tarda de Retiro a San Telmo")
 22. "send_money" - Transferir dinero via Mercado Pago a un alias/CBU/CVU (ej: "pagale 5000 pesos al alias gonzalez.mp", "transferile 10000 a juan.banco", "manda 2000 al CVU 0000003100012345678901", "pagale al de marzo 15000 pesos", "transferi 500 a maria.garcia el viernes a las 10")
-23. "unknown" - No es ninguna de las anteriores
+23. "schedule_payment" - Programar pagos recurrentes (ej: "pagale 5000 todos los lunes al alias gonzalez.mp", "pagale 3000 mensual a juan.banco durante 6 meses", "schedulea un pago semanal de 2000 a maria.mp a las 10 durante 3 meses", "todos los meses el dia 5 a las 9 pagarle 15000 al alias alquiler.mp")
+24. "list_scheduled_payments" - Ver pagos programados activos (ej: "mis pagos programados", "que pagos tengo configurados", "ver pagos recurrentes", "listar mis pagos automaticos")
+25. "cancel_scheduled_payment" - Cancelar un pago programado (ej: "cancela el pago recurrente 1", "elimina el pago programado 2", "borra el pago numero 1")
+26. "unknown" - No es ninguna de las anteriores
 
 IMPORTANTE para CREATE_REMINDER:
 - Si el usuario menciona MULTIPLES recordatorios en un mensaje, extrae TODOS
@@ -127,7 +130,7 @@ Para cada recordatorio, generá también un "funMessage": un mensaje corto (máx
 
 Responde UNICAMENTE con JSON valido (sin markdown, sin explicaciones):
 {
-  "intentType": "create_reminder" | "list_tasks" | "cancel_task" | "modify_task" | "link_email" | "unlink_email" | "email_status" | "reply_email" | "search_email" | "search_product" | "link_mercadolibre" | "unlink_mercadolibre" | "track_order" | "enable_digest" | "disable_digest" | "check_expenses" | "financial_advice" | "check_dollar" | "get_news" | "check_crypto" | "get_directions" | "send_money" | "unknown",
+  "intentType": "create_reminder" | "list_tasks" | "cancel_task" | "modify_task" | "link_email" | "unlink_email" | "email_status" | "reply_email" | "search_email" | "search_product" | "link_mercadolibre" | "unlink_mercadolibre" | "track_order" | "enable_digest" | "disable_digest" | "check_expenses" | "financial_advice" | "check_dollar" | "get_news" | "check_crypto" | "get_directions" | "send_money" | "schedule_payment" | "list_scheduled_payments" | "cancel_scheduled_payment" | "unknown",
   "taskNumber": number | null,
   "reminderDetails": [
     {
@@ -157,6 +160,14 @@ Responde UNICAMENTE con JSON valido (sin markdown, sin explicaciones):
   "transferAmount": number | null,
   "transferDescription": "string | null - optional description for the transfer",
   "transferScheduledAt": "string ISO 8601 | null - if the user wants to schedule the transfer for a future date/time",
+  "paymentAlias": "string | null - alias, CVU or CBU for a recurring scheduled payment",
+  "paymentAmount": number | null,
+  "paymentDescription": "string | null - optional description for scheduled payment",
+  "paymentRecurrence": "DAILY" | "WEEKLY" | "MONTHLY" | null,
+  "paymentDay": number | null - day of week (0=Sun..6=Sat) for WEEKLY, day of month (1-31) for MONTHLY,
+  "paymentTime": "HH:MM | null - time of day for the payment",
+  "paymentTotalCount": number | null - total number of payments (null = indefinite),
+  "paymentIndex": number | null - 1-based index of scheduled payment to cancel,
   "confidence": number (0-1)
 }
 
@@ -307,7 +318,22 @@ Ejemplos:
   -> {"intentType": "send_money", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": null, "productSearchQuery": null, "digestHour": null, "expensePeriod": null, "newsQuery": null, "newsCategory": null, "coins": null, "directionsOrigin": null, "directionsDestination": null, "travelMode": null, "transferRecipient": null, "transferAmount": 15000, "transferDescription": "al de marzo", "transferScheduledAt": "2024-01-19T10:00:00-03:00", "confidence": 0.90}
 
 - "manda 2500 al CVU 0000003100012345678901"
-  -> {"intentType": "send_money", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": null, "productSearchQuery": null, "digestHour": null, "expensePeriod": null, "newsQuery": null, "newsCategory": null, "coins": null, "directionsOrigin": null, "directionsDestination": null, "travelMode": null, "transferRecipient": "0000003100012345678901", "transferAmount": 2500, "transferDescription": null, "transferScheduledAt": null, "confidence": 0.97}`;
+  -> {"intentType": "send_money", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": null, "productSearchQuery": null, "digestHour": null, "expensePeriod": null, "newsQuery": null, "newsCategory": null, "coins": null, "directionsOrigin": null, "directionsDestination": null, "travelMode": null, "transferRecipient": "0000003100012345678901", "transferAmount": 2500, "transferDescription": null, "transferScheduledAt": null, "paymentAlias": null, "paymentAmount": null, "paymentDescription": null, "paymentRecurrence": null, "paymentDay": null, "paymentTime": null, "paymentTotalCount": null, "paymentIndex": null, "confidence": 0.97}
+
+- "pagale 5000 todos los lunes a las 5 al alias gonzalez.mp durante 3 meses"
+  -> {"intentType": "schedule_payment", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": null, "productSearchQuery": null, "digestHour": null, "expensePeriod": null, "newsQuery": null, "newsCategory": null, "coins": null, "directionsOrigin": null, "directionsDestination": null, "travelMode": null, "transferRecipient": null, "transferAmount": null, "transferDescription": null, "transferScheduledAt": null, "paymentAlias": "gonzalez.mp", "paymentAmount": 5000, "paymentDescription": null, "paymentRecurrence": "WEEKLY", "paymentDay": 1, "paymentTime": "05:00", "paymentTotalCount": 12, "paymentIndex": null, "confidence": 0.95}
+
+- "todos los meses el dia 5 a las 9 pagarle 15000 al alias alquiler.mp"
+  -> {"intentType": "schedule_payment", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": null, "productSearchQuery": null, "digestHour": null, "expensePeriod": null, "newsQuery": null, "newsCategory": null, "coins": null, "directionsOrigin": null, "directionsDestination": null, "travelMode": null, "transferRecipient": null, "transferAmount": null, "transferDescription": null, "transferScheduledAt": null, "paymentAlias": "alquiler.mp", "paymentAmount": 15000, "paymentDescription": null, "paymentRecurrence": "MONTHLY", "paymentDay": 5, "paymentTime": "09:00", "paymentTotalCount": null, "paymentIndex": null, "confidence": 0.95}
+
+- "pagale 2000 cada semana a maria.garcia durante 6 meses"
+  -> {"intentType": "schedule_payment", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": null, "productSearchQuery": null, "digestHour": null, "expensePeriod": null, "newsQuery": null, "newsCategory": null, "coins": null, "directionsOrigin": null, "directionsDestination": null, "travelMode": null, "transferRecipient": null, "transferAmount": null, "transferDescription": null, "transferScheduledAt": null, "paymentAlias": "maria.garcia", "paymentAmount": 2000, "paymentDescription": null, "paymentRecurrence": "WEEKLY", "paymentDay": 1, "paymentTime": "09:00", "paymentTotalCount": 24, "paymentIndex": null, "confidence": 0.92}
+
+- "mis pagos programados"
+  -> {"intentType": "list_scheduled_payments", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": null, "productSearchQuery": null, "digestHour": null, "expensePeriod": null, "newsQuery": null, "newsCategory": null, "coins": null, "directionsOrigin": null, "directionsDestination": null, "travelMode": null, "transferRecipient": null, "transferAmount": null, "transferDescription": null, "transferScheduledAt": null, "paymentAlias": null, "paymentAmount": null, "paymentDescription": null, "paymentRecurrence": null, "paymentDay": null, "paymentTime": null, "paymentTotalCount": null, "paymentIndex": null, "confidence": 0.97}
+
+- "cancela el pago recurrente 2"
+  -> {"intentType": "cancel_scheduled_payment", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "emailReplyInstruction": null, "emailSearchQuery": null, "productSearchQuery": null, "digestHour": null, "expensePeriod": null, "newsQuery": null, "newsCategory": null, "coins": null, "directionsOrigin": null, "directionsDestination": null, "travelMode": null, "transferRecipient": null, "transferAmount": null, "transferDescription": null, "transferScheduledAt": null, "paymentAlias": null, "paymentAmount": null, "paymentDescription": null, "paymentRecurrence": null, "paymentDay": null, "paymentTime": null, "paymentTotalCount": null, "paymentIndex": 2, "confidence": 0.97}`;
 
 export function buildReminderIntentPrompt(): string {
   const now = new Date();

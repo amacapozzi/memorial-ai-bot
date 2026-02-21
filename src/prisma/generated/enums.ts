@@ -100,3 +100,12 @@ export const ProcessedEmailStatus = {
 } as const;
 
 export type ProcessedEmailStatus = (typeof ProcessedEmailStatus)[keyof typeof ProcessedEmailStatus];
+
+export const ScheduledPaymentStatus = {
+  ACTIVE: "ACTIVE",
+  CANCELLED: "CANCELLED",
+  COMPLETED: "COMPLETED"
+} as const;
+
+export type ScheduledPaymentStatus =
+  (typeof ScheduledPaymentStatus)[keyof typeof ScheduledPaymentStatus];

@@ -38,6 +38,7 @@ import {
 } from "@modules/mercadolibre";
 import { NewsService } from "@modules/news";
 import { createNotificationModule } from "@modules/notification";
+import { ScheduledPaymentRepository, ScheduledPaymentService } from "@modules/payments";
 import { ProductSearchService } from "@modules/product-search";
 import {
   ReminderService,
@@ -73,6 +74,7 @@ export function buildApp() {
   const commitRepository = new CommitRepository(prisma);
   const meliAuthRepository = new MeliAuthRepository(prisma);
   const expenseRepository = new ExpenseRepository(prisma);
+  const scheduledPaymentRepository = new ScheduledPaymentRepository(prisma);
 
   // AI Services
   const groqClient = new GroqClient();
@@ -117,6 +119,9 @@ export function buildApp() {
   // Expense Services
   const expenseService = new ExpenseService(expenseRepository);
   const financialAdviceService = new FinancialAdviceService(groqClient);
+
+  // Scheduled Payment Services
+  const scheduledPaymentService = new ScheduledPaymentService(scheduledPaymentRepository);
 
   // MercadoLibre Services (optional — only if MELI_APP_ID configured)
   const meliAuthService = env().MELI_APP_ID ? new MeliAuthService(meliAuthRepository) : undefined;
@@ -183,7 +188,8 @@ export function buildApp() {
     cryptoService,
     newsService,
     mapsService,
-    meliTransferService
+    meliTransferService,
+    scheduledPaymentService
   );
 
   // Scheduler
@@ -191,7 +197,8 @@ export function buildApp() {
     reminderService,
     whatsappClient,
     digestService,
-    expenseSummaryService
+    expenseSummaryService,
+    scheduledPaymentService
   );
 
   // Commit Service
