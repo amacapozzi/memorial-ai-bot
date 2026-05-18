@@ -2,6 +2,7 @@ import type { Boom } from "@hapi/boom";
 import makeWASocket, {
   Browsers,
   DisconnectReason,
+  fetchLatestBaileysVersion,
   type WASocket,
   type BaileysEventMap,
   downloadMediaMessage
@@ -48,10 +49,13 @@ export class WhatsAppClient {
     this.cleanup();
 
     const { state, saveCreds } = await this.sessionService.getAuthState();
+    const { version } = await fetchLatestBaileysVersion();
+    this.logger.debug(`Using WhatsApp Web version: ${version.join(".")}`);
 
     this.socket = makeWASocket({
+      version,
       auth: state,
-      browser: Browsers.ubuntu("Chrome"),
+      browser: Browsers.macOS("Chrome"),
       printQRInTerminal: false,
       keepAliveIntervalMs: 30_000,
       connectTimeoutMs: 60_000,
@@ -164,7 +168,9 @@ export class WhatsAppClient {
         this.sessionService.clearSession();
         this.reconnectAttempts = 0;
         this.reconnecting = false;
-        this.connect();
+        this.connect().catch((err) => {
+          this.logger.error("Failed to reconnect after logout", err);
+        });
         return;
       }
 
