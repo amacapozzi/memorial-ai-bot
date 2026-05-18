@@ -1,4 +1,7 @@
 import type { PrismaClient } from "@prisma-module/generated/client";
+import { createLogger } from "@shared/logger/logger";
+
+const logger = createLogger("subscription-repository");
 
 export interface UserSubscriptionInfo {
   hasLinkedAccount: boolean;
@@ -43,6 +46,7 @@ export class SubscriptionRepository {
     });
 
     if (!user) {
+      logger.info(`Access denied: no user found for chatId=${chatId}`);
       return {
         hasLinkedAccount: false,
         hasActiveSubscription: false,
@@ -60,8 +64,21 @@ export class SubscriptionRepository {
 
     // User exists but has no email = bot-created user, not linked via website
     const hasLinkedAccount = !!user.email;
+    if (!hasLinkedAccount) {
+      logger.info(
+        `Access denied: user found but no email linked for chatId=${chatId} userId=${user.id}`
+      );
+    }
+
     const sub = user.subscription;
     const hasActiveSubscription = !!sub && (sub.status === "ACTIVE" || sub.status === "TRIALING");
+
+    if (hasLinkedAccount && !hasActiveSubscription) {
+      logger.info(
+        `Access denied: no active subscription for chatId=${chatId} userId=${user.id} ` +
+          `subscriptionStatus=${sub?.status ?? "none"} periodEnd=${sub?.currentPeriodEnd?.toISOString() ?? "none"}`
+      );
+    }
 
     const currentReminderCount = await this.prisma.reminder.count({
       where: { chatId, status: "PENDING" }

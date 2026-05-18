@@ -520,6 +520,9 @@ export class MessageHandler {
       this.logger.info(`Reminder created: ${reminder.id}`);
     }
 
+    // Invalidate subscription cache so reminder count is accurate for limit checks
+    this.subscriptionService?.invalidateCache(chatId);
+
     // Build confirmation message
     if (createdReminders.length === 1) {
       const r = createdReminders[0];

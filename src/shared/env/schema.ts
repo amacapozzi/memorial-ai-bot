@@ -1,5 +1,10 @@
 import { z } from "zod";
 
+const optionalEnvString = z.preprocess(
+  (val) => (val === "" ? undefined : val),
+  z.string().min(1).optional()
+);
+
 export const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   PORT: z.coerce.number().int().positive().default(3000),
@@ -25,7 +30,7 @@ export const envSchema = z.object({
   GOOGLE_REDIRECT_URI: z.string().url().default("http://localhost:3000/auth/google/callback"),
 
   // Security: only process messages from this number (optional)
-  ALLOWED_PHONE_NUMBER: z.string().optional(),
+  ALLOWED_PHONE_NUMBER: optionalEnvString,
 
   // Gmail integration
   GMAIL_REDIRECT_URI: z.string().url().default("http://localhost:3000/auth/gmail/callback"),
@@ -38,21 +43,21 @@ export const envSchema = z.object({
   WEBHOOK_SECRET: z.string().min(1).default("change-me"),
 
   // GitHub webhook secret (for push event tracking)
-  GITHUB_WEBHOOK_SECRET: z.string().min(1).optional(),
+  GITHUB_WEBHOOK_SECRET: optionalEnvString,
 
   // SerpAPI key for Google Shopping search (optional)
-  SERPAPI_API_KEY: z.string().min(1).optional(),
+  SERPAPI_API_KEY: optionalEnvString,
 
   // MercadoLibre OAuth (optional)
-  MELI_APP_ID: z.string().min(1).optional(),
-  MELI_CLIENT_SECRET: z.string().min(1).optional(),
+  MELI_APP_ID: optionalEnvString,
+  MELI_CLIENT_SECRET: optionalEnvString,
   MELI_REDIRECT_URI: z.string().url().default("http://localhost:3000/auth/mercadolibre/callback"),
 
   // NewsAPI.org (optional)
-  NEWS_API_KEY: z.string().min(1).optional(),
+  NEWS_API_KEY: optionalEnvString,
 
   // OpenRouteService Directions API (optional) — free at openrouteservice.org
-  ORS_API_KEY: z.string().min(1).optional()
+  ORS_API_KEY: optionalEnvString
 });
 
 export type Env = z.infer<typeof envSchema>;
