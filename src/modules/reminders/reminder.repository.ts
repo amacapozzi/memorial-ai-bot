@@ -19,22 +19,16 @@ export interface CreateReminderData {
 export class ReminderRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
-  /**
-   * Find or create a user by chatId, returning the userId
-   */
-  private async getOrCreateUserId(chatId: string): Promise<string> {
-    const user = await this.prisma.user.upsert({
+  private async findUserId(chatId: string): Promise<string | undefined> {
+    const user = await this.prisma.user.findUnique({
       where: { chatId },
-      create: { chatId },
-      update: {},
       select: { id: true }
     });
-    return user.id;
+    return user?.id;
   }
 
   async create(data: CreateReminderData): Promise<Reminder> {
-    // Get or create user by chatId
-    const userId = await this.getOrCreateUserId(data.chatId);
+    const userId = await this.findUserId(data.chatId);
 
     return this.prisma.reminder.create({
       data: {
@@ -174,14 +168,13 @@ export class ReminderRepository {
   async canCreateReminder(chatId: string): Promise<boolean> {
     const limits = await this.getUserPlanLimits(chatId);
 
-    // No subscription or no limit = free tier (5 reminders)
-    const maxReminders = limits?.maxReminders ?? 5;
-
-    // null means unlimited
-    if (maxReminders === null) {
+    // Plan explicitly set to null = unlimited reminders (paid tier)
+    if (limits?.maxReminders === null) {
       return true;
     }
 
+    // No subscription = free tier cap of 5
+    const maxReminders = limits?.maxReminders ?? 5;
     const currentCount = await this.countByChat(chatId);
     return currentCount < maxReminders;
   }
