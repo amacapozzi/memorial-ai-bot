@@ -54,6 +54,8 @@ export class SchedulerService {
   private readonly checkIntervalMs = 60_000; // Check every minute
   private readonly logger = createLogger("scheduler");
   private isRunning = false;
+  private lastWeeklyDate: string | null = null;
+  private lastMonthlyDate: string | null = null;
 
   constructor(
     private readonly reminderService: ReminderService,
@@ -116,6 +118,7 @@ export class SchedulerService {
       const hourBsAs = nowBsAs.getHours();
       const dayOfWeek = nowBsAs.getDay(); // 0=Sun, 1=Mon
       const dayOfMonth = nowBsAs.getDate();
+      const todayStr = `${nowBsAs.getFullYear()}-${String(nowBsAs.getMonth() + 1).padStart(2, "0")}-${String(dayOfMonth).padStart(2, "0")}`;
 
       // Send daily digests
       if (this.digestService) {
@@ -123,14 +126,26 @@ export class SchedulerService {
       }
 
       // Weekly expense summary (Monday at digest hour 8)
-      if (this.expenseSummaryService && dayOfWeek === 1 && hourBsAs === 8) {
+      if (
+        this.expenseSummaryService &&
+        dayOfWeek === 1 &&
+        hourBsAs === 8 &&
+        this.lastWeeklyDate !== todayStr
+      ) {
+        this.lastWeeklyDate = todayStr;
         await this.expenseSummaryService.sendWeeklySummaries().catch((error) => {
           this.logger.error("Error sending weekly expense summaries", error);
         });
       }
 
       // Monthly expense summary (1st of month at digest hour 8)
-      if (this.expenseSummaryService && dayOfMonth === 1 && hourBsAs === 8) {
+      if (
+        this.expenseSummaryService &&
+        dayOfMonth === 1 &&
+        hourBsAs === 8 &&
+        this.lastMonthlyDate !== todayStr
+      ) {
+        this.lastMonthlyDate = todayStr;
         await this.expenseSummaryService.sendMonthlySummaries().catch((error) => {
           this.logger.error("Error sending monthly expense summaries", error);
         });
@@ -213,7 +228,18 @@ export class SchedulerService {
       }
     } catch (error) {
       this.logger.error(`Failed to send reminder ${reminder.id}`, error);
-      await this.reminderService.markAsFailed(reminder.id);
+
+      // Only mark FAILED if the reminder is more than 24h overdue — transient
+      // WhatsApp errors (reconnection, timeout) should be retried on the next tick.
+      const hoursOverdue = (Date.now() - reminder.scheduledAt.getTime()) / (1000 * 60 * 60);
+      if (hoursOverdue > 24) {
+        this.logger.warn(
+          `Reminder ${reminder.id} is ${hoursOverdue.toFixed(0)}h overdue — marking as failed`
+        );
+        await this.reminderService.markAsFailed(reminder.id);
+      } else {
+        this.logger.info(`Reminder ${reminder.id} will be retried on next tick`);
+      }
     }
   }
 }
