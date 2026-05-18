@@ -207,17 +207,18 @@ export type ProcessedEmailGroupByOutputType = {
   _max: ProcessedEmailMaxAggregateOutputType | null;
 };
 
-type GetProcessedEmailGroupByPayload<T extends ProcessedEmailGroupByArgs> = Prisma.PrismaPromise<
-  Array<
-    Prisma.PickEnumerable<ProcessedEmailGroupByOutputType, T["by"]> & {
-      [P in keyof T & keyof ProcessedEmailGroupByOutputType]: P extends "_count"
-        ? T[P] extends boolean
-          ? number
-          : Prisma.GetScalarType<T[P], ProcessedEmailGroupByOutputType[P]>
-        : Prisma.GetScalarType<T[P], ProcessedEmailGroupByOutputType[P]>;
-    }
-  >
->;
+export type GetProcessedEmailGroupByPayload<T extends ProcessedEmailGroupByArgs> =
+  Prisma.PrismaPromise<
+    Array<
+      Prisma.PickEnumerable<ProcessedEmailGroupByOutputType, T["by"]> & {
+        [P in keyof T & keyof ProcessedEmailGroupByOutputType]: P extends "_count"
+          ? T[P] extends boolean
+            ? number
+            : Prisma.GetScalarType<T[P], ProcessedEmailGroupByOutputType[P]>
+          : Prisma.GetScalarType<T[P], ProcessedEmailGroupByOutputType[P]>;
+      }
+    >
+  >;
 
 export type ProcessedEmailWhereInput = {
   AND?: Prisma.ProcessedEmailWhereInput | Prisma.ProcessedEmailWhereInput[];
@@ -1810,6 +1811,11 @@ export type ProcessedEmailFindManyArgs<
    * Skip the first `n` ProcessedEmails.
    */
   skip?: number;
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of ProcessedEmails.
+   */
   distinct?: Prisma.ProcessedEmailScalarFieldEnum | Prisma.ProcessedEmailScalarFieldEnum[];
 };
 

@@ -256,7 +256,7 @@ export type ReminderGroupByOutputType = {
   _max: ReminderMaxAggregateOutputType | null;
 };
 
-type GetReminderGroupByPayload<T extends ReminderGroupByArgs> = Prisma.PrismaPromise<
+export type GetReminderGroupByPayload<T extends ReminderGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<ReminderGroupByOutputType, T["by"]> & {
       [P in keyof T & keyof ReminderGroupByOutputType]: P extends "_count"
@@ -1757,6 +1757,11 @@ export type ReminderFindManyArgs<
    * Skip the first `n` Reminders.
    */
   skip?: number;
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of Reminders.
+   */
   distinct?: Prisma.ReminderScalarFieldEnum | Prisma.ReminderScalarFieldEnum[];
 };
 

@@ -197,7 +197,7 @@ export type MercadoLibreTokenGroupByOutputType = {
   _max: MercadoLibreTokenMaxAggregateOutputType | null;
 };
 
-type GetMercadoLibreTokenGroupByPayload<T extends MercadoLibreTokenGroupByArgs> =
+export type GetMercadoLibreTokenGroupByPayload<T extends MercadoLibreTokenGroupByArgs> =
   Prisma.PrismaPromise<
     Array<
       Prisma.PickEnumerable<MercadoLibreTokenGroupByOutputType, T["by"]> & {
@@ -1490,6 +1490,11 @@ export type MercadoLibreTokenFindManyArgs<
    * Skip the first `n` MercadoLibreTokens.
    */
   skip?: number;
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of MercadoLibreTokens.
+   */
   distinct?: Prisma.MercadoLibreTokenScalarFieldEnum | Prisma.MercadoLibreTokenScalarFieldEnum[];
 };
 

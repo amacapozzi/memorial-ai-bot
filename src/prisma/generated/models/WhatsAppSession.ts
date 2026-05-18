@@ -151,17 +151,18 @@ export type WhatsAppSessionGroupByOutputType = {
   _max: WhatsAppSessionMaxAggregateOutputType | null;
 };
 
-type GetWhatsAppSessionGroupByPayload<T extends WhatsAppSessionGroupByArgs> = Prisma.PrismaPromise<
-  Array<
-    Prisma.PickEnumerable<WhatsAppSessionGroupByOutputType, T["by"]> & {
-      [P in keyof T & keyof WhatsAppSessionGroupByOutputType]: P extends "_count"
-        ? T[P] extends boolean
-          ? number
-          : Prisma.GetScalarType<T[P], WhatsAppSessionGroupByOutputType[P]>
-        : Prisma.GetScalarType<T[P], WhatsAppSessionGroupByOutputType[P]>;
-    }
-  >
->;
+export type GetWhatsAppSessionGroupByPayload<T extends WhatsAppSessionGroupByArgs> =
+  Prisma.PrismaPromise<
+    Array<
+      Prisma.PickEnumerable<WhatsAppSessionGroupByOutputType, T["by"]> & {
+        [P in keyof T & keyof WhatsAppSessionGroupByOutputType]: P extends "_count"
+          ? T[P] extends boolean
+            ? number
+            : Prisma.GetScalarType<T[P], WhatsAppSessionGroupByOutputType[P]>
+          : Prisma.GetScalarType<T[P], WhatsAppSessionGroupByOutputType[P]>;
+      }
+    >
+  >;
 
 export type WhatsAppSessionWhereInput = {
   AND?: Prisma.WhatsAppSessionWhereInput | Prisma.WhatsAppSessionWhereInput[];
@@ -1113,6 +1114,11 @@ export type WhatsAppSessionFindManyArgs<
    * Skip the first `n` WhatsAppSessions.
    */
   skip?: number;
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of WhatsAppSessions.
+   */
   distinct?: Prisma.WhatsAppSessionScalarFieldEnum | Prisma.WhatsAppSessionScalarFieldEnum[];
 };
 

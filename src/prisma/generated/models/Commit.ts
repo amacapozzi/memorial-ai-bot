@@ -185,7 +185,7 @@ export type CommitGroupByOutputType = {
   _max: CommitMaxAggregateOutputType | null;
 };
 
-type GetCommitGroupByPayload<T extends CommitGroupByArgs> = Prisma.PrismaPromise<
+export type GetCommitGroupByPayload<T extends CommitGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<CommitGroupByOutputType, T["by"]> & {
       [P in keyof T & keyof CommitGroupByOutputType]: P extends "_count"
@@ -1213,6 +1213,11 @@ export type CommitFindManyArgs<
    * Skip the first `n` Commits.
    */
   skip?: number;
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of Commits.
+   */
   distinct?: Prisma.CommitScalarFieldEnum | Prisma.CommitScalarFieldEnum[];
 };
 

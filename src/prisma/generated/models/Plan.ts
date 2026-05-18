@@ -305,7 +305,7 @@ export type PlanGroupByOutputType = {
   _max: PlanMaxAggregateOutputType | null;
 };
 
-type GetPlanGroupByPayload<T extends PlanGroupByArgs> = Prisma.PrismaPromise<
+export type GetPlanGroupByPayload<T extends PlanGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<PlanGroupByOutputType, T["by"]> & {
       [P in keyof T & keyof PlanGroupByOutputType]: P extends "_count"
@@ -1815,6 +1815,11 @@ export type PlanFindManyArgs<
    * Skip the first `n` Plans.
    */
   skip?: number;
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of Plans.
+   */
   distinct?: Prisma.PlanScalarFieldEnum | Prisma.PlanScalarFieldEnum[];
 };
 

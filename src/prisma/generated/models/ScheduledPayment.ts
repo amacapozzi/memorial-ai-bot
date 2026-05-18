@@ -271,7 +271,7 @@ export type ScheduledPaymentGroupByOutputType = {
   _max: ScheduledPaymentMaxAggregateOutputType | null;
 };
 
-type GetScheduledPaymentGroupByPayload<T extends ScheduledPaymentGroupByArgs> =
+export type GetScheduledPaymentGroupByPayload<T extends ScheduledPaymentGroupByArgs> =
   Prisma.PrismaPromise<
     Array<
       Prisma.PickEnumerable<ScheduledPaymentGroupByOutputType, T["by"]> & {
@@ -1530,6 +1530,11 @@ export type ScheduledPaymentFindManyArgs<
    * Skip the first `n` ScheduledPayments.
    */
   skip?: number;
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of ScheduledPayments.
+   */
   distinct?: Prisma.ScheduledPaymentScalarFieldEnum | Prisma.ScheduledPaymentScalarFieldEnum[];
 };
 

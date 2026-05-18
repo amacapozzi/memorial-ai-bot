@@ -201,7 +201,7 @@ export type EmailTokenGroupByOutputType = {
   _max: EmailTokenMaxAggregateOutputType | null;
 };
 
-type GetEmailTokenGroupByPayload<T extends EmailTokenGroupByArgs> = Prisma.PrismaPromise<
+export type GetEmailTokenGroupByPayload<T extends EmailTokenGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<EmailTokenGroupByOutputType, T["by"]> & {
       [P in keyof T & keyof EmailTokenGroupByOutputType]: P extends "_count"
@@ -1510,6 +1510,11 @@ export type EmailTokenFindManyArgs<
    * Skip the first `n` EmailTokens.
    */
   skip?: number;
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of EmailTokens.
+   */
   distinct?: Prisma.EmailTokenScalarFieldEnum | Prisma.EmailTokenScalarFieldEnum[];
 };
 

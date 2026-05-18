@@ -240,7 +240,7 @@ export type AccountGroupByOutputType = {
   _max: AccountMaxAggregateOutputType | null;
 };
 
-type GetAccountGroupByPayload<T extends AccountGroupByArgs> = Prisma.PrismaPromise<
+export type GetAccountGroupByPayload<T extends AccountGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<AccountGroupByOutputType, T["by"]> & {
       [P in keyof T & keyof AccountGroupByOutputType]: P extends "_count"
@@ -1670,6 +1670,11 @@ export type AccountFindManyArgs<
    * Skip the first `n` Accounts.
    */
   skip?: number;
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of Accounts.
+   */
   distinct?: Prisma.AccountScalarFieldEnum | Prisma.AccountScalarFieldEnum[];
 };
 

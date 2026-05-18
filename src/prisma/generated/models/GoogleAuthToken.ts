@@ -183,17 +183,18 @@ export type GoogleAuthTokenGroupByOutputType = {
   _max: GoogleAuthTokenMaxAggregateOutputType | null;
 };
 
-type GetGoogleAuthTokenGroupByPayload<T extends GoogleAuthTokenGroupByArgs> = Prisma.PrismaPromise<
-  Array<
-    Prisma.PickEnumerable<GoogleAuthTokenGroupByOutputType, T["by"]> & {
-      [P in keyof T & keyof GoogleAuthTokenGroupByOutputType]: P extends "_count"
-        ? T[P] extends boolean
-          ? number
-          : Prisma.GetScalarType<T[P], GoogleAuthTokenGroupByOutputType[P]>
-        : Prisma.GetScalarType<T[P], GoogleAuthTokenGroupByOutputType[P]>;
-    }
-  >
->;
+export type GetGoogleAuthTokenGroupByPayload<T extends GoogleAuthTokenGroupByArgs> =
+  Prisma.PrismaPromise<
+    Array<
+      Prisma.PickEnumerable<GoogleAuthTokenGroupByOutputType, T["by"]> & {
+        [P in keyof T & keyof GoogleAuthTokenGroupByOutputType]: P extends "_count"
+          ? T[P] extends boolean
+            ? number
+            : Prisma.GetScalarType<T[P], GoogleAuthTokenGroupByOutputType[P]>
+          : Prisma.GetScalarType<T[P], GoogleAuthTokenGroupByOutputType[P]>;
+      }
+    >
+  >;
 
 export type GoogleAuthTokenWhereInput = {
   AND?: Prisma.GoogleAuthTokenWhereInput | Prisma.GoogleAuthTokenWhereInput[];
@@ -1238,6 +1239,11 @@ export type GoogleAuthTokenFindManyArgs<
    * Skip the first `n` GoogleAuthTokens.
    */
   skip?: number;
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of GoogleAuthTokens.
+   */
   distinct?: Prisma.GoogleAuthTokenScalarFieldEnum | Prisma.GoogleAuthTokenScalarFieldEnum[];
 };
 

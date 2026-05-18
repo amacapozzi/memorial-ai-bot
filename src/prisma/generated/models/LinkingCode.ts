@@ -175,7 +175,7 @@ export type LinkingCodeGroupByOutputType = {
   _max: LinkingCodeMaxAggregateOutputType | null;
 };
 
-type GetLinkingCodeGroupByPayload<T extends LinkingCodeGroupByArgs> = Prisma.PrismaPromise<
+export type GetLinkingCodeGroupByPayload<T extends LinkingCodeGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<LinkingCodeGroupByOutputType, T["by"]> & {
       [P in keyof T & keyof LinkingCodeGroupByOutputType]: P extends "_count"
@@ -1199,6 +1199,11 @@ export type LinkingCodeFindManyArgs<
    * Skip the first `n` LinkingCodes.
    */
   skip?: number;
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of LinkingCodes.
+   */
   distinct?: Prisma.LinkingCodeScalarFieldEnum | Prisma.LinkingCodeScalarFieldEnum[];
 };
 
