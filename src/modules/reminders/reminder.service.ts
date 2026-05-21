@@ -125,56 +125,60 @@ export class ReminderService {
   }
 
   /**
-   * Calculate next occurrence for a recurring reminder
+   * Calculate next occurrence for a recurring reminder.
+   * All time operations use Argentina timezone (UTC-3) to avoid server-timezone bugs.
    */
   calculateNextOccurrence(reminder: Reminder): Date {
     const now = new Date();
-    let nextDate: Date;
-
-    // Parse recurrence time (HH:MM format)
     const [hours, minutes] = (reminder.recurrenceTime || "09:00").split(":").map(Number);
 
+    // Argentina is UTC-3. Shift UTC timestamp so getUTC* fields reflect Argentina local time.
+    const ARG_OFFSET_MS = 3 * 60 * 60 * 1000;
+    const argNow = new Date(now.getTime() - ARG_OFFSET_MS);
+
     switch (reminder.recurrence) {
-      case "DAILY":
-        nextDate = new Date(now);
-        nextDate.setHours(hours, minutes, 0, 0);
-        // If time already passed today, schedule for tomorrow
-        if (nextDate <= now) {
-          nextDate.setDate(nextDate.getDate() + 1);
+      case "DAILY": {
+        const argTarget = new Date(argNow);
+        argTarget.setUTCHours(hours, minutes, 0, 0);
+        let result = new Date(argTarget.getTime() + ARG_OFFSET_MS);
+        if (result <= now) {
+          argTarget.setUTCDate(argTarget.getUTCDate() + 1);
+          result = new Date(argTarget.getTime() + ARG_OFFSET_MS);
         }
-        break;
+        return result;
+      }
 
-      case "WEEKLY":
-        nextDate = new Date(now);
-        nextDate.setHours(hours, minutes, 0, 0);
+      case "WEEKLY": {
         const targetDay = reminder.recurrenceDay ?? 0;
-        const currentDay = nextDate.getDay();
-        let daysUntilTarget = targetDay - currentDay;
-
-        if (daysUntilTarget < 0 || (daysUntilTarget === 0 && nextDate <= now)) {
-          daysUntilTarget += 7;
+        const argCurrentDay = argNow.getUTCDay();
+        let daysUntilTarget = (targetDay - argCurrentDay + 7) % 7;
+        if (daysUntilTarget === 0) {
+          const argCurrentMins = argNow.getUTCHours() * 60 + argNow.getUTCMinutes();
+          const targetMins = hours * 60 + minutes;
+          if (targetMins <= argCurrentMins) daysUntilTarget = 7;
         }
+        const argTarget = new Date(argNow);
+        argTarget.setUTCDate(argTarget.getUTCDate() + daysUntilTarget);
+        argTarget.setUTCHours(hours, minutes, 0, 0);
+        return new Date(argTarget.getTime() + ARG_OFFSET_MS);
+      }
 
-        nextDate.setDate(nextDate.getDate() + daysUntilTarget);
-        break;
-
-      case "MONTHLY":
-        nextDate = new Date(now);
-        nextDate.setHours(hours, minutes, 0, 0);
+      case "MONTHLY": {
         const targetDayOfMonth = reminder.recurrenceDay ?? 1;
-        nextDate.setDate(targetDayOfMonth);
-
-        // If the date already passed this month, go to next month
-        if (nextDate <= now) {
-          nextDate.setMonth(nextDate.getMonth() + 1);
+        const argTarget = new Date(argNow);
+        argTarget.setUTCDate(targetDayOfMonth);
+        argTarget.setUTCHours(hours, minutes, 0, 0);
+        let result = new Date(argTarget.getTime() + ARG_OFFSET_MS);
+        if (result <= now) {
+          argTarget.setUTCMonth(argTarget.getUTCMonth() + 1);
+          result = new Date(argTarget.getTime() + ARG_OFFSET_MS);
         }
-        break;
+        return result;
+      }
 
       default:
         throw new Error(`Unknown recurrence type: ${reminder.recurrence}`);
     }
-
-    return nextDate;
   }
 
   /**

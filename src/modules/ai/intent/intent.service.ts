@@ -143,12 +143,14 @@ export class IntentService {
       // Handle new date/time for modify
       if (response.newDateTime) {
         const newDateTime = new Date(response.newDateTime);
-        if (newDateTime > new Date()) {
-          result.newDateTime = newDateTime;
-        } else {
-          newDateTime.setDate(newDateTime.getDate() + 1);
-          result.newDateTime = newDateTime;
+        if (newDateTime <= new Date()) {
+          // Advance by 7-day increments to preserve the original day of the week
+          const now = new Date();
+          while (newDateTime <= now) {
+            newDateTime.setDate(newDateTime.getDate() + 7);
+          }
         }
+        result.newDateTime = newDateTime;
       }
 
       // Handle email reply instruction
@@ -227,9 +229,13 @@ export class IntentService {
             // Validate the date is in the future (only for non-recurring)
             if (detail.recurrence === "NONE" && dateTime <= new Date()) {
               this.logger.warn(
-                `Parsed date for "${detail.description}" is in the past, adjusting to tomorrow`
+                `Parsed date for "${detail.description}" is in the past, advancing to next occurrence`
               );
-              dateTime.setDate(dateTime.getDate() + 1);
+              // Advance by 7-day increments to preserve the original day of the week
+              const now = new Date();
+              while (dateTime <= now) {
+                dateTime.setDate(dateTime.getDate() + 7);
+              }
             }
           }
 

@@ -16,6 +16,8 @@ IMPORTANTE:
 - Si solo dice "a la tarde" usa las 15:00
 - Si solo dice "a la noche" usa las 20:00
 - Si solo dice "a la manana" usa las 9:00
+- Si dice un dia de la semana (ej: "el viernes"): si ya paso esta semana, usar la semana siguiente
+- NUNCA generes fechas en el pasado
 
 Responde UNICAMENTE con JSON valido (sin markdown, sin explicaciones):
 {
@@ -35,25 +37,23 @@ Ejemplos:
 - "que hora es"
   -> {"isReminder": false, "description": "", "dateTime": "", "confidence": 0.90}`;
 
-export const FUN_REMINDER_SYSTEM_PROMPT = `Sos un asistente divertido que genera mensajes de recordatorio.
+export const FUN_REMINDER_SYSTEM_PROMPT = `Eres un asistente que genera mensajes de recordatorio profesionales y directos.
 
-Generá un mensaje CORTO (máximo 2 líneas) y DIVERTIDO para recordar algo.
-El mensaje debe ser amigable, puede tener un toque de humor pero sin ser ofensivo.
-Usá español rioplatense (vos en lugar de tú). Usá tildes y ñ correctamente.
-Podés usar 1-2 emojis si quedan bien.
+Generá un mensaje CORTO (máximo 2 líneas) y CLARO para recordar algo.
+El mensaje debe ser respetuoso y conciso. Podés usar 1 emoji si corresponde.
+Usá español neutro con tildes y ñ correctamente.
 
 NO uses:
-- Saludos formales
+- Expresiones informales como "che", "pa", "opa", "ey", "psst", "dale"
 - Mensajes muy largos
-- Siempre el mismo opener (variá entre Ey!, Che!, Opa!, Pa!, Psst!, Dale!, etc.)
+- Humor forzado
 
 Ejemplos de buen tono:
-- "Ey! No te olvidés de tu cita con el dentista. Hora de mostrar esos dientitos! 🦷"
-- "Che! Tenés que comprar leche. El café solo no es lo mismo 🥛"
-- "Opa! Reunión en 30 min. ¡A ponerse las pilas!"
-- "Pa! ¿Te acordás que querías llamar a mamá? Es el momento 📞"
-- "Psst... lo anotaste vos. Hora de cumplirlo 😏"
-- "Dale! Lo que querías hacer ya llegó la hora 💪"`;
+- "⏰ Recordatorio: cita con el dentista. Es el momento indicado."
+- "🔔 Tiene pendiente: comprar leche."
+- "📌 Recordatorio programado: reunión en 30 minutos."
+- "📅 Ha llegado el momento de llamar a mamá."
+- "✅ Recordatorio activo: cumplir con la tarea pendiente."`;
 
 export const TASK_MANAGEMENT_SYSTEM_PROMPT = `Eres un asistente que analiza mensajes para detectar intenciones relacionadas con recordatorios/tareas y email.
 
@@ -93,6 +93,14 @@ IMPORTANTE para CREATE_REMINDER:
 - Ejemplos de multiples: "recuerdame que manana a las 3 tengo padel y que el viernes a las 5 tengo yoga"
 - Cada recordatorio debe tener su propia descripcion y fecha/hora
 
+IMPORTANTE - INTERPRETACION DE DIAS DE LA SEMANA:
+- Si el usuario dice un dia especifico (ej: "el viernes", "el martes", "el jueves"):
+  * Si ese dia AUN NO llegó esta semana → usar ese dia de esta semana
+  * Si ese dia YA PASO esta semana → usar ese mismo dia la SEMANA SIGUIENTE
+- Si el usuario dice "el proximo [dia]" o "la semana que viene [dia]" → SIEMPRE usar la semana siguiente
+- Si el usuario dice "este [dia]" → usar esta semana aunque ya sea el dia de hoy pero no haya pasado la hora
+- NUNCA generes fechas en el pasado. Si el calculo da una fecha ya ocurrida, sumar 7 dias
+
 RECORDATORIOS RECURRENTES:
 Detecta cuando el usuario quiere recordatorios que se repiten:
 - "todos los dias" / "cada dia" / "diariamente" -> recurrence: "DAILY"
@@ -122,11 +130,12 @@ Para interpretar fechas/horas:
 - "a la manana" = 9:00
 - Si dice dia pero no hora, usar 9:00 por defecto
 - Si es recurrente y dice la hora, usar esa hora para recurrenceTime
+- Si dice un dia de la semana especifico (ej: "el viernes", "el martes"): si ese dia ya paso esta semana, usar la semana siguiente. NUNCA generes una fecha en el pasado.
 
-Para cada recordatorio, generá también un "funMessage": un mensaje corto (máximo 2 líneas) y divertido en español rioplatense (vos en lugar de tú), con tildes y ñ correctas. Puede tener 1-2 emojis. Variá el estilo entre los recordatorios. Ejemplos:
-- "Ey! No te olvidés de tu cita con el dentista. Hora de mostrar esos dientitos! 🦷"
-- "Che! Tenés que comprar leche. El café solo no es lo mismo 🥛"
-- "Pa! ¿Te acordás? Era hoy. *No hay excusas* 😄"
+Para cada recordatorio, generá también un "funMessage": un mensaje corto (máximo 2 líneas) y profesional en español neutro, con tildes y ñ correctas. Puede tener 1 emoji. Variá el estilo entre los recordatorios. NO uses expresiones informales como "che", "pa", "opa", "ey". Ejemplos:
+- "⏰ Recordatorio: cita con el dentista. Es el momento."
+- "🔔 Tiene pendiente: comprar leche."
+- "📌 Recordatorio programado: reunión importante."
 
 Responde UNICAMENTE con JSON valido (sin markdown, sin explicaciones):
 {
@@ -174,22 +183,22 @@ Responde UNICAMENTE con JSON valido (sin markdown, sin explicaciones):
 Ejemplos:
 
 - "recuerdame manana a las 4 ir al dentista"
-  -> {"intentType": "create_reminder", "taskNumber": null, "reminderDetails": [{"description": "ir al dentista", "dateTime": "2024-01-16T16:00:00-03:00", "recurrence": "NONE", "recurrenceDay": null, "recurrenceTime": null, "funMessage": "Ey! No te olvides del dentista. Hora de mostrar esos dientitos! 🦷"}], "newDateTime": null, "missingDateTime": false, "productSearchQuery": null, "confidence": 0.95}
+  -> {"intentType": "create_reminder", "taskNumber": null, "reminderDetails": [{"description": "ir al dentista", "dateTime": "2024-01-16T16:00:00-03:00", "recurrence": "NONE", "recurrenceDay": null, "recurrenceTime": null, "funMessage": "⏰ Recordatorio: cita con el dentista."}], "newDateTime": null, "missingDateTime": false, "productSearchQuery": null, "confidence": 0.95}
 
 - "recuerdame todos los dias a las 8 tomar la pastilla"
-  -> {"intentType": "create_reminder", "taskNumber": null, "reminderDetails": [{"description": "tomar la pastilla", "dateTime": null, "recurrence": "DAILY", "recurrenceDay": null, "recurrenceTime": "08:00", "funMessage": "Che! Hora de la pastilla. Tu cuerpo te lo va a agradecer 💊"}], "newDateTime": null, "missingDateTime": false, "productSearchQuery": null, "confidence": 0.95}
+  -> {"intentType": "create_reminder", "taskNumber": null, "reminderDetails": [{"description": "tomar la pastilla", "dateTime": null, "recurrence": "DAILY", "recurrenceDay": null, "recurrenceTime": "08:00", "funMessage": "💊 Recordatorio: tomar la pastilla."}], "newDateTime": null, "missingDateTime": false, "productSearchQuery": null, "confidence": 0.95}
 
 - "recuerdame todos los domingos a las 10 ir a la iglesia"
-  -> {"intentType": "create_reminder", "taskNumber": null, "reminderDetails": [{"description": "ir a la iglesia", "dateTime": null, "recurrence": "WEEKLY", "recurrenceDay": 0, "recurrenceTime": "10:00", "funMessage": "Domingo de fe! A prepararse para la iglesia 🙏"}], "newDateTime": null, "missingDateTime": false, "productSearchQuery": null, "confidence": 0.95}
+  -> {"intentType": "create_reminder", "taskNumber": null, "reminderDetails": [{"description": "ir a la iglesia", "dateTime": null, "recurrence": "WEEKLY", "recurrenceDay": 0, "recurrenceTime": "10:00", "funMessage": "🙏 Recordatorio: ir a la iglesia."}], "newDateTime": null, "missingDateTime": false, "productSearchQuery": null, "confidence": 0.95}
 
 - "recuerdame los lunes y miercoles a las 7 ir al gimnasio"
-  -> {"intentType": "create_reminder", "taskNumber": null, "reminderDetails": [{"description": "ir al gimnasio", "dateTime": null, "recurrence": "WEEKLY", "recurrenceDay": 1, "recurrenceTime": "07:00", "funMessage": "Dale que arrancamos la semana con todo! A mover el esqueleto 💪"}, {"description": "ir al gimnasio", "dateTime": null, "recurrence": "WEEKLY", "recurrenceDay": 3, "recurrenceTime": "07:00", "funMessage": "Mitad de semana y vos no aflojas! Al gimnasio se ha dicho 🏋️"}], "newDateTime": null, "missingDateTime": false, "productSearchQuery": null, "confidence": 0.95}
+  -> {"intentType": "create_reminder", "taskNumber": null, "reminderDetails": [{"description": "ir al gimnasio", "dateTime": null, "recurrence": "WEEKLY", "recurrenceDay": 1, "recurrenceTime": "07:00", "funMessage": "🏋️ Recordatorio: ir al gimnasio."}, {"description": "ir al gimnasio", "dateTime": null, "recurrence": "WEEKLY", "recurrenceDay": 3, "recurrenceTime": "07:00", "funMessage": "🏋️ Recordatorio: ir al gimnasio."}], "newDateTime": null, "missingDateTime": false, "productSearchQuery": null, "confidence": 0.95}
 
 - "recuerdame llamar a mama"
-  -> {"intentType": "create_reminder", "taskNumber": null, "reminderDetails": [{"description": "llamar a mama", "dateTime": null, "recurrence": "NONE", "recurrenceDay": null, "recurrenceTime": null, "funMessage": "Ey! Llama a mama que seguro te extraña 📞"}], "newDateTime": null, "missingDateTime": true, "productSearchQuery": null, "confidence": 0.90}
+  -> {"intentType": "create_reminder", "taskNumber": null, "reminderDetails": [{"description": "llamar a mama", "dateTime": null, "recurrence": "NONE", "recurrenceDay": null, "recurrenceTime": null, "funMessage": "📞 Recordatorio: llamar a mamá."}], "newDateTime": null, "missingDateTime": true, "productSearchQuery": null, "confidence": 0.90}
 
 - "creame un recordatorio de pagar las cuentas"
-  -> {"intentType": "create_reminder", "taskNumber": null, "reminderDetails": [{"description": "pagar las cuentas", "dateTime": null, "recurrence": "NONE", "recurrenceDay": null, "recurrenceTime": null, "funMessage": "Ojo! Las cuentas no se pagan solas. A ponerse las pilas 💸"}], "newDateTime": null, "missingDateTime": true, "productSearchQuery": null, "confidence": 0.90}
+  -> {"intentType": "create_reminder", "taskNumber": null, "reminderDetails": [{"description": "pagar las cuentas", "dateTime": null, "recurrence": "NONE", "recurrenceDay": null, "recurrenceTime": null, "funMessage": "💸 Recordatorio: pagar las cuentas."}], "newDateTime": null, "missingDateTime": true, "productSearchQuery": null, "confidence": 0.90}
 
 - "que tareas tengo pendientes"
   -> {"intentType": "list_tasks", "taskNumber": null, "reminderDetails": null, "newDateTime": null, "missingDateTime": false, "productSearchQuery": null, "confidence": 0.95}

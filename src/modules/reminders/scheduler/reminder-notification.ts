@@ -1,5 +1,5 @@
 /**
- * Generates varied, fun notification messages for reminders.
+ * Generates varied notification messages for reminders.
  * Each call returns a different template so recurring reminders
  * never feel repetitive.
  */
@@ -7,24 +7,18 @@
 type Template = (description: string) => string;
 
 const TEMPLATES: Template[] = [
-  (d) => `⏰ Ey! No te olvidés: *${d}*`,
-  (d) => `🔔 Che, acordate que tenés que: *${d}*`,
-  (d) => `📌 *Recordatorio:*\n${d}`,
-  (d) => `🎯 Es la hora de: *${d}*`,
-  (d) => `💬 Psst! No se te pase: *${d}*`,
-  (d) => `⌚ *${cap(d)}* — ¡es ahora!`,
-  (d) => `🚀 Anotaste esto y llegó el momento:\n*${d}*`,
-  (d) => `💡 Tenés pendiente: *${d}*`,
-  (d) => `🎉 Opa! Esto no se puede olvidar: *${d}*`,
-  (d) => `⚡ Pa! Acordate:\n*${d}*`,
-  (d) => `📢 *${cap(d)}* ← lo anotaste vos 😏`,
-  (d) => `🔮 Tu vos del pasado te manda saludos:\n*${d}*`,
-  (d) => `👋 Ey, yo de antes: *no te olvidés de ${d}*`,
-  (d) => `🗓️ Agendaste esto y ya llegó:\n*${d}*`,
-  (d) => `💭 Sí, sí... *${d}*. Ese recordatorio que pusiste.`,
-  (d) => `🔔 Momento! Tenías algo pendiente:\n*${d}*`,
-  (d) => `😤 Dale, que podés: *${d}*`,
-  (d) => `🪄 ¡Pum! Te recuerdo: *${d}*`
+  (d) => `⏰ *Recordatorio:* ${d}`,
+  (d) => `🔔 Es momento de: *${d}*`,
+  (d) => `📌 *Recordatorio programado:*\n${d}`,
+  (d) => `🎯 Ha llegado la hora de: *${d}*`,
+  (d) => `💬 Tiene pendiente: *${d}*`,
+  (d) => `⌚ *${cap(d)}* — es ahora`,
+  (d) => `🗓️ Recordatorio agendado:\n*${d}*`,
+  (d) => `💡 Pendiente: *${d}*`,
+  (d) => `📢 *${cap(d)}* — recordatorio activo`,
+  (d) => `🔔 Aviso: tiene un recordatorio pendiente:\n*${d}*`,
+  (d) => `📅 Llegó el momento para: *${d}*`,
+  (d) => `✅ *Recordatorio:*\n${d}`
 ];
 
 function cap(s: string): string {
@@ -52,7 +46,7 @@ export function buildReminderNotification(text: string): string {
  */
 function isFullMessage(text: string): boolean {
   return (
-    /^[⏰🔔📌🎯💬🚀💡🎉🗓️⚡📢🔮👋💭😤🪄🔮]/.test(text) ||
-    /^(Te |Ey!|Che!|Opa!|Hola!|Pa!|Psst|Acordate)/i.test(text)
+    /^[⏰🔔📌🎯💬🚀💡🎉🗓️⚡📢🔮👋💭😤🪄✅]/.test(text) ||
+    /^(Recordatorio|Aviso|Es momento|Ha llegado|Pendiente|Llegó el momento)/i.test(text)
   );
 }

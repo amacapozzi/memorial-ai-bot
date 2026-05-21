@@ -543,36 +543,56 @@ export class MessageHandler {
   ): Date {
     const now = new Date();
     const [hours, minutes] = recurrenceTime.split(":").map(Number);
-    let nextDate = new Date(now);
-    nextDate.setHours(hours, minutes, 0, 0);
+
+    // Argentina is UTC-3. To work in Argentina local time we shift the UTC timestamp
+    // so that UTC fields on the shifted date reflect Argentina local values.
+    const ARG_OFFSET_MS = 3 * 60 * 60 * 1000;
+    // argNow.getUTC*() returns Argentina local time components
+    const argNow = new Date(now.getTime() - ARG_OFFSET_MS);
 
     switch (recurrence) {
-      case "DAILY":
-        if (nextDate <= now) {
-          nextDate.setDate(nextDate.getDate() + 1);
+      case "DAILY": {
+        const argTarget = new Date(argNow);
+        argTarget.setUTCHours(hours, minutes, 0, 0);
+        let result = new Date(argTarget.getTime() + ARG_OFFSET_MS);
+        if (result <= now) {
+          argTarget.setUTCDate(argTarget.getUTCDate() + 1);
+          result = new Date(argTarget.getTime() + ARG_OFFSET_MS);
         }
-        break;
+        return result;
+      }
 
-      case "WEEKLY":
+      case "WEEKLY": {
         const targetDay = recurrenceDay ?? 0;
-        const currentDay = nextDate.getDay();
-        let daysUntilTarget = targetDay - currentDay;
-        if (daysUntilTarget < 0 || (daysUntilTarget === 0 && nextDate <= now)) {
-          daysUntilTarget += 7;
+        const argCurrentDay = argNow.getUTCDay();
+        let daysUntilTarget = (targetDay - argCurrentDay + 7) % 7;
+        if (daysUntilTarget === 0) {
+          const argCurrentMins = argNow.getUTCHours() * 60 + argNow.getUTCMinutes();
+          const targetMins = hours * 60 + minutes;
+          if (targetMins <= argCurrentMins) daysUntilTarget = 7;
         }
-        nextDate.setDate(nextDate.getDate() + daysUntilTarget);
-        break;
+        const argTarget = new Date(argNow);
+        argTarget.setUTCDate(argTarget.getUTCDate() + daysUntilTarget);
+        argTarget.setUTCHours(hours, minutes, 0, 0);
+        return new Date(argTarget.getTime() + ARG_OFFSET_MS);
+      }
 
-      case "MONTHLY":
+      case "MONTHLY": {
         const targetDayOfMonth = recurrenceDay ?? 1;
-        nextDate.setDate(targetDayOfMonth);
-        if (nextDate <= now) {
-          nextDate.setMonth(nextDate.getMonth() + 1);
+        const argTarget = new Date(argNow);
+        argTarget.setUTCDate(targetDayOfMonth);
+        argTarget.setUTCHours(hours, minutes, 0, 0);
+        let result = new Date(argTarget.getTime() + ARG_OFFSET_MS);
+        if (result <= now) {
+          argTarget.setUTCMonth(argTarget.getUTCMonth() + 1);
+          result = new Date(argTarget.getTime() + ARG_OFFSET_MS);
         }
-        break;
-    }
+        return result;
+      }
 
-    return nextDate;
+      default:
+        return now;
+    }
   }
 
   private buildConfirmationMessage(r: {
